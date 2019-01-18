@@ -74,23 +74,20 @@ void fus::net_msg_printf(const net_struct_t* msg, const void* data, FILE* f)
         case net_data_t::e_integer:
         case net_data_t::e_transaction:
             {
-                union { uint8_t* u8; uint16_t* u16; uint32_t* u32; uint64_t* u64; } magic;
-                magic.u8 = datap;
-
                 fprintf(f, "        - DATA: ");
                 /// fixme big endian
                 switch (msg->m_fields[i].m_datasz) {
                 case 1:
-                    fprintf(f, "%hhu", *magic.u8);
+                    fprintf(f, "%hhu", *datap);
                     break;
                 case 2:
-                    fprintf(f, "%hu", *magic.u16);
+                    fprintf(f, "%hu", *(uint16_t*)datap);
                     break;
                 case 4:
-                    fprintf(f, "%lu", *magic.u32);
+                    fprintf(f, "%lu", *(uint32_t*)datap);
                     break;
                 case 8:
-                    fprintf(f, "%llu", *magic.u64);
+                    fprintf(f, "%llu", *(uint64_t*)datap);
                     break;
                 default:
                     FUS_ASSERTD(0);
