@@ -15,11 +15,13 @@
  */
 
 #include <cstdio>
+#include <iostream>
+#include <uv.h>
 
 #include "common.h"
+#include "fus_config.h"
 #include "net_struct.h"
 #include "tcp_stream.h"
-#include <uv.h>
 
 static void on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 {
@@ -63,12 +65,18 @@ int main(int argc, char* argv[])
     net_struct_printf(fus::protocol::msg_size_header::net_struct, stdout);
     puts("");
 
+    // TEST: Load a config file
+    fus::config_parser config(fus::daemon_config);
+    config.read("fus.ini");
+    const char* bindaddr = config.get<const char*>("lobby", "bindaddr");
+    int port = config.get<int>("lobby", "port");
+
     // Try to receive a connection header from a client...
     uv_loop_t* loop = uv_default_loop();
     uv_tcp_t server; // todo: don't use this directly
     uv_tcp_init(loop, &server);
     struct sockaddr_in addr;
-    uv_ip4_addr("0.0.0.0", 14617, &addr);
+    uv_ip4_addr(bindaddr, port, &addr);
     uv_tcp_bind(&server, (const struct sockaddr*)&addr, 0);
     int r = uv_listen((uv_stream_t*)&server, 128, on_new_connection);
     if (r) {

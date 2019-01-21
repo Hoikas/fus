@@ -16,11 +16,13 @@
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 
 set(FUS_CORE_HEADERS
+    config_parser.h
     errors.h
     list.h
 )
 
 set(FUS_CORE_SOURCES
+    config_parser.cpp
     errors.cpp
 )
 

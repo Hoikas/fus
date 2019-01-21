@@ -20,6 +20,7 @@ include_directories("../io")
 include_directories("../protocol")
 
 set(FUS_DAEMON_HEADERS
+    fus_config.h
 )
 
 set(FUS_DAEMON_SOURCES
