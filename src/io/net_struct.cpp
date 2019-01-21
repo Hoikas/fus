@@ -27,18 +27,18 @@ size_t fus::net_struct_calcsz(const net_struct_t* msg)
     return size;
 }
 
-static const char* _get_data_type_str(fus::net_data_t type)
+static const char* _get_data_type_str(fus::net_field_t::data_type type)
 {
     switch (type) {
-    case fus::net_data_t::e_blob:
+    case fus::net_field_t::data_type::e_blob:
         return "BLOB";
-    case fus::net_data_t::e_buffer:
+    case fus::net_field_t::data_type::e_buffer:
         return "BUFFER";
-    case fus::net_data_t::e_integer:
+    case fus::net_field_t::data_type::e_integer:
         return "INTEGER";
-    case fus::net_data_t::e_string:
+    case fus::net_field_t::data_type::e_string:
         return "STRING";
-    case fus::net_data_t::e_transaction:
+    case fus::net_field_t::data_type::e_transaction:
         return "TRANSID";
     default:
         return "???";
@@ -71,8 +71,8 @@ void fus::net_msg_printf(const net_struct_t* msg, const void* data, FILE* f)
 
         uint8_t* datap = (uint8_t*)data + offset;
         switch (msg->m_fields[i].m_type) {
-        case net_data_t::e_integer:
-        case net_data_t::e_transaction:
+        case net_field_t::data_type::e_integer:
+        case net_field_t::data_type::e_transaction:
             {
                 fprintf(f, "        - DATA: ");
                 /// fixme big endian
@@ -96,7 +96,7 @@ void fus::net_msg_printf(const net_struct_t* msg, const void* data, FILE* f)
             }
             fprintf(f, "\n");
             break;
-        case net_data_t::e_string:
+        case net_field_t::data_type::e_string:
             fprintf(f, "        - DATA: '%S'\n", (char16_t*)datap);
             break;
         }

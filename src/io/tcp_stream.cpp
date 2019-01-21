@@ -59,7 +59,7 @@ static void _read_alloc(fus::tcp_stream_t* stream, size_t suggestion, uv_buf_t* 
     // When a read is executed, the size of any variable length field only accounts for the size portion.
     // Meaning that, in a best case scenario, we read once for the main body of the message and the
     // size of the buffer. Then, we have to read again for the buffer itself. Let's see if that's us.
-    if (stream->m_readStruct->m_fields[stream->m_readField].m_type == fus::net_data_t::e_buffer) {
+    if (stream->m_readStruct->m_fields[stream->m_readField].m_type == fus::net_field_t::data_type::e_buffer) {
         FUS_ASSERTD(stream->m_readField == stream->m_readStruct->m_size);
         FUS_ASSERTD(stream->m_readBuf);
 

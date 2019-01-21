@@ -22,27 +22,27 @@
 
 namespace fus
 {
-    enum class net_data_t
+    struct net_field_t final
     {
-        /** Plain old int. */
-        e_integer,
+        enum class data_type
+        {
+            /** Plain old int. */
+            e_integer,
 
-        /** Transaction ID data type... it's a plain old int */
-        e_transaction,
+            /** Transaction ID data type... it's a plain old int */
+            e_transaction,
 
-        /** A fixed size buffer. */
-        e_blob,
+            /** A fixed size buffer. */
+            e_blob,
 
-        /** A fixed size string buffer */
-        e_string,
+            /** A fixed size string buffer */
+            e_string,
 
-        /** An arbitrarily sized buffer */
-        e_buffer,
-    };
+            /** An arbitrarily sized buffer */
+            e_buffer,
+        };
 
-    struct net_fields_t final
-    {
-        net_data_t m_type;
+        data_type m_type;
         const char* m_name;
         size_t m_datasz;
     };
@@ -51,7 +51,7 @@ namespace fus
     {
         const char* m_name;
         size_t m_size;
-        const net_fields_t* m_fields;
+        const net_field_t* m_fields;
     };
 
     size_t net_struct_calcsz(const net_struct_t*);

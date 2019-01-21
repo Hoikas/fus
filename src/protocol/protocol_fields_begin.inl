@@ -27,22 +27,22 @@ namespace fus
 
 #define FUS_NET_STRUCT_BEGIN(name) \
     namespace fus { namespace protocol { namespace _fields { \
-        static const fus::net_fields_t name[] = {
+        static const fus::net_field_t name[] = {
 
 #define FUS_NET_FIELD_UINT8(name) \
-    { fus::net_data_t::e_integer, #name, sizeof(uint8_t) },
+    { fus::net_field_t::data_type::e_integer, #name, sizeof(uint8_t) },
 
 #define FUS_NET_FIELD_UINT16(name) \
-    { fus::net_data_t::e_integer, #name, sizeof(uint16_t) },
+    { fus::net_field_t::data_type::e_integer, #name, sizeof(uint16_t) },
 
 #define FUS_NET_FIELD_UINT32(name) \
-    { fus::net_data_t::e_integer, #name, sizeof(uint32_t) },
+    { fus::net_field_t::data_type::e_integer, #name, sizeof(uint32_t) },
 
 #define FUS_NET_FIELD_STRING(name, size) \
-    { fus::net_data_t::e_string, #name, size * sizeof(char16_t) },
+    { fus::net_field_t::data_type::e_string, #name, size * sizeof(char16_t) },
 
 #define FUS_NET_FIELD_UUID(name) \
-    { fus::net_data_t::e_blob, #name, 16 },
+    { fus::net_field_t::data_type::e_blob, #name, 16 },
 
 #define FUS_NET_STRUCT_END(name) \
     }; \
