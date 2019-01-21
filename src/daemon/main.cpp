@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <uv.h>
 
@@ -21,6 +22,12 @@
 #include "fus_config.h"
 #include "net_struct.h"
 #include "tcp_stream.h"
+
+// =================================================================================
+
+DEFINE_string(config_path, "fus.ini", "Path to fus configuration file");
+
+// =================================================================================
 
 static void on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 {
@@ -56,8 +63,12 @@ static void on_new_connection(uv_stream_t* server, int status)
     }
 }
 
+// =================================================================================
+
 int main(int argc, char* argv[])
 {
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
+
     // TEST: display common stuff
     net_struct_print(fus::protocol::connection_header::net_struct, std::cout);
     net_struct_print(fus::protocol::msg_std_header::net_struct, std::cout);
@@ -65,7 +76,7 @@ int main(int argc, char* argv[])
 
     // TEST: Load a config file
     fus::config_parser config(fus::daemon_config);
-    config.read("fus.ini");
+    config.read(FLAGS_config_path);
     const char* bindaddr = config.get<const char*>("lobby", "bindaddr");
     int port = config.get<int>("lobby", "port");
 

@@ -19,6 +19,7 @@ project(fus)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # Required third party libraries
+find_package(gflags REQUIRED)
 find_package(LibUV REQUIRED)
 find_package(string_theory REQUIRED)
 

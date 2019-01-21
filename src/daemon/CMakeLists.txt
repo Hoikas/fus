@@ -13,6 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
+include_directories(${GFLAGS_INCLUDE_DIRS})
 include_directories(${LIBUV_INCLUDE_DIRS})
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../core")
@@ -28,6 +29,7 @@ set(FUS_DAEMON_SOURCES
 )
 
 add_executable(fus_daemon ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
+target_link_libraries(fus_daemon ${GFLAGS_LIBRARIES})
 target_link_libraries(fus_daemon ${LIBUV_LIBRARIES})
 target_link_libraries(fus_daemon ${STRING_THEORY_LIBRARIES})
 target_link_libraries(fus_daemon fus_core)
