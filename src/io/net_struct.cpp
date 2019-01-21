@@ -80,7 +80,7 @@ void fus::net_msg_print(const net_struct_t* msg, const void* data, std::ostream&
                 /// fixme big endian
                 switch (msg->m_fields[i].m_datasz) {
                 case 1:
-                    stream << *datap;
+                    stream << (int)(*datap);
                     break;
                 case 2:
                     stream << *(uint16_t*)datap;
