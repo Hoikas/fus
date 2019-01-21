@@ -14,7 +14,6 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdio>
 #include <iostream>
 #include <uv.h>
 
@@ -26,14 +25,14 @@
 static void on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 {
     if (error < 0) {
-        fprintf(stderr, "Read error %s\n", uv_strerror(error));
+        std::cerr << "Read error " << uv_strerror(error) << std::endl;
         uv_close((uv_handle_t*)client, nullptr);
         uv_stop(uv_default_loop());
         return;
     }
 
     // dump to console
-    fus::net_msg_printf(fus::protocol::connection_header::net_struct, msg, stdout);
+    fus::net_msg_print(fus::protocol::connection_header::net_struct, msg, std::cout);
     uv_close((uv_handle_t*)client, nullptr);
     uv_stop(uv_default_loop());
 }
@@ -41,7 +40,7 @@ static void on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 static void on_new_connection(uv_stream_t* server, int status)
 {
     if (status < 0) {
-        fprintf(stderr, "New connection error %s\n", uv_strerror(status));
+        std::cerr << "New connection error " << uv_strerror(status) << std::endl;
         uv_stop(uv_default_loop());
         return;
     }
@@ -60,10 +59,9 @@ static void on_new_connection(uv_stream_t* server, int status)
 int main(int argc, char* argv[])
 {
     // TEST: display common stuff
-    net_struct_printf(fus::protocol::connection_header::net_struct, stdout);
-    net_struct_printf(fus::protocol::msg_std_header::net_struct, stdout);
-    net_struct_printf(fus::protocol::msg_size_header::net_struct, stdout);
-    puts("");
+    net_struct_print(fus::protocol::connection_header::net_struct, std::cout);
+    net_struct_print(fus::protocol::msg_std_header::net_struct, std::cout);
+    net_struct_print(fus::protocol::msg_size_header::net_struct, std::cout);
 
     // TEST: Load a config file
     fus::config_parser config(fus::daemon_config);
@@ -80,7 +78,7 @@ int main(int argc, char* argv[])
     uv_tcp_bind(&server, (const struct sockaddr*)&addr, 0);
     int r = uv_listen((uv_stream_t*)&server, 128, on_new_connection);
     if (r) {
-        fprintf(stderr, "Listen error %s\n", uv_strerror(r));
+        std::cerr << "Listen error " << uv_strerror(r) << std::endl;
         return 1;
     }
     return uv_run(loop, UV_RUN_DEFAULT);

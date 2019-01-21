@@ -55,8 +55,8 @@ namespace fus
     };
 
     size_t net_struct_calcsz(const net_struct_t*);
-    void net_struct_printf(const net_struct_t*, FILE*);
-    void net_msg_printf(const net_struct_t*, const void*, FILE*);
+    void net_struct_print(const net_struct_t*, std::ostream&);
+    void net_msg_print(const net_struct_t*, const void*, std::ostream&);
 };
 
 #endif
