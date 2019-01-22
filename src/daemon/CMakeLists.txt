@@ -22,10 +22,12 @@ include_directories("../protocol")
 
 set(FUS_DAEMON_HEADERS
     fus_config.h
+    server.h
 )
 
 set(FUS_DAEMON_SOURCES
     main.cpp
+    server.cpp
 )
 
 add_executable(fus_daemon ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
