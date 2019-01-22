@@ -14,21 +14,25 @@
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
 include_directories(${LIBUV_INCLUDE_DIRS})
+include_directories(${OPENSSL_INCLUDE_DIRS})
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../core")
 
 set(FUS_IO_HEADERS
+    io.h
     net_struct.h
     tcp_stream.h
 )
 
 set(FUS_IO_SOURCES
+    io.cpp
     net_struct.cpp
     tcp_stream.cpp
 )
 
 add_library(fus_io STATIC ${FUS_IO_HEADERS} ${FUS_IO_SOURCES})
 target_link_libraries(fus_io ${LIBUV_LIBRARIES})
+target_link_openssl_crypto(fus_io)
 target_link_libraries(fus_io ${STRING_THEORY_LIBRARIES})
 target_link_libraries(fus_io fus_core)
 

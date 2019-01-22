@@ -13,20 +13,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.2)
-project(fus)
+find_package(OpenSSL REQUIRED)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-# Required third party libraries
-find_package(gflags REQUIRED)
-find_package(LibUV REQUIRED)
-include(OpenSSL) # some extra logic in there
-find_package(string_theory REQUIRED)
-
-# Might as well request C++17 so the mice can play.
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Allow the libs and exes to fondle themselves
-add_subdirectory(src)
+function(target_link_openssl_crypto target_name)
+    target_link_libraries(${target_name} OpenSSL::Crypto)
+    if(WIN32)
+        target_link_libraries(${target_name} CRYPT32)
+    endif()
+endfunction()

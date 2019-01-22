@@ -16,14 +16,36 @@
 
 #include <gflags/gflags.h>
 #include <iostream>
+#include <string_theory/st_format.h>
 
+#include "io.h"
 #include "server.h"
 
 // =================================================================================
 
 DEFINE_string(config_path, "fus.ini", "Path to fus configuration file");
+DEFINE_bool(generate_keys, false, "Generate a new set of encryption keys");
 DEFINE_bool(run_lobby, true, "Launch the server lobby");
 DEFINE_bool(save_config, false, "Saves the server configuration file");
+
+// =================================================================================
+
+static void generate_daemon_keys(fus::config_parser& config, const ST::string& srv)
+{
+    ST::string section = ST_LITERAL("crypt");
+    unsigned int g_value = config.get<unsigned int>(section, ST::format("{}_g", srv));
+    auto keys = fus::io_generate_keys(g_value);
+    config.set<const ST::string&>(section, ST::format("{}_k", srv), std::get<0>(keys));
+    config.set<const ST::string&>(section, ST::format("{}_n", srv), std::get<1>(keys));
+    config.set<const ST::string&>(section, ST::format("{}_x", srv), std::get<2>(keys));
+}
+
+static void generate_all_keys(fus::config_parser& config)
+{
+    generate_daemon_keys(config, ST_LITERAL("auth"));
+    generate_daemon_keys(config, ST_LITERAL("game"));
+    generate_daemon_keys(config, ST_LITERAL("gate"));
+}
 
 // =================================================================================
 
@@ -32,10 +54,13 @@ int main(int argc, char* argv[])
     /// fixme: set program name and version
     gflags::ParseCommandLineFlags(&argc, &argv, false);
 
+    fus::io_init();
     fus::server server(FLAGS_config_path);
 
     // Do anything that might change the server's configuration here and optionally save the new
     // configuration file at the end of the process.
+    if (FLAGS_generate_keys)
+        generate_all_keys(server.config());
     if (FLAGS_save_config)
         server.config().write(FLAGS_config_path);
 
@@ -48,5 +73,7 @@ int main(int argc, char* argv[])
             server.run_forever();
     }
 
+    // Done
+    fus::io_close();
     return 0;
 }

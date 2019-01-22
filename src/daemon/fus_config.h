@@ -19,6 +19,16 @@
 
 #include "config_parser.h"
 
+#define FUS_CONFIG_CRYPT(server, gval) \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_k"), fus::config_item::value_type::e_string, \
+      ST::null, ST::null }, \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_n"), fus::config_item::value_type::e_string, \
+      ST::null, ST::null }, \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_x"), fus::config_item::value_type::e_string, \
+      ST::null, ST::null }, \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_g"), fus::config_item::value_type::e_integer, \
+      ST_LITERAL(#gval), ST::null }, \
+
 namespace fus
 {
     config_item daemon_config[] = {
@@ -28,7 +38,13 @@ namespace fus
         FUS_CONFIG_INT("lobby", "port", 14617,
                        "Lobby Bind Port\n"
                        "Port that this fus server should listen for connections on")
+
+        FUS_CONFIG_CRYPT("auth", 41)
+        FUS_CONFIG_CRYPT("game", 73)
+        FUS_CONFIG_CRYPT("gate", 4)
     };
 };
+
+#undef FUS_CONFIG_CRYPT
 
 #endif
