@@ -132,6 +132,28 @@ void fus::config_parser::set<unsigned int>(const ST::string& section, const ST::
 }
 
 // ============================================================================
+
+void fus::config_parser::set(size_t lineno, const configmap_t::iterator& section, const ST::string& key, const ST::string& value)
+{
+    if (section == m_config.end()) {
+        std::cerr << "CONFIG: (Line: " << lineno << ") Found config item '" << key.c_str();
+        std::cerr << "' outside of a valid section, ignoring." << std::endl;
+        return;
+    }
+
+    auto item = section->second.find(key);
+    if (item != section->second.end()) {
+        if (!value.empty() || item->second.m_def->m_type == config_item::value_type::e_string)
+            item->second.m_value = value;
+        else
+            item->second.m_value = ST_LITERAL("0");
+    } else {
+        std::cerr << "CONFIG: (Line: " << lineno << ") Found unknown config item '" << section->first.c_str();
+        std::cerr << "." << key.c_str() << "' -- is it in the right section?" << std::endl;
+    }
+}
+
+// ============================================================================
 bool fus::config_parser::read(const std::filesystem::path& filename)
 {
     if (!std::filesystem::exists(filename))
@@ -142,6 +164,7 @@ bool fus::config_parser::read(const std::filesystem::path& filename)
 
     std::regex section_test("\\[(.*?)\\]");
     std::regex value_test("(\\w+)\\s*=\\s*([^\\+]+(?!\\+{3}))");
+    std::regex empty_test("(\\w+)\\s*=");
 
     size_t lineno = 0;
     configmap_t::iterator section = m_config.end();
@@ -163,20 +186,10 @@ bool fus::config_parser::read(const std::filesystem::path& filename)
         } else if (std::regex_search(line.c_str(), match, value_test)) {
             ST::string key = ST::string::from_std_string(match[1].str());
             ST::string value = ST::string::from_std_string(match[2].str());
-
-            if (section == m_config.end()) {
-                std::cerr << "CONFIG: (Line: " << lineno << ") Found config item '" << key.c_str();
-                std::cerr << "' outside of any section, ignoring." << std::endl;
-                continue;
-            }
-
-            auto item = section->second.find(key);
-            if (item != section->second.end()) {
-                item->second.m_value = value;
-            } else {
-                std::cerr << "CONFIG: (Line: " << lineno << ") Found unknown config item '" << section->first.c_str();
-                std::cerr << "." << key.c_str() << "' -- is it in the right section?" << std::endl;
-            }
+            set(lineno, section, key, value);
+        } else if (std::regex_search(line.c_str(), match, empty_test)) {
+            ST::string key = ST::string::from_std_string(match[1].str());
+            set(lineno, section, key, ST::null);
         } else {
             std::cerr << "CONFIG: (Line: " << lineno << ") WTF?!?!?!" << std::endl;
         }

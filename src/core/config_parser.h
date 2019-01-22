@@ -74,6 +74,7 @@ namespace fus
 
         sectionmap_t::iterator find_item(const ST::string& section, const ST::string& key);
         sectionmap_t::const_iterator find_item(const ST::string& section, const ST::string& key) const;
+        void set(size_t lineno, const configmap_t::iterator& section, const ST::string& key, const ST::string& value);
 
     public:
         config_parser(const config_parser& copy) = delete;
