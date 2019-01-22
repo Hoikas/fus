@@ -72,6 +72,9 @@ namespace fus
                                    ST::hash_i, ST::equal_i> configmap_t;
         configmap_t m_config;
 
+        sectionmap_t::iterator find_item(const ST::string& section, const ST::string& key);
+        sectionmap_t::const_iterator find_item(const ST::string& section, const ST::string& key) const;
+
     public:
         config_parser(const config_parser& copy) = delete;
         config_parser(config_parser&& move) = delete;
@@ -93,6 +96,25 @@ namespace fus
         {
             return get<T>(ST::string::from_literal(section, _SectionSz-1),
                           ST::string::from_literal(key, _KeySz-1));
+        }
+
+        template<typename T>
+        void set(const ST::string& section, const ST::string& key, T value);
+
+        template<typename T, size_t _SectionSz, size_t _KeySz>
+        void set(const char(&section)[_SectionSz], const char(&key)[_KeySz], T value)
+        {
+            set<T>(ST::string::from_literal(section, _SectionSz-1),
+                   ST::string::from_literal(key, _KeySz-1),
+                   value);
+        }
+
+        template<size_t _SectionSz, size_t _KeySz, size_t _ValueSz>
+        void set(const char(&section)[_SectionSz], const char(&key)[_KeySz], const char(&value)[_ValueSz])
+        {
+            set<ST::string>(ST::string::from_literal(section, _SectionSz-1),
+                            ST::string::from_literal(key, _KeySz-1),
+                            ST::string::from_literal(value, _ValueSz-1));
         }
 
         /**

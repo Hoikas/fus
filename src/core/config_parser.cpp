@@ -23,13 +23,28 @@
 #include <string>
 
 // ============================================================================
-template<>
-bool fus::config_parser::get<bool>(const ST::string& section, const ST::string& key) const
+fus::config_parser::sectionmap_t::iterator fus::config_parser::find_item(const ST::string& section, const ST::string& key)
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());
     auto item_it = section_it->second.find(key);
     FUS_ASSERTD(item_it != section_it->second.end());
+    return item_it;
+}
+
+fus::config_parser::sectionmap_t::const_iterator fus::config_parser::find_item(const ST::string& section, const ST::string& key) const
+{
+    auto section_it = m_config.find(section);
+    FUS_ASSERTD(section_it != m_config.end());
+    auto item_it = section_it->second.find(key);
+    FUS_ASSERTD(item_it != section_it->second.end());
+    return item_it;
+}
+
+template<>
+bool fus::config_parser::get<bool>(const ST::string& section, const ST::string& key) const
+{
+    auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_boolean);
     return item_it->second.m_value.to_bool();
 }
@@ -37,10 +52,7 @@ bool fus::config_parser::get<bool>(const ST::string& section, const ST::string& 
 template<>
 float fus::config_parser::get<float>(const ST::string& section, const ST::string& key) const
 {
-    auto section_it = m_config.find(section);
-    FUS_ASSERTD(section_it != m_config.end());
-    auto item_it = section_it->second.find(key);
-    FUS_ASSERTD(item_it != section_it->second.end());
+    auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_float);
     return item_it->second.m_value.to_float();
 }
@@ -48,10 +60,7 @@ float fus::config_parser::get<float>(const ST::string& section, const ST::string
 template<>
 int fus::config_parser::get<int>(const ST::string& section, const ST::string& key) const
 {
-    auto section_it = m_config.find(section);
-    FUS_ASSERTD(section_it != m_config.end());
-    auto item_it = section_it->second.find(key);
-    FUS_ASSERTD(item_it != section_it->second.end());
+    auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_integer);
     return item_it->second.m_value.to_int();
 }
@@ -59,10 +68,7 @@ int fus::config_parser::get<int>(const ST::string& section, const ST::string& ke
 template<>
 const char* fus::config_parser::get<const char*>(const ST::string& section, const ST::string& key) const
 {
-    auto section_it = m_config.find(section);
-    FUS_ASSERTD(section_it != m_config.end());
-    auto item_it = section_it->second.find(key);
-    FUS_ASSERTD(item_it != section_it->second.end());
+    auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_string);
     return item_it->second.m_value.c_str();
 }
@@ -70,10 +76,7 @@ const char* fus::config_parser::get<const char*>(const ST::string& section, cons
 template<>
 ST::string fus::config_parser::get<ST::string>(const ST::string& section, const ST::string& key) const
 {
-    auto section_it = m_config.find(section);
-    FUS_ASSERTD(section_it != m_config.end());
-    auto item_it = section_it->second.find(key);
-    FUS_ASSERTD(item_it != section_it->second.end());
+    auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_string);
     return item_it->second.m_value;
 }
@@ -81,12 +84,51 @@ ST::string fus::config_parser::get<ST::string>(const ST::string& section, const 
 template<>
 unsigned int fus::config_parser::get<unsigned int>(const ST::string& section, const ST::string& key) const
 {
-    auto section_it = m_config.find(section);
-    FUS_ASSERTD(section_it != m_config.end());
-    auto item_it = section_it->second.find(key);
-    FUS_ASSERTD(item_it != section_it->second.end());
+    auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_integer);
     return item_it->second.m_value.to_uint();
+}
+
+// ============================================================================
+
+template<>
+void fus::config_parser::set<bool>(const ST::string& section, const ST::string& key, bool value)
+{
+    auto item_it = find_item(section, key);
+    FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_boolean);
+    item_it->second.m_value = ST::string::from_bool(value);
+}
+
+template<>
+void fus::config_parser::set<float>(const ST::string& section, const ST::string& key, float value)
+{
+    auto item_it = find_item(section, key);
+    FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_float);
+    item_it->second.m_value = ST::string::from_float(value);
+}
+
+template<>
+void fus::config_parser::set<int>(const ST::string& section, const ST::string& key, int value)
+{
+    auto item_it = find_item(section, key);
+    FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_integer);
+    item_it->second.m_value = ST::string::from_int(value);
+}
+
+template<>
+void fus::config_parser::set<const ST::string&>(const ST::string& section, const ST::string& key, const ST::string& value)
+{
+    auto item_it = find_item(section, key);
+    FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_string);
+    item_it->second.m_value = value;
+}
+
+template<>
+void fus::config_parser::set<unsigned int>(const ST::string& section, const ST::string& key, unsigned int value)
+{
+    auto item_it = find_item(section, key);
+    FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_integer);
+    item_it->second.m_value = ST::string::from_uint(value);
 }
 
 // ============================================================================

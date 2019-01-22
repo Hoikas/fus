@@ -33,12 +33,19 @@ int main(int argc, char* argv[])
     gflags::ParseCommandLineFlags(&argc, &argv, false);
 
     fus::server server(FLAGS_config_path);
+
+    // Do anything that might change the server's configuration here and optionally save the new
+    // configuration file at the end of the process.
+    if (FLAGS_save_config)
+        server.config().write(FLAGS_config_path);
+
+    /// TODO
+    /// Start the various daemons
+
+    // Run the lobby server to accept connections and pump the loop forever
     if (FLAGS_run_lobby) {
         if (server.start_lobby())
             server.run_forever();
-    }
-    if (FLAGS_save_config) {
-        server.config().write(FLAGS_config_path);
     }
 
     return 0;
