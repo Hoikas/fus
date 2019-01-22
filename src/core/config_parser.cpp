@@ -24,7 +24,7 @@
 
 // ============================================================================
 template<>
-bool fus::config_parser::get<bool>(const ST::string& section, const ST::string& key)
+bool fus::config_parser::get<bool>(const ST::string& section, const ST::string& key) const
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());
@@ -35,7 +35,7 @@ bool fus::config_parser::get<bool>(const ST::string& section, const ST::string& 
 }
 
 template<>
-float fus::config_parser::get<float>(const ST::string& section, const ST::string& key)
+float fus::config_parser::get<float>(const ST::string& section, const ST::string& key) const
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());
@@ -46,7 +46,7 @@ float fus::config_parser::get<float>(const ST::string& section, const ST::string
 }
 
 template<>
-int fus::config_parser::get<int>(const ST::string& section, const ST::string& key)
+int fus::config_parser::get<int>(const ST::string& section, const ST::string& key) const
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());
@@ -57,7 +57,7 @@ int fus::config_parser::get<int>(const ST::string& section, const ST::string& ke
 }
 
 template<>
-const char* fus::config_parser::get<const char*>(const ST::string& section, const ST::string& key)
+const char* fus::config_parser::get<const char*>(const ST::string& section, const ST::string& key) const
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());
@@ -68,7 +68,7 @@ const char* fus::config_parser::get<const char*>(const ST::string& section, cons
 }
 
 template<>
-ST::string fus::config_parser::get<ST::string>(const ST::string& section, const ST::string& key)
+ST::string fus::config_parser::get<ST::string>(const ST::string& section, const ST::string& key) const
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());
@@ -79,7 +79,7 @@ ST::string fus::config_parser::get<ST::string>(const ST::string& section, const 
 }
 
 template<>
-unsigned int fus::config_parser::get<unsigned int>(const ST::string& section, const ST::string& key)
+unsigned int fus::config_parser::get<unsigned int>(const ST::string& section, const ST::string& key) const
 {
     auto section_it = m_config.find(section);
     FUS_ASSERTD(section_it != m_config.end());

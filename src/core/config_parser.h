@@ -86,10 +86,10 @@ namespace fus
         }
 
         template<typename T>
-        T get(const ST::string& section, const ST::string& key);
+        T get(const ST::string& section, const ST::string& key) const;
 
         template<typename T, size_t _SectionSz, size_t _KeySz>
-        T get(const char(&section)[_SectionSz], const char(&key)[_KeySz])
+        T get(const char(&section)[_SectionSz], const char(&key)[_KeySz]) const
         {
             return get<T>(ST::string::from_literal(section, _SectionSz-1),
                           ST::string::from_literal(key, _KeySz-1));
