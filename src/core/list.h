@@ -37,27 +37,27 @@
  * \param cls_name Class name of the list elements
  * \param link_name Name of the member field in the class to use for link usage \sa FUS_LIST_LINK
  */
-#define HIO_LIST_DECL(cls_name, link_name) fus::list_declare<cls_name, offsetof(cls_name, link_name)>
+#define FUS_LIST_DECL(cls_name, link_name) fus::list_declare<cls_name, offsetof(cls_name, link_name)>
 
 /**
  * \brief Declares an intrusive list link field.
  * This shortcut macro should be used to declare a link field to be used for membership in an
  * intrusive list. Each list that the object is a member of should have its own link field.
  */
-#define HIO_LIST_LINK(cls_name) fus::list_link<cls_name>
+#define FUS_LIST_LINK(cls_name) fus::list_link<cls_name>
 
 // =================================================================================
 
 namespace fus
 {
     template<class T>
-    class link {
+    class list_link {
     public:
-        ~link();
-        link();
+        ~list_link();
+        list_link();
 
-        link(const link& copy) = delete;
-        link& operator=(const link& copy) = delete;
+        list_link(const list_link& copy) = delete;
+        list_link& operator=(const list_link& copy) = delete;
 
         bool linked() const;
         void unlink();
@@ -68,27 +68,27 @@ namespace fus
         const T* next() const;
 
         // For use by list-type classes, not user code; the alternative is to friend list<T>
-        link(size_t offset);
+        list_link(size_t offset);
         void set_offset(size_t offset);
-        link<T>* next_link();
-        link<T>* prev_link();
-        void insert_before(T* node, link<T>* nextLink);
-        void insert_after(T* node, link<T>* prevLink);
+        list_link<T>* next_link();
+        list_link<T>* prev_link();
+        void insert_before(T* node, list_link<T>* nextLink);
+        void insert_after(T* node, list_link<T>* prevLink);
 
     private:
         T *        m_nextNode; // pointer to the next >object<
-        link<T> *  m_prevLink; // pointer to the previous >link field<
+        list_link<T> *  m_prevLink; // pointer to the previous >link field<
         void remove();
     };
 
     template<class T>
-    link<T>::~link()
+    list_link<T>::~list_link()
     {
         remove();
     }
 
     template<class T>
-    link<T>::link()
+    list_link<T>::list_link()
     {
         // Mark this node as the end of the list, with no link offset
         m_nextNode = (T*)((size_t)this + 1 - 0);
@@ -96,7 +96,7 @@ namespace fus
     }
 
     template<class T>
-    link<T>::link(size_t offset)
+    list_link<T>::list_link(size_t offset)
     {
         // Mark this node as the end of the list, with the link offset set
         m_nextNode = (T*)((size_t)this + 1 - offset);
@@ -104,7 +104,7 @@ namespace fus
     }
 
     template<class T>
-    void link<T>::set_offset(size_t offset)
+    void list_link<T>::set_offset(size_t offset)
     {
         // Mark this node as the end of the list, with the link offset set
         m_nextNode = (T*)((size_t)this + 1 - offset);
@@ -112,24 +112,24 @@ namespace fus
     }
 
     template<class T>
-    link<T> * link<T>::next_link()
+    list_link<T> * list_link<T>::next_link()
     {
         // Calculate the offset from a node pointer to a link structure
         size_t offset = (size_t)this - ((size_t)m_prevLink->m_nextNode & ~1);
 
         // Get the link field for the next node
-        return (link<T> *) (((size_t)m_nextNode & ~1) + offset);
+        return (list_link<T> *) (((size_t)m_nextNode & ~1) + offset);
     }
 
     template<class T>
-    void link<T>::remove()
+    void list_link<T>::remove()
     {
         next_link()->m_prevLink = m_prevLink;
         m_prevLink->m_nextNode = m_nextNode;
     }
 
     template<class T>
-    void link<T>::insert_before(T * node, link<T> * nextLink)
+    void list_link<T>::insert_before(T * node, list_link<T> * nextLink)
     {
         remove();
 
@@ -141,7 +141,7 @@ namespace fus
     }
 
     template<class T>
-    void link<T>::insert_after(T * node, link<T> * prevLink)
+    void list_link<T>::insert_after(T * node, list_link<T> * prevLink)
     {
         remove();
 
@@ -153,13 +153,13 @@ namespace fus
     }
 
     template<class T>
-    bool link<T>::linked() const
+    bool list_link<T>::linked() const
     {
         return m_prevLink != this;
     }
 
     template<class T>
-    void link<T>::unlink()
+    void list_link<T>::unlink()
     {
         remove();
 
@@ -169,13 +169,13 @@ namespace fus
     }
 
     template<class T>
-    link<T>* link<T>::prev_link()
+    list_link<T>* list_link<T>::prev_link()
     {
         return m_prevLink;
     }
 
     template<class T>
-    T* link<T>::prev() {
+    T* list_link<T>::prev() {
         T* prevNode = m_prevLink->m_prevLink->m_nextNode;
         if ((size_t)prevNode & 1)
             return nullptr;
@@ -183,7 +183,7 @@ namespace fus
     }
 
     template<class T>
-    const T* link<T>::prev() const
+    const T* list_link<T>::prev() const
     {
         const T* prevNode = m_prevLink->m_prevLink->m_nextNode;
         if ((size_t)prevNode & 1)
@@ -192,7 +192,7 @@ namespace fus
     }
 
     template<class T>
-    T* link<T>::next()
+    T* list_link<T>::next()
     {
         if ((size_t)m_nextNode & 1)
             return NULL;
@@ -200,7 +200,7 @@ namespace fus
     }
 
     template<class T>
-    const T* link<T>::next() const
+    const T* list_link<T>::next() const
     {
         if ((size_t)m_nextNode & 1)
             return nullptr;
@@ -226,22 +226,23 @@ namespace fus
         const T* front() const;
         const T* back() const;
 
-        T* prev(T * node);
-        T* next(T * node);
+        T* prev(T* node);
+        T* next(T* node);
         const T* prev(const T* node) const;
         const T* next(const T* node) const;
 
         void push_front(T* node);
         void push_back(T* node);
+
         void insert_before(T* node, T* before);
         void insert_after(T* node, T*  after);
 
     private:
-        link<T>     m_link;
-        size_t      m_offset;
+        list_link<T> m_link;
+        size_t       m_offset;
 
         list(size_t offset);
-        link<T> * get_link(const T * node) const;
+        list_link<T>* get_link(const T * node) const;
         template<class T, size_t offset> friend class list_declare;
     };
 
@@ -273,7 +274,7 @@ namespace fus
     void list<T>::clear()
     {
         for (;;) {
-            link<T> * link = m_link.prev_link();
+            list_link<T> * link = m_link.prev_link();
             if (link == &m_link)
                 break;
             link->unlink();
@@ -281,7 +282,7 @@ namespace fus
     }
 
     template<class T>
-    T * list<T>::front()
+    T* list<T>::front()
     {
         return m_link.next();
     }
@@ -343,13 +344,13 @@ namespace fus
     template<class T>
     void list<T>::insert_before(T* node, T* before)
     {
-        FUS_FUS_ASSERTDD(!((size_t)node & 1));
+        FUS_ASSERTD(!((size_t)node & 1));
         get_link(node)->insert_before(node,
                                       before ? get_link(before) : &m_link);
     }
 
     template<class T>
-    void list<T>::insert_after(T * node, T * after)
+    void list<T>::insert_after(T* node, T* after)
     {
         FUS_ASSERTD(!((size_t)node & 1));
         get_link(node)->insert_after(node,
@@ -357,7 +358,7 @@ namespace fus
     }
 
     template<class T>
-    link<T>* list<T>::get_link(const T * node) const
+    list_link<T>* list<T>::get_link(const T* node) const
     {
         FUS_ASSERTD(m_offset != (size_t)-1);
         return (link<T>*)((size_t)node + m_offset);
