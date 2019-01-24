@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <fstream>
 #include <gflags/gflags.h>
 #include <iostream>
 #include <string_theory/st_format.h>
@@ -24,11 +25,38 @@
 // =================================================================================
 
 DEFINE_string(config_path, "fus.ini", "Path to fus configuration file");
+DEFINE_string(generate_client_ini, "", "Generates a server.ini file for plClient");
 DEFINE_bool(generate_keys, false, "Generate a new set of encryption keys");
 DEFINE_bool(run_lobby, true, "Launch the server lobby");
 DEFINE_bool(save_config, false, "Saves the server configuration file");
 
 // =================================================================================
+
+static void generate_client_keys(const fus::config_parser& config, std::ostream& stream, const ST::string& srv)
+{
+    ST::string srv_lower = srv.to_lower();
+    unsigned int g_val = config.get<unsigned int>(ST_LITERAL("crypt"), ST::format("{}_g", srv_lower));
+    const char* n_key = config.get<const char*>(ST_LITERAL("crypt"), ST::format("{}_n", srv_lower));
+    const char* x_key = config.get<const char*>(ST_LITERAL("crypt"), ST::format("{}_x", srv_lower));
+
+    stream << "Server." << srv.c_str() << ".G " << g_val << std::endl;
+    stream << "Server." << srv.c_str() << ".N \"" << n_key << "\"" << std::endl;
+    stream << "Server." << srv.c_str() << ".X \"" << x_key << "\"" << std::endl;
+}
+
+static void generate_client_ini(const fus::config_parser& config, const std::filesystem::path& path)
+{
+    std::ofstream stream;
+    stream.open(path, std::ios_base::out | std::ios_base::trunc);
+
+    // Encryption keys
+    generate_client_keys(config, stream, ST_LITERAL("Auth"));
+    generate_client_keys(config, stream, ST_LITERAL("Gate"));
+    generate_client_keys(config, stream, ST_LITERAL("Game"));
+
+    // Shard addresses
+    /// todo
+}
 
 static void generate_daemon_keys(fus::config_parser& config, const ST::string& srv)
 {
@@ -61,6 +89,8 @@ int main(int argc, char* argv[])
     // configuration file at the end of the process.
     if (FLAGS_generate_keys)
         generate_all_keys(server.config());
+    if (!FLAGS_generate_client_ini.empty())
+        generate_client_ini(server.config(), FLAGS_generate_client_ini);
     if (FLAGS_save_config)
         server.config().write(FLAGS_config_path);
 
