@@ -28,5 +28,10 @@ find_package(string_theory REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Prevent Win32 junk from leaking in
+if(WIN32)
+    add_definitions(-DNOMINMAX)
+endif()
+
 # Allow the libs and exes to fondle themselves
 add_subdirectory(src)
