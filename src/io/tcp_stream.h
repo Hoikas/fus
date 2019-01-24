@@ -22,10 +22,20 @@
 namespace fus
 {
     struct tcp_stream_t;
-    typedef void (*read_msg_cb)(tcp_stream_t*, ssize_t, void*);
+    typedef void (*tcp_read_cb)(tcp_stream_t*, ssize_t, void*);
+    typedef void (*tcp_write_cb)(tcp_stream_t*, ssize_t);
 
     struct tcp_stream_t
     {
+        enum
+        {
+            e_reading = (1<<0),
+            e_readQueued = (1<<1),
+            e_readCallback = (1<<2),
+            e_readAllocFailed = (1<<3),
+            e_encrypted = (1<<4),
+        };
+
         uv_tcp_t m_tcp;
         uint32_t m_flags;
 
@@ -33,13 +43,14 @@ namespace fus
         size_t m_readField;
         char* m_readBuf;
         size_t m_readBufsz;
-        read_msg_cb m_readcb;
+        tcp_read_cb m_readcb;
     };
 
     int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
     void tcp_stream_close(tcp_stream_t*, uv_close_cb close_cb=nullptr);
-
-    void tcp_stream_read_msg(tcp_stream_t*, const struct net_struct_t*, read_msg_cb read_cb);
+    void tcp_stream_read(tcp_stream_t*, size_t msgsz, tcp_read_cb read_cb);
+    void tcp_stream_read_msg(tcp_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);
+    void tcp_stream_write(tcp_stream_t*, const void*, size_t, tcp_write_cb write_cb=nullptr);
 };
 
 #endif

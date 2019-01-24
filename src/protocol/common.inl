@@ -14,6 +14,10 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+FUS_NET_STRUCT_BEGIN(connection_buffer)
+    FUS_NET_FIELD_BUFFER_REDUNDANT_TINY(buffer)
+FUS_NET_STRUCT_END(connection_buffer)
+
 FUS_NET_STRUCT_BEGIN(connection_header)
     FUS_NET_FIELD_UINT8(connType)
     FUS_NET_FIELD_UINT16(msgsz)

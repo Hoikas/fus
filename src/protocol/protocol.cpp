@@ -14,4 +14,10 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Include all protocol headers here
 #include "common.h"
+
+// Reinclude all of the protocol inlines to define objects
+#include "protocol_objects_begin.inl"
+#include "common.inl"
+#include "protocol_objects_end.inl"

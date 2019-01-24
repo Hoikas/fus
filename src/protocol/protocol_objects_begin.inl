@@ -14,16 +14,19 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#undef FUS_NET_STRUCT_BEGIN
-#undef FUS_NET_FIELD_BUFFER
-#undef FUS_NET_FIELD_BUFFER_TINY
-#undef FUS_NET_FIELD_BUFFER_HUGE
-#undef FUS_NET_FIELD_BUFFER_REDUNDANT
-#undef FUS_NET_FIELD_BUFFER_REDUNDANT_TINY
-#undef FUS_NET_FIELD_BUFFER_REDUNDANT_HUGE
-#undef FUS_NET_FIELD_UINT8
-#undef FUS_NET_FIELD_UINT16
-#undef FUS_NET_FIELD_UINT32
-#undef FUS_NET_FIELD_STRING
-#undef FUS_NET_FIELD_UUID
-#undef FUS_NET_STRUCT_END
+#define FUS_NET_STRUCT_BEGIN(name) \
+    const fus::net_struct_t* fus::protocol::name::net_struct = &fus::protocol::_net_structs::name;
+
+// noops
+#define FUS_NET_FIELD_BUFFER(name) ;
+#define FUS_NET_FIELD_BUFFER_TINY(name) ;
+#define FUS_NET_FIELD_BUFFER_HUGE(name) ;
+#define FUS_NET_FIELD_BUFFER_REDUNDANT(name) ;
+#define FUS_NET_FIELD_BUFFER_REDUNDANT_TINY(name) ;
+#define FUS_NET_FIELD_BUFFER_REDUNDANT_HUGE(name) ;
+#define FUS_NET_FIELD_UINT8(name) ;
+#define FUS_NET_FIELD_UINT16(name) ;
+#define FUS_NET_FIELD_UINT32(name) ;
+#define FUS_NET_FIELD_STRING(name, size) ;
+#define FUS_NET_FIELD_UUID(name) ;
+#define FUS_NET_STRUCT_END(name) ;

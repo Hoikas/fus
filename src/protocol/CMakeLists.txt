@@ -23,6 +23,8 @@ set(FUS_PROTOCOL_HEADERS
 set(FUS_PROTOCOL_INLINES
     protocol_fields_begin.inl
     protocol_fields_end.inl
+    protocol_objects_begin.inl
+    protocol_objects_end.inl
     protocol_structs_begin.inl
     protocol_structs_end.inl
 )

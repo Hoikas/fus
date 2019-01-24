@@ -14,9 +14,9 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Disable struct packing
 #ifdef _MSC_VER
 #   pragma warning(disable:4103)
+#   pragma warning(disable:4200)
 #endif
 #pragma pack(push,1)
 
@@ -24,6 +24,30 @@
     namespace fus { namespace protocol { \
         struct name final { \
             static const fus::net_struct_t* net_struct;
+
+#define FUS_NET_FIELD_BUFFER(name) \
+    uint32_t m_##name##sz; \
+    uint8_t m_##name[]; \
+    \
+    uint32_t get_##name##sz() const { return m_##name##sz; } \
+    void set_##name##sz(uint32_t value) { m_##name##sz = value; } \
+    const uint8_t* get_##name() const { return m_##name; } \
+    uint8_t* get_##name() { return m_##name; }
+
+#define FUS_NET_FIELD_BUFFER_TINY(name) FUS_NET_FIELD_BUFFER(name)
+#define FUS_NET_FIELD_BUFFER_HUGE(name) FUS_NET_FIELD_BUFFER(name)
+
+#define FUS_NET_FIELD_BUFFER_REDUNDANT(name) \
+    uint32_t m_##name##sz; \
+    uint8_t m_##name[]; \
+    \
+    uint32_t get_##name##sz() const { return m_##name##sz - sizeof(uint32_t); } \
+    void set_##name##sz(uint32_t value) { m_##name##sz = value + sizeof(uint32_t); } \
+    const uint8_t* get_##name() const { return m_##name; } \
+    uint8_t* get_##name() { return m_##name; }
+
+#define FUS_NET_FIELD_BUFFER_REDUNDANT_TINY(name) FUS_NET_FIELD_BUFFER_REDUNDANT(name)
+#define FUS_NET_FIELD_BUFFER_REDUNDANT_HUGE(name) FUS_NET_FIELD_BUFFER_REDUNDANT(name)
 
 #define FUS_NET_FIELD_UINT8(name) \
     uint8_t m_##name; \
@@ -60,6 +84,4 @@
     uint8_t m_##name[16]; // fixme... real uuid type
 
 #define FUS_NET_STRUCT_END(name) \
-    }; \
-    const fus::net_struct_t* fus::protocol::name::net_struct = &fus::protocol::_net_structs::name; \
-    }; };
+    }; }; };

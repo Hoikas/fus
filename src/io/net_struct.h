@@ -38,8 +38,23 @@ namespace fus
             /** A fixed size string buffer */
             e_string,
 
-            /** An arbitrarily sized buffer */
+            /** An arbitrarily sized buffer of medium length */
             e_buffer,
+
+            /** An arbitrarily sized buffer of small length */
+            e_buffer_tiny,
+
+            /** An arbitrarily sized buffer of large length */
+            e_buffer_huge,
+
+            /** An arbitarily sized buffer with a redundant size of medium length */
+            e_buffer_redundant,
+
+            /** An arbitarily sized buffer with a redundant size of small length */
+            e_buffer_redundant_tiny,
+
+            /** An arbitarily sized buffer with a redundant size of large length */
+            e_buffer_redundant_huge,
         };
 
         data_type m_type;
