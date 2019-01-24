@@ -74,7 +74,7 @@ const char* fus::config_parser::get<const char*>(const ST::string& section, cons
 }
 
 template<>
-ST::string fus::config_parser::get<ST::string>(const ST::string& section, const ST::string& key) const
+const ST::string& fus::config_parser::get<const ST::string&>(const ST::string& section, const ST::string& key) const
 {
     auto item_it = find_item(section, key);
     FUS_ASSERTD(item_it->second.m_def->m_type == config_item::value_type::e_string);
