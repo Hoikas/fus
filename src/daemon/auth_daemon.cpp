@@ -87,5 +87,5 @@ void fus::auth_daemon_accept_client(fus::auth_client_t* client)
     //     uint32_t msgsz
     //     uuid (junk)
     // Read in as a buffer to accept any arbitrary trash without choking too badly
-    tcp_stream_read_msg((tcp_stream_t*)client, fus::protocol::connection_buffer::net_struct, (tcp_read_cb)auth_connect_buffer_read);
+    tcp_stream_read_msg<protocol::connection_buffer>((tcp_stream_t*)client, (tcp_read_cb)auth_connect_buffer_read);
 }

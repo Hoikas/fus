@@ -155,7 +155,7 @@ void fus::crypt_stream_establish_server(fus::crypt_stream_t* stream, BIGNUM* k, 
     stream->m_crypt.k = k;
     stream->m_crypt.n = n;
     stream->m_encryptcb = cb;
-    tcp_stream_read_msg((tcp_stream_t*)stream, &s_cryptHandshakeStruct, (tcp_read_cb)_handshake_header_read);
+    tcp_stream_read_struct((tcp_stream_t*)stream, &s_cryptHandshakeStruct, (tcp_read_cb)_handshake_header_read);
 }
 
 // =================================================================================
@@ -178,13 +178,13 @@ static void _read_complete(fus::crypt_stream_t* stream, ssize_t nread, unsigned 
     cb((fus::tcp_stream_t*)stream, nread, msg);
 }
 
-void fus::crypt_stream_read_msg(fus::crypt_stream_t* stream, const struct fus::net_struct_t* ns, fus::tcp_read_cb read_cb)
+void fus::crypt_stream_read_struct(fus::crypt_stream_t* stream, const struct fus::net_struct_t* ns, fus::tcp_read_cb read_cb)
 {
     FUS_ASSERTD(stream);
     FUS_ASSERTD(read_cb);
 
     stream->m_readcb = read_cb;
-    tcp_stream_read_msg((tcp_stream_t*)stream, ns, (tcp_read_cb)_read_complete);
+    tcp_stream_read_struct((tcp_stream_t*)stream, ns, (tcp_read_cb)_read_complete);
 }
 
 // =================================================================================

@@ -48,8 +48,16 @@ namespace fus
 
     int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
     void tcp_stream_close(tcp_stream_t*, uv_close_cb close_cb=nullptr);
+
     void tcp_stream_read(tcp_stream_t*, size_t msgsz, tcp_read_cb read_cb);
-    void tcp_stream_read_msg(tcp_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);
+    void tcp_stream_read_struct(tcp_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);
+
+    template<typename T>
+    inline void tcp_stream_read_msg(tcp_stream_t* s, tcp_read_cb read_cb)
+    {
+        tcp_stream_read_struct(s, T::net_struct, read_cb);
+    }
+
     void tcp_stream_write(tcp_stream_t*, const void*, size_t, tcp_write_cb write_cb=nullptr);
 };
 

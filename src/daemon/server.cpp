@@ -114,7 +114,7 @@ static void _on_client_connect(uv_stream_t* lobby, int status)
     fus::tcp_stream_t* client = (fus::tcp_stream_t*)malloc(k_clientMemsz);
     fus::tcp_stream_init(client, uv_default_loop());
     if (uv_accept(lobby, (uv_stream_t*)client) == 0) {
-        fus::tcp_stream_read_msg(client, fus::protocol::connection_header::net_struct, _on_header_read);
+        fus::tcp_stream_read_msg<fus::protocol::connection_header>(client, _on_header_read);
     } else {
         uv_close((uv_handle_t*)client, nullptr);
     }

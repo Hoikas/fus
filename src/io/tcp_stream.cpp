@@ -300,7 +300,7 @@ void fus::tcp_stream_read(fus::tcp_stream_t* stream, size_t bufsz, fus::tcp_read
     }
 }
 
-void fus::tcp_stream_read_msg(fus::tcp_stream_t* stream, const fus::net_struct_t* ns, fus::tcp_read_cb read_cb)
+void fus::tcp_stream_read_struct(fus::tcp_stream_t* stream, const fus::net_struct_t* ns, fus::tcp_read_cb read_cb)
 {
     FUS_ASSERTD(stream);
     FUS_ASSERTD(!(stream->m_flags & tcp_stream_t::e_readQueued));
