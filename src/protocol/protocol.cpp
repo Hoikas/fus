@@ -23,6 +23,6 @@
 
 // Reinclude all of the protocol inlines to define objects
 #include "protocol_objects_begin.inl"
-#include "auth.h"
+#include "auth.inl"
 #include "common.inl"
 #include "protocol_objects_end.inl"
