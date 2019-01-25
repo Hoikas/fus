@@ -80,6 +80,43 @@ void fus::crypt_stream_close(fus::crypt_stream_t* stream, uv_close_cb cb)
 
 // =================================================================================
 
+static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, const uint8_t* key, size_t keylen)
+{
+    stream->m_stream.m_flags |= fus::tcp_stream_t::e_encrypted;
+    const EVP_CIPHER* cipher;
+    if (key == nullptr)
+        cipher = EVP_enc_null();
+    else
+        cipher = EVP_rc4();
+
+    /// TODO: investigate... can we share the EVP context?
+    // init send encryption
+    stream->m_crypt.encrypt = EVP_CIPHER_CTX_new();
+    EVP_EncryptInit_ex(stream->m_crypt.encrypt, cipher, nullptr, key, nullptr);
+    if (key)
+        EVP_CIPHER_CTX_set_key_length(stream->m_crypt.encrypt, keylen);
+
+    // init recv encryption
+    stream->m_crypt.decrypt = EVP_CIPHER_CTX_new();
+    EVP_DecryptInit_ex(stream->m_crypt.decrypt, cipher, nullptr, key, nullptr);
+    if (key)
+        EVP_CIPHER_CTX_set_key_length(stream->m_crypt.decrypt, keylen);
+
+    // write encryption reply
+    size_t msgsz = 2 + keylen;
+    uint8_t* reply = (uint8_t*)alloca(msgsz);
+    {
+        uint8_t* ptr = reply;
+        *ptr++ = e_encrypt;
+        *ptr++ = msgsz;
+        memcpy(ptr, key, sizeof(seed));
+    }
+    // not waiting for the write to finish, no more decrypted messages are allowed.
+    fus::tcp_stream_write((fus::tcp_stream_t*)stream, reply, msgsz);
+    if (stream->m_encryptcb)
+        stream->m_encryptcb(stream, 0);
+}
+
 static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* buf)
 {
     if (nread < 0) {
@@ -103,29 +140,7 @@ static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, ui
     uint8_t key[7];
     for (size_t i = 0; i < sizeof(key); ++i)
         key[i] = cli_seed[i] ^ srv_seed[i];
-    stream->m_stream.m_flags |= fus::tcp_stream_t::e_encrypted;
-
-    /// TODO: investigate... can we share the EVP context?
-    // init send encryption
-    stream->m_crypt.encrypt = EVP_CIPHER_CTX_new();
-    EVP_EncryptInit_ex(stream->m_crypt.encrypt, EVP_rc4(), nullptr, key, nullptr);
-    EVP_CIPHER_CTX_set_key_length(stream->m_crypt.encrypt, sizeof(key));
-
-    // init recv encryption
-    stream->m_crypt.decrypt = EVP_CIPHER_CTX_new();
-    EVP_DecryptInit_ex(stream->m_crypt.decrypt, EVP_rc4(), nullptr, key, nullptr);
-    EVP_CIPHER_CTX_set_key_length(stream->m_crypt.decrypt, sizeof(key));
-
-    // write encryption reply
-    uint8_t reply[9];
-    {
-        uint8_t* ptr = reply;
-        *ptr++ = e_encrypt;
-        *ptr++ = sizeof(reply);
-        memcpy(ptr, key, sizeof(key));
-    }
-    // not waiting for the write to finish, no more decrypted messages are allowed.
-    fus::tcp_stream_write((fus::tcp_stream_t*)stream, reply, sizeof(reply));
+    _init_encryption(stream, srv_seed, key, sizeof(key));
 }
 
 static void _handshake_header_read(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* msg)
@@ -141,9 +156,8 @@ static void _handshake_header_read(fus::crypt_stream_t* stream, ssize_t nread, u
     // A client will send no Y data if encryption is not desired.
     uint8_t ybufsz = msgsz - 2;
     if (ybufsz == 0) {
-        /// TODO: support this in an intelligent manner (namely, allow support for this to be
-        ///       disabled somewhere. probably at the cmake level.
-        fus::crypt_stream_close(stream);
+        /// TODO: allow this to be disabled in cmake
+        _init_encryption(stream, nullptr, nullptr, 0);
     } else {
         // Read in the Y-Data from the client
         fus::tcp_stream_read((fus::tcp_stream_t*)stream, ybufsz, (fus::tcp_read_cb)_handshake_ydata_read);
