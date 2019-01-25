@@ -16,9 +16,7 @@
 include_directories(${GFLAGS_INCLUDE_DIRS})
 include_directories(${LIBUV_INCLUDE_DIRS})
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
-include_directories("../core")
-include_directories("../io")
-include_directories("../protocol")
+include_directories("../")
 
 set(FUS_AUTH_DAEMON
     auth.h

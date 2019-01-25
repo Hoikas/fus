@@ -18,9 +18,9 @@
 #include <string_theory/st_codecs.h>
 #include <string_theory/st_format.h>
 
-#include "crypt_stream.h"
+#include "core/errors.h"
 #include "daemon_base.h"
-#include "errors.h"
+#include "io/crypt_stream.h"
 #include "server.h"
 
 // =================================================================================

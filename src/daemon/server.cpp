@@ -17,12 +17,12 @@
 #include <iostream>
 
 #include "auth.h"
-#include "common.h"
-#include "errors.h"
+#include "core/errors.h"
 #include "fus_config.h"
-#include "net_struct.h"
+#include "io/net_struct.h"
+#include "io/tcp_stream.h"
+#include "protocol/common.h"
 #include "server.h"
-#include "tcp_stream.h"
 
 fus::server* fus::server::m_instance = nullptr;
 

@@ -14,8 +14,8 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/errors.h"
 #include "net_struct.h"
-#include "errors.h"
 
 #include <iostream>
 

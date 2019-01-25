@@ -20,7 +20,7 @@
 #include <string_theory/st_format.h>
 
 #include "auth.h"
-#include "io.h"
+#include "io/io.h"
 #include "server.h"
 
 // =================================================================================

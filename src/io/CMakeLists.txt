@@ -16,7 +16,7 @@
 include_directories(${LIBUV_INCLUDE_DIRS})
 include_directories(${OPENSSL_INCLUDE_DIRS})
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
-include_directories("../core")
+include_directories("../")
 
 set(FUS_IO_HEADERS
     crypt_stream.h

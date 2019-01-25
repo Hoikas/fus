@@ -18,8 +18,8 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
+#include "core/errors.h"
 #include "crypt_stream.h"
-#include "errors.h"
 #include "io.h"
 #include "net_struct.h"
 

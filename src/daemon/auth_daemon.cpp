@@ -15,9 +15,9 @@
  */
 
 #include "auth.h"
-#include "common.h"
+#include "core/errors.h"
 #include "daemon_base.h"
-#include "errors.h"
+#include "protocol/common.h"
 
 // =================================================================================
 

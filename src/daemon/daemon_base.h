@@ -20,7 +20,7 @@
 #include <openssl/ossl_typ.h>
 #include <string_theory/string>
 
-#include "crypt_stream.h"
+#include "io/crypt_stream.h"
 
 namespace fus
 {

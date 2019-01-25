@@ -17,7 +17,7 @@
 #ifndef __FUS_AUTH_DAEMON_H
 #define __FUS_AUTH_DAEMON_H
 
-#include "crypt_stream.h"
+#include "io/crypt_stream.h"
 
 namespace fus
 {

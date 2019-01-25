@@ -14,7 +14,7 @@
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
-include_directories("../io")
+include_directories("../")
 
 set(FUS_PROTOCOL_HEADERS
     common.h

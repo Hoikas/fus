@@ -17,7 +17,7 @@
 #ifndef __FUS_DAEMON_CONFIG_H
 #define __FUS_DAEMON_CONFIG_H
 
-#include "config_parser.h"
+#include "core/config_parser.h"
 
 #define FUS_CONFIG_CRYPT(server, gval) \
     { ST_LITERAL("crypt"), ST_LITERAL(server##"_k"), fus::config_item::value_type::e_string, \

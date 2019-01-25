@@ -14,11 +14,9 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
 #include <iostream>
 
-#include "errors.h"
-#include "list.h"
+#include "core/errors.h"
 #include "net_struct.h"
 #include "tcp_stream.h"
 
