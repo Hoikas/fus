@@ -14,15 +14,21 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Include all protocol headers here
-#include "auth.h"
-#include "common.h"
+#ifndef __FUS_PROTOCOL_UTILS_H
+#define __FUS_PROTOCOL_UTILS_H
 
-// Protocol utilities will help with compile-time verifications
-#include "utils.h"
+#include "io/net_struct.h"
+#include <string_theory/string>
 
-// Reinclude all of the protocol inlines to define objects
-#include "protocol_objects_begin.inl"
-#include "auth.h"
-#include "common.inl"
-#include "protocol_objects_end.inl"
+namespace fus
+{
+    namespace protocol
+    {
+        namespace _fields {
+            template <typename _T, size_t _Sz>
+            constexpr size_t size(_T(&)[_Sz]) { return _Sz; }
+        }
+    }
+};
+
+#endif

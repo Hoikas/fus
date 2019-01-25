@@ -17,7 +17,9 @@ include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../")
 
 set(FUS_PROTOCOL_HEADERS
+    auth.h
     common.h
+    utils.h
 )
 
 set(FUS_PROTOCOL_INLINES
@@ -30,6 +32,7 @@ set(FUS_PROTOCOL_INLINES
 )
 
 set(FUS_PROTOCOL_PROTOCOLS
+    auth.inl
     common.inl
 )
 

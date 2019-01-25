@@ -14,17 +14,6 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace fus
-{
-    namespace protocol
-    {
-        namespace _fields {
-            template <typename _T, size_t _Sz>
-            constexpr size_t size(_T(&)[_Sz]) { return _Sz; }
-        }
-    }
-};
-
 #define FUS_NET_STRUCT_BEGIN(name) \
     namespace fus { namespace protocol { namespace _fields { \
         static const fus::net_field_t name[] = {

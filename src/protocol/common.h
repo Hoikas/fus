@@ -17,8 +17,7 @@
 #ifndef __FUS_PROTOCOL_COMMON_H
 #define __FUS_PROTOCOL_COMMON_H
 
-#include "net_struct.h"
-#include <string_theory/string>
+#include "utils.h"
 
 #include "protocol_fields_begin.inl"
 #include "common.inl"
