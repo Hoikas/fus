@@ -23,3 +23,11 @@ FUS_NET_STRUCT_END(auth_pingRequest)
 FUS_NET_STRUCT_BEGIN(auth_clientRegisterRequest)
     FUS_NET_FIELD_UINT32(buildId)
 FUS_NET_STRUCT_END(auth_clientRegisterRequest)
+
+// =================================================================================
+
+FUS_NET_STRUCT_BEGIN(auth_pingReply)
+    FUS_NET_FIELD_UINT32(pingTime)
+    FUS_NET_FIELD_UINT32(transId)
+    FUS_NET_FIELD_BUFFER_TINY(payload)
+FUS_NET_STRUCT_END(auth_pingReply)

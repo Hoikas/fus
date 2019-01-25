@@ -109,7 +109,8 @@ static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, c
         uint8_t* ptr = reply;
         *ptr++ = e_encrypt;
         *ptr++ = msgsz;
-        memcpy(ptr, key, sizeof(seed));
+        if (seed)
+            memcpy(ptr, key, sizeof(seed));
     }
     // not waiting for the write to finish, no more decrypted messages are allowed.
     fus::tcp_stream_write((fus::tcp_stream_t*)stream, reply, msgsz);

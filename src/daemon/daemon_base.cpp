@@ -56,5 +56,7 @@ void fus::secure_daemon_encrypt_stream(fus::secure_daemon_t* daemon, fus::crypt_
 {
     FUS_ASSERTD(daemon);
     FUS_ASSERTD(stream);
+
+    crypt_stream_init(stream);
     crypt_stream_establish_server(stream, daemon->m_bnK, daemon->m_bnN, cb);
 }
