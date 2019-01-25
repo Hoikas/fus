@@ -14,15 +14,15 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "server.h"
+#include <iostream>
 
+#include "auth.h"
 #include "common.h"
 #include "errors.h"
 #include "fus_config.h"
 #include "net_struct.h"
+#include "server.h"
 #include "tcp_stream.h"
-
-#include <iostream>
 
 fus::server* fus::server::m_instance = nullptr;
 
@@ -31,6 +31,38 @@ enum
     e_lobbyReady = (1<<0),
     e_running = (1<<1),
 };
+
+enum
+{
+    // Externally facing services
+    e_protocolCli2Auth = 0x0A,
+    e_protocolCli2Game = 0x0B,
+    e_protocolCli2File = 0x10,
+    e_protocolCli2Gate = 0x16,
+
+    // Internal services
+    e_protocolSrv2Master = 0x80,
+    e_protocolSrv2Database = 0x81,
+};
+
+// =================================================================================
+
+template<typename... _Args>
+struct max_sizeof
+{
+    static constexpr size_t value = 0;
+};
+
+template<typename _Arg0, typename ..._Args>
+struct max_sizeof<_Arg0, _Args...>
+{
+    static constexpr size_t value = std::max(sizeof(_Arg0), max_sizeof<_Args...>::value);
+};
+
+/// FIXME: remove base types when more clients are available
+constexpr size_t k_clientMemsz = max_sizeof<fus::auth_client_t,
+                                            fus::crypt_stream_t,
+                                            fus::tcp_stream_t>::value;
 
 // =================================================================================
 
@@ -56,10 +88,17 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
         return;
     }
 
-    // TEMP: dump to console
-    fus::net_msg_print(fus::protocol::connection_header::net_struct, msg, std::cout);
-    uv_close((uv_handle_t*)client, nullptr);
-    uv_loop_close(uv_default_loop());
+    fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
+    /// TODO: validate connection properties
+    switch (header->get_connType()) {
+    case e_protocolCli2Auth:
+        if (fus::auth_daemon_running()) {
+            fus::auth_daemon_accept_client((fus::auth_client_t*)client);
+        } else {
+            // ...
+        }
+        break;
+    }
 }
 
 static void _on_client_connect(uv_stream_t* lobby, int status)
@@ -69,8 +108,10 @@ static void _on_client_connect(uv_stream_t* lobby, int status)
         return;
     }
 
-    // using malloc() because we will eventually want to realloc into the final client type
-    fus::tcp_stream_t* client = (fus::tcp_stream_t*)malloc(sizeof(fus::tcp_stream_t));
+    // We absolutely must allocate enough space for the largest client type. It would be nice
+    // if we could realloc() when we knew what the connection type is, but that could result in
+    // the pointer address changing. That's a generally a bad thing for non-POD, like us.
+    fus::tcp_stream_t* client = (fus::tcp_stream_t*)malloc(k_clientMemsz);
     fus::tcp_stream_init(client, uv_default_loop());
     if (uv_accept(lobby, (uv_stream_t*)client) == 0) {
         fus::tcp_stream_read_msg(client, fus::protocol::connection_header::net_struct, _on_header_read);

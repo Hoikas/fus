@@ -19,6 +19,7 @@
 #include <iostream>
 #include <string_theory/st_format.h>
 
+#include "auth.h"
 #include "io.h"
 #include "server.h"
 
@@ -27,6 +28,7 @@
 DEFINE_string(config_path, "fus.ini", "Path to fus configuration file");
 DEFINE_string(generate_client_ini, "", "Generates a server.ini file for plClient");
 DEFINE_bool(generate_keys, false, "Generate a new set of encryption keys");
+DEFINE_bool(run_auth, true, "Launch the auth daemon");
 DEFINE_bool(run_lobby, true, "Launch the server lobby");
 DEFINE_bool(save_config, false, "Saves the server configuration file");
 
@@ -94,14 +96,19 @@ int main(int argc, char* argv[])
     if (FLAGS_save_config)
         server.config().write(FLAGS_config_path);
 
-    /// TODO
-    /// Start the various daemons
+    // Init the daemons
+    if (FLAGS_run_auth)
+        fus::auth_daemon_init();
 
     // Run the lobby server to accept connections and pump the loop forever
     if (FLAGS_run_lobby) {
         if (server.start_lobby())
             server.run_forever();
     }
+
+    // Shutdown the daemons
+    if (fus::auth_daemon_running())
+        fus::auth_daemon_close();
 
     // Done
     fus::io_close();

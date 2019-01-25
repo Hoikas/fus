@@ -25,6 +25,8 @@
 namespace fus
 {
     io_crypt_bn_t io_crypt_bn{ nullptr, nullptr, nullptr, nullptr, nullptr };
+    size_t io_crypt_bufsz = 0;
+    void* io_crypt_buf = nullptr;
 };
 
 // ============================================================================

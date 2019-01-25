@@ -20,17 +20,25 @@ include_directories("../core")
 include_directories("../io")
 include_directories("../protocol")
 
+set(FUS_AUTH_DAEMON
+    auth.h
+    auth_client.cpp
+    auth_daemon.cpp
+)
+
 set(FUS_DAEMON_HEADERS
+    daemon_base.h
     fus_config.h
     server.h
 )
 
 set(FUS_DAEMON_SOURCES
+    daemon_base.cpp
     main.cpp
     server.cpp
 )
 
-add_executable(fus_daemon ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
+add_executable(fus_daemon ${FUS_AUTH_DAEMON} ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
 target_link_libraries(fus_daemon ${GFLAGS_LIBRARIES})
 target_link_libraries(fus_daemon ${LIBUV_LIBRARIES})
 target_link_libraries(fus_daemon ${STRING_THEORY_LIBRARIES})
@@ -38,5 +46,6 @@ target_link_libraries(fus_daemon fus_core)
 target_link_libraries(fus_daemon fus_io)
 target_link_libraries(fus_daemon fus_protocol)
 
+source_group("Auth Daemon" FILES ${FUS_AUTH_DAEMON})
 source_group("Header Files" FILES ${FUS_DAEMON_HEADERS})
 source_group("Source Files" FILES ${FUS_DAEMON_SOURCES})

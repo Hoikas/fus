@@ -19,12 +19,14 @@ include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../core")
 
 set(FUS_IO_HEADERS
+    crypt_stream.h
     io.h
     net_struct.h
     tcp_stream.h
 )
 
 set(FUS_IO_SOURCES
+    crypt_stream.cpp
     io.cpp
     net_struct.cpp
     tcp_stream.cpp
