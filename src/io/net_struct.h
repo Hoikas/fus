@@ -29,8 +29,8 @@ namespace fus
             /** Plain old int. */
             e_integer,
 
-            /** Transaction ID data type... it's a plain old int */
-            e_transaction,
+            /** UUID */
+            e_uuid,
 
             /** A fixed size buffer. */
             e_blob,

@@ -19,15 +19,20 @@ set(FUS_CORE_HEADERS
     config_parser.h
     errors.h
     list.h
+    uuid.h
 )
 
 set(FUS_CORE_SOURCES
     config_parser.cpp
     errors.cpp
+    uuid.cpp
 )
 
 add_library(fus_core STATIC ${FUS_CORE_HEADERS} ${FUS_CORE_SOURCES})
 target_link_libraries(fus_core ${STRING_THEORY_LIBRARIES})
+if(WIN32)
+    target_link_libraries(fus_core Rpcrt4)
+endif()
 
 source_group("Header Files" FILES ${FUS_CORE_HEADERS})
 source_group("Source Files" FILES ${FUS_CORE_SOURCES})

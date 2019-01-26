@@ -55,7 +55,7 @@
     { fus::net_field_t::data_type::e_string, #name, size * sizeof(char16_t) },
 
 #define FUS_NET_FIELD_UUID(name) \
-    { fus::net_field_t::data_type::e_blob, #name, 16 },
+    { fus::net_field_t::data_type::e_uuid, #name, 16 },
 
 #define FUS_NET_STRUCT_END(name) \
     }; \

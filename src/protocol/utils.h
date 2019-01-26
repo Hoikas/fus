@@ -17,6 +17,7 @@
 #ifndef __FUS_PROTOCOL_UTILS_H
 #define __FUS_PROTOCOL_UTILS_H
 
+#include "core/uuid.h"
 #include "io/net_struct.h"
 #include <string_theory/string>
 

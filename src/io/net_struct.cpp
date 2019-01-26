@@ -15,6 +15,7 @@
  */
 
 #include "core/errors.h"
+#include "core/uuid.h"
 #include "net_struct.h"
 
 #include <iostream>
@@ -38,8 +39,8 @@ static const char* _get_data_type_str(fus::net_field_t::data_type type)
         return "INTEGER";
     case fus::net_field_t::data_type::e_string:
         return "STRING";
-    case fus::net_field_t::data_type::e_transaction:
-        return "TRANSID";
+    case fus::net_field_t::data_type::e_uuid:
+        return "UUID";
     default:
         return "???";
     }
@@ -74,7 +75,6 @@ void fus::net_msg_print(const net_struct_t* msg, const void* data, std::ostream&
         uint8_t* datap = (uint8_t*)data + offset;
         switch (msg->m_fields[i].m_type) {
         case net_field_t::data_type::e_integer:
-        case net_field_t::data_type::e_transaction:
             {
                 stream << "        - DATA: ";
                 /// fixme big endian
@@ -101,6 +101,8 @@ void fus::net_msg_print(const net_struct_t* msg, const void* data, std::ostream&
         case net_field_t::data_type::e_string:
             stream << "        - DATA: '" << (char16_t*)datap << "'" << std::endl;
             break;
+        case net_field_t::data_type::e_uuid:
+            stream << "        - DATA: '" << ((fus::uuid*)datap)->as_string().c_str() << "'" << std::endl;
         }
 
         offset += msg->m_fields[i].m_datasz;

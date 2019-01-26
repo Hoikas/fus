@@ -81,7 +81,9 @@
     }
 
 #define FUS_NET_FIELD_UUID(name) \
-    uint8_t m_##name[16]; // fixme... real uuid type
+    uint8_t m_##name[16]; \
+    const fus::uuid* get_##name() const { return (const fus::uuid*)m_##name; } \
+    fus::uuid* get_##name() { return (fus::uuid*)m_##name; }
 
 #define FUS_NET_STRUCT_END(name) \
     }; }; };
