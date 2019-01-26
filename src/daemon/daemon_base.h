@@ -20,14 +20,33 @@
 #include <openssl/ossl_typ.h>
 #include <string_theory/string>
 
+#include "core/uuid.h"
 #include "io/crypt_stream.h"
 
 namespace fus
 {
-    struct secure_daemon_t;
+    enum class client_verification
+    {
+        e_none,
+        e_default,
+        e_strict,
+    };
+
+    struct daemon_t
+    {
+        uint32_t m_buildId;
+        uint32_t m_branchId;
+        uint32_t m_buildType;
+        fus::uuid m_product;
+        client_verification m_verification;
+    };
+
+    void daemon_init(daemon_t*);
+    bool daemon_verify_connection(const daemon_t*, const void*, bool);
 
     struct secure_daemon_t
     {
+        daemon_t m_base;
         BIGNUM* m_bnK;
         BIGNUM* m_bnN;
     };

@@ -21,7 +21,45 @@
 #include "core/errors.h"
 #include "daemon_base.h"
 #include "io/crypt_stream.h"
+#include "protocol/common.h"
 #include "server.h"
+
+// =================================================================================
+
+void fus::daemon_init(fus::daemon_t* daemon)
+{
+    const fus::config_parser& config = server::get()->config();
+    daemon->m_buildId = config.get<unsigned int>("client", "buildId");
+    daemon->m_branchId = config.get<unsigned int>("client", "branchId");
+    daemon->m_buildType = config.get<unsigned int>("client", "buildType");
+    FUS_ASSERTD(daemon->m_product.from_string(config.get<const ST::string&>("client", "product")));
+
+    ST::string level = config.get<const ST::string&>("client", "verification").to_lower();
+    if (level == ST_LITERAL("none"))
+        daemon->m_verification = client_verification::e_none;
+    else if (level == ST_LITERAL("strict"))
+        daemon->m_verification = client_verification::e_strict;
+    else
+        daemon->m_verification = client_verification::e_default;
+}
+
+bool fus::daemon_verify_connection(const daemon_t* daemon, const void* msgbuf, bool permissive)
+{
+    if (daemon->m_verification == client_verification::e_none)
+        return true;
+
+    const protocol::connection_header* header = (const protocol::connection_header*)msgbuf;
+    if (!permissive) {
+        if (header->get_branchId() != daemon->m_branchId)
+            return false;
+        if (header->get_buildId() != daemon->m_buildId)
+            return false;
+    }
+    if (daemon->m_verification == client_verification::e_strict || !permissive)
+        if (!header->get_product()->equals(daemon->m_product))
+            return false;
+    return true;
+}
 
 // =================================================================================
 
@@ -36,6 +74,8 @@ static void _load_key(const ST::string& srv, const ST::string& key, BIGNUM* bn)
 
 void fus::secure_daemon_init(fus::secure_daemon_t* daemon, const ST::string& srv)
 {
+    daemon_init((daemon_t*)daemon);
+
     daemon->m_bnK = BN_new();
     daemon->m_bnN = BN_new();
 

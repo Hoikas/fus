@@ -89,14 +89,9 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
     }
 
     fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
-    /// TODO: validate connection properties
     switch (header->get_connType()) {
     case e_protocolCli2Auth:
-        if (fus::auth_daemon_running()) {
-            fus::auth_daemon_accept_client((fus::auth_client_t*)client);
-        } else {
-            // ...
-        }
+        fus::auth_daemon_accept_client((fus::auth_client_t*)client, msg);
         break;
     }
 }

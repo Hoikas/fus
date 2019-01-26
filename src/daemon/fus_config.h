@@ -39,6 +39,26 @@ namespace fus
                        "Lobby Bind Port\n"
                        "Port that this fus server should listen for connections on")
 
+        FUS_CONFIG_INT("client", "buildId", 918,
+                       "Client Build ID\n"
+                       "Build ID for clients connecting to this shard")
+        FUS_CONFIG_INT("client", "branchId", 1,
+                       "Client Branch ID\n"
+                       "Branch ID for clients connecting to this shard")
+        FUS_CONFIG_INT("client", "buildType", 50,
+                       "Client Build Type\n"
+                       "Build Type ID for clients connecting to this shard")
+        FUS_CONFIG_STR("client", "product", "ea489821-6c35-4bd0-9dae-bb17c585e680",
+                       "Client UUID\n"
+                       "Product UUID for clients connecting to this shard")
+        FUS_CONFIG_STR("client", "verification", "default",
+                       "Client Verification Level\n"
+                       "This specifies how closely the data provided in the client connection handshake should be verified.\n"
+                       "Possible Values:\n"
+                       "    - none: No verification, any client will be allowed to connect.\n"
+                       "    - default: Default verification, any client can connect to file or gatekeeper but all others must match the expected values"
+                       "    - strict: Strict verification, like default but the product uuid is verified for file and gatekeeper connections")
+
         FUS_CONFIG_CRYPT("auth", 41)
         FUS_CONFIG_CRYPT("game", 73)
         FUS_CONFIG_CRYPT("gate", 4)

@@ -34,7 +34,7 @@ namespace fus
     bool auth_daemon_running();
     void auth_daemon_close();
 
-    void auth_daemon_accept_client(auth_client_t*);
+    void auth_daemon_accept_client(auth_client_t*, const void*);
 };
 
 #endif
