@@ -34,6 +34,11 @@ static const char* _get_data_type_str(fus::net_field_t::data_type type)
     case fus::net_field_t::data_type::e_blob:
         return "BLOB";
     case fus::net_field_t::data_type::e_buffer:
+    case fus::net_field_t::data_type::e_buffer_tiny:
+    case fus::net_field_t::data_type::e_buffer_huge:
+    case fus::net_field_t::data_type::e_buffer_redundant:
+    case fus::net_field_t::data_type::e_buffer_redundant_tiny:
+    case fus::net_field_t::data_type::e_buffer_redundant_huge:
         return "BUFFER";
     case fus::net_field_t::data_type::e_integer:
         return "INTEGER";
@@ -55,7 +60,8 @@ void fus::net_struct_print(const net_struct_t* msg, std::ostream& stream)
         const char* type = _get_data_type_str(msg->m_fields[i].m_type);
         stream << "    -> " << msg->m_fields[i].m_name << " ";
         stream << "[TYPE: '" << _get_data_type_str(msg->m_fields[i].m_type) << "'] ";
-        stream << "[SIZE: " << msg->m_fields[i].m_datasz << "]" << std::endl;
+        if (msg->m_fields[i].m_datasz)
+            stream << "[SIZE: " << msg->m_fields[i].m_datasz << "]" << std::endl;
     }
     stream << "--- END   NETSTRUCT ---" << std::endl;
 }
@@ -70,7 +76,8 @@ void fus::net_msg_print(const net_struct_t* msg, const void* data, std::ostream&
     for (size_t i = 0; i < msg->m_size; ++i) {
         stream << "    -> " << msg->m_fields[i].m_name << std::endl;
         stream << "        - TYPE: '" << _get_data_type_str(msg->m_fields[i].m_type) << "'" << std::endl;
-        stream << "        - SIZE: " << msg->m_fields[i].m_datasz << std::endl;
+        if (msg->m_fields[i].m_datasz)
+            stream << "        - SIZE: " << msg->m_fields[i].m_datasz << std::endl;
 
         uint8_t* datap = (uint8_t*)data + offset;
         switch (msg->m_fields[i].m_type) {
