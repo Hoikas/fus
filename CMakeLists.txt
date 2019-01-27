@@ -17,6 +17,7 @@ cmake_minimum_required(VERSION 3.2)
 project(fus)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${fus_BINARY_DIR}/bin)
 
 # Required third party libraries
 find_package(gflags REQUIRED)
