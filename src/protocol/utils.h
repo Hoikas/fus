@@ -25,10 +25,22 @@ namespace fus
 {
     namespace protocol
     {
-        namespace _fields {
+        namespace _fields
+        {
             template <typename _T, size_t _Sz>
             constexpr size_t size(_T(&)[_Sz]) { return _Sz; }
         }
+
+#pragma pack(push,1)
+        template<typename _Header, typename _Msg>
+        struct net_msg
+        {
+            _Header m_header;
+            _Msg m_contents;
+
+            operator void*() { return (void*)(&m_header); }
+        };
+#pragma pack(pop)
     }
 };
 

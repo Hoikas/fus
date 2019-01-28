@@ -26,8 +26,11 @@ namespace fus
     struct auth_client_t
     {
         crypt_stream_t m_stream;
+        uint32_t m_flags;
+        uint32_t m_loginSalt;
     };
 
+    void auth_client_init(auth_client_t*);
     void auth_client_read(auth_client_t*);
 
     void auth_daemon_init();

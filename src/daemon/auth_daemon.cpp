@@ -84,8 +84,11 @@ void fus::auth_daemon_accept_client(fus::auth_client_t* client, const void* msgb
     // Validate connection
     if (!s_authDaemon || !daemon_verify_connection((daemon_t*)s_authDaemon, msgbuf, false)) {
         /// fixme
-        crypt_stream_close((crypt_stream_t*)client);
+        tcp_stream_close((tcp_stream_t*)client);
     }
+
+    // Init
+    auth_client_init(client);
 
     // Unencrypted auth connection prefix:
     //     uint32_t msgsz

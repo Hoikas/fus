@@ -31,3 +31,7 @@ FUS_NET_STRUCT_BEGIN(auth_pingReply)
     FUS_NET_FIELD_UINT32(transId)
     FUS_NET_FIELD_BUFFER_TINY(payload)
 FUS_NET_STRUCT_END(auth_pingReply)
+
+FUS_NET_STRUCT_BEGIN(auth_clientRegisterReply)
+    FUS_NET_FIELD_UINT32(loginSalt)
+FUS_NET_STRUCT_END(auth_clientRegisterReply)

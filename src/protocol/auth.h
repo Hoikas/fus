@@ -18,6 +18,7 @@
 #define __FUS_PROTOCOL_AUTH_H
 
 #include "utils.h"
+#include "common.h"
 
 #include "protocol_fields_begin.inl"
 #include "auth.inl"
@@ -31,9 +32,15 @@ namespace fus
 {
     namespace protocol
     {
-        namespace _client2auth
+#pragma pack(push,1)
+        template<typename _Msg>
+        struct auth_msg : public net_msg<msg_std_header, _Msg> { };
+#pragma pack(pop)
+
+        namespace client2auth
         {
-            enum msgids {
+            enum
+            {
                 // Global
                 e_pingRequest,
 
@@ -119,9 +126,10 @@ namespace fus
             };
         };
 
-        namespace _auth2client
+        namespace auth2client
         {
-            enum msgids {
+            enum
+            {
                 // Global
                 e_pingReply,
                 e_serverAddr,
@@ -204,10 +212,6 @@ namespace fus
                 e_numMsgs
             };
         };
-
-        // Hack to prevent collisions
-        using client2auth = _client2auth::msgids;
-        using auth2client = _auth2client::msgids;
     };
 };
 
