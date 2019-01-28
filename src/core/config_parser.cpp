@@ -163,7 +163,7 @@ bool fus::config_parser::read(const std::filesystem::path& filename)
     stream.open(filename, std::ios_base::in);
 
     std::regex section_test("\\[(.*?)\\]");
-    std::regex value_test("(\\w+)\\s*=\\s*([^\\+]+(?!\\+{3}))");
+    std::regex value_test("(\\w+)\\s*=\\s*([^]+(?!\\+{3}))");
     std::regex empty_test("(\\w+)\\s*=");
 
     size_t lineno = 0;
