@@ -24,7 +24,7 @@
 
 namespace fus
 {
-    io_crypt_bn_t io_crypt_bn{ nullptr, nullptr, nullptr, nullptr, nullptr };
+    io_crypt_bn_t io_crypt_bn{ nullptr };
     size_t io_crypt_bufsz = 0;
     void* io_crypt_buf = nullptr;
 };
@@ -37,10 +37,6 @@ void fus::io_init()
 
     // This (hopefully) avoids some allocations
     io_crypt_bn.ctx = BN_CTX_new();
-    io_crypt_bn.g = BN_new();
-    io_crypt_bn.k = BN_new();
-    io_crypt_bn.n = BN_new();
-    io_crypt_bn.x = BN_new();
 
     // OpenSSL 1.0 compatibility
     OpenSSL_add_all_algorithms();
@@ -49,10 +45,6 @@ void fus::io_init()
 void fus::io_close()
 {
     BN_CTX_free(io_crypt_bn.ctx);
-    BN_free(io_crypt_bn.g);
-    BN_free(io_crypt_bn.k);
-    BN_free(io_crypt_bn.n);
-    BN_free(io_crypt_bn.x);
 
     // OpenSSL 1.0 compatibility
     EVP_cleanup();
@@ -66,17 +58,33 @@ void fus::io_generate_keys(uint32_t g_value, uint8_t (&k_key)[_KSz], uint8_t (&n
     static_assert (_KSz == _NSz);
     static_assert (_NSz == _XSz);
 
-    // Generate primes for public and private keys
-    BN_generate_prime_ex(io_crypt_bn.k, _KSz * 8, 1, nullptr, nullptr, nullptr);
-    BN_generate_prime_ex(io_crypt_bn.n, _NSz * 8, 1, nullptr, nullptr, nullptr);
+    // Keys should be 512 bits
+    constexpr int key_bits = _KSz * 8;
+    static_assert(key_bits == 512);
 
-    // x = g**k%n
-    BN_set_word(io_crypt_bn.g, g_value);
-    BN_mod_exp(io_crypt_bn.x, io_crypt_bn.g, io_crypt_bn.k, io_crypt_bn.n, io_crypt_bn.ctx);
+    // According to OpenSSL's documentation, this works well for tight loops
+    BN_CTX_start(io_crypt_bn.ctx);
+    BIGNUM* g = BN_CTX_get(io_crypt_bn.ctx);
+    BIGNUM* k = BN_CTX_get(io_crypt_bn.ctx);
+    BIGNUM* n = BN_CTX_get(io_crypt_bn.ctx);
+    BIGNUM* x = BN_CTX_get(io_crypt_bn.ctx);
 
-    BN_bn2bin(io_crypt_bn.k, k_key);
-    BN_bn2bin(io_crypt_bn.n, n_key);
-    BN_bn2bin(io_crypt_bn.x, x_key);
+    // Generate primes for public (N) and private (K/A) keys
+    BN_generate_prime_ex(k, key_bits, 1, nullptr, nullptr, nullptr);
+    BN_generate_prime_ex(n, key_bits, 1, nullptr, nullptr, nullptr);
+
+    // Compute the client key (N/KA)
+    // X = g**K%N
+    BN_set_word(g, g_value);
+    BN_mod_exp(x, g, k, n, io_crypt_bn.ctx);
+
+    // Store the keys
+    BN_bn2bin(k, k_key);
+    BN_bn2bin(n, n_key);
+    BN_bn2bin(x, x_key);
+
+    // Releases the temporary bignums
+    BN_CTX_end(io_crypt_bn.ctx);
 }
 
 std::tuple<ST::string, ST::string, ST::string> fus::io_generate_keys(uint32_t g_value)
@@ -85,7 +93,7 @@ std::tuple<ST::string, ST::string, ST::string> fus::io_generate_keys(uint32_t g_
     uint8_t n_key[64];
     uint8_t x_key[64];
     io_generate_keys(g_value, k_key, n_key, x_key);
-    return std::make_tuple(ST::base64_encode(k_key, 64),
-                           ST::base64_encode(n_key, 64),
-                           ST::base64_encode(x_key, 64));
+    return std::make_tuple(ST::base64_encode(k_key, sizeof(k_key)),
+                           ST::base64_encode(n_key, sizeof(n_key)),
+                           ST::base64_encode(x_key, sizeof(x_key)));
 }

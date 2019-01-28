@@ -25,10 +25,6 @@ namespace fus
 {
     struct io_crypt_bn_t
     {
-        BIGNUM* g;
-        BIGNUM* k;
-        BIGNUM* n;
-        BIGNUM* x;
         BN_CTX* ctx;
     };
 

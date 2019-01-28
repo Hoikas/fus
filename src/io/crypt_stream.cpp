@@ -80,27 +80,40 @@ void fus::crypt_stream_close(fus::crypt_stream_t* stream, uv_close_cb cb)
 
 // =================================================================================
 
-static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, const uint8_t* key, size_t keylen)
+static EVP_CIPHER_CTX* _init_evp(const uint8_t* key, size_t keylen, int enc)
 {
-    stream->m_stream.m_flags |= fus::tcp_stream_t::e_encrypted;
     const EVP_CIPHER* cipher;
     if (key == nullptr)
         cipher = EVP_enc_null();
     else
         cipher = EVP_rc4();
 
-    /// TODO: investigate... can we share the EVP context?
-    // init send encryption
-    stream->m_crypt.encrypt = EVP_CIPHER_CTX_new();
-    EVP_EncryptInit_ex(stream->m_crypt.encrypt, cipher, nullptr, key, nullptr);
-    if (key)
-        EVP_CIPHER_CTX_set_key_length(stream->m_crypt.encrypt, keylen);
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    EVP_CipherInit_ex(ctx, cipher, nullptr, nullptr, nullptr, enc);
 
-    // init recv encryption
-    stream->m_crypt.decrypt = EVP_CIPHER_CTX_new();
-    EVP_DecryptInit_ex(stream->m_crypt.decrypt, cipher, nullptr, key, nullptr);
-    if (key)
-        EVP_CIPHER_CTX_set_key_length(stream->m_crypt.decrypt, keylen);
+    // I am uncertain as to whether this is a bug in OpenSSL or just a piss-poor design decision.
+    // RC4 supposedly allows "variable key lengths" in EVP. OK, but when you call CipherInit_ex,
+    // it uses the key length it already has (16 bytes). Calling EVP_CIPHER_CTX_set_key_length does
+    // not refresh the key. Trying to use EVP_CIPHER_CTX_set_key_length before CipherInit does not
+    // work because then the cipher is NULL. Trying to reinit the cipher causes the custom key
+    // length to be discarded... UGHHHH
+    // So, we will set the custom key length and manually pump the cipher init function. Notice that
+    // we didn't provide the key in the call to CipherInit_ex? That avoided part of the init proc.
+    if (key) {
+        EVP_CIPHER_CTX_set_key_length(ctx, keylen);
+        auto initproc = EVP_CIPHER_meth_get_init(cipher);
+        FUS_ASSERTD(initproc(ctx, key, nullptr, enc) == 1);
+    }
+
+    // OpenSSL needs to die in a fire.
+    return ctx;
+}
+
+static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, const uint8_t* key, size_t keylen)
+{
+    stream->m_stream.m_flags |= fus::tcp_stream_t::e_encrypted;
+    stream->m_crypt.encrypt = _init_evp(key, keylen, 1);
+    stream->m_crypt.decrypt = _init_evp(key, keylen, 0);
 
     // write encryption reply
     size_t msgsz = 2 + keylen;
@@ -110,7 +123,7 @@ static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, c
         *ptr++ = e_encrypt;
         *ptr++ = msgsz;
         if (seed)
-            memcpy(ptr, key, sizeof(seed));
+            memcpy(ptr, seed, keylen);
     }
     // not waiting for the write to finish, no more decrypted messages are allowed.
     fus::tcp_stream_write((fus::tcp_stream_t*)stream, reply, msgsz);
@@ -125,18 +138,19 @@ static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, ui
         return;
     }
 
-    // The purpose of this cryptography is not that we're trying to hide nuclear secrets. Rather,
-    // we are simply trying to authenticate the client and server with one another. If any data leaks
-    // out of here, allowing connection snooping... Well, who cares. This is URU.
-    BN_lebin2bn(buf, (int)nread, fus::io_crypt_bn.x);
-    BN_mod_exp(fus::io_crypt_bn.g, fus::io_crypt_bn.x, stream->m_crypt.k, stream->m_crypt.n, fus::io_crypt_bn.ctx);
+    // Hey, nice, OpenSSL has considered that we'll want temporary bignums...
+    BN_CTX_start(fus::io_crypt_bn.ctx);
+    BIGNUM* y = BN_CTX_get(fus::io_crypt_bn.ctx);
+    BIGNUM* seed = BN_CTX_get(fus::io_crypt_bn.ctx);
+
+    BN_lebin2bn((unsigned char*)buf, (int)nread, y);
+    BN_mod_exp(seed, y, stream->m_crypt.k, stream->m_crypt.n, fus::io_crypt_bn.ctx);
 
     uint8_t cli_seed[64];
     uint8_t srv_seed[7];
-    if (BN_bn2lebinpad(fus::io_crypt_bn.g, cli_seed, 64) < 0) {
-        fus::crypt_stream_close(stream);
-        return;
-    }
+    BN_bn2lebinpad(seed, cli_seed, sizeof(cli_seed));
+    BN_CTX_end(fus::io_crypt_bn.ctx);
+
     RAND_bytes(srv_seed, sizeof(srv_seed));
     uint8_t key[7];
     for (size_t i = 0; i < sizeof(key); ++i)
@@ -184,7 +198,7 @@ static void _read_complete(fus::crypt_stream_t* stream, ssize_t nread, unsigned 
         else
             outbuf = (unsigned char*)_realloc_buffer(nread);
         int encsize;
-        EVP_DecryptUpdate(stream->m_crypt.decrypt, outbuf, &encsize, msg, nread);
+        EVP_CipherUpdate(stream->m_crypt.decrypt, outbuf, &encsize, msg, nread);
         memcpy(msg, outbuf, nread);
     }
 
@@ -217,7 +231,7 @@ void fus::crypt_stream_write(fus::crypt_stream_t* stream, const void* buf, size_
         else
             outbuf = (unsigned char*)_realloc_buffer(bufsz);
         int encsize;
-        EVP_EncryptUpdate(stream->m_crypt.encrypt, outbuf, &encsize, (unsigned char*)buf, bufsz);
+        EVP_CipherUpdate(stream->m_crypt.encrypt, outbuf, &encsize, (unsigned char*)buf, bufsz);
         tcp_stream_write((tcp_stream_t*)stream, outbuf, bufsz, write_cb);
     } else {
         tcp_stream_write((tcp_stream_t*)stream, buf, bufsz, write_cb);

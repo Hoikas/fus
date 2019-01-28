@@ -68,8 +68,8 @@ static void _load_key(const ST::string& srv, const ST::string& key, BIGNUM* bn)
     const fus::config_parser& config = fus::server::get()->config();
     const ST::string& key_base64 = config.get<const ST::string&>(ST_LITERAL("crypt"), ST::format("{}_{}", srv, key));
     uint8_t key_data[64];
-    ST::base64_decode(key_base64, key_data, 64);
-    BN_bin2bn(key_data, 64, bn);
+    FUS_ASSERTD(ST::base64_decode(key_base64, key_data, sizeof(key_data)) == sizeof(key_data));
+    BN_bin2bn(key_data, sizeof(key_data), bn);
 }
 
 void fus::secure_daemon_init(fus::secure_daemon_t* daemon, const ST::string& srv)
