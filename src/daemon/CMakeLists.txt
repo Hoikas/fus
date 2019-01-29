@@ -22,6 +22,7 @@ set(FUS_AUTH_DAEMON
     auth.h
     auth_client.cpp
     auth_daemon.cpp
+    auth_private.h
 )
 
 set(FUS_DAEMON_HEADERS

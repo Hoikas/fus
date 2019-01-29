@@ -14,27 +14,11 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "auth.h"
+#include "auth_private.h"
 #include "core/errors.h"
 #include "daemon_base.h"
 #include <openssl/rand.h>
 #include "protocol/auth.h"
-
-// =================================================================================
-
-template<typename _Msg>
-using _auth_cb = void(fus::auth_client_t*, ssize_t, _Msg*);
-
-template<typename _Msg, typename _Cb=_auth_cb<_Msg>>
-static inline void auth_read(fus::auth_client_t* client, _Cb cb)
-{
-    fus::crypt_stream_read_msg<_Msg>((fus::crypt_stream_t*)client, (fus::tcp_read_cb)cb);
-}
-
-enum
-{
-    e_clientRegistered = (1<<0),
-};
 
 // =================================================================================
 

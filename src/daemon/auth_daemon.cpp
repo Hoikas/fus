@@ -14,22 +14,13 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "auth.h"
+#include "auth_private.h"
 #include "core/errors.h"
-#include "daemon_base.h"
 #include "protocol/common.h"
 
 // =================================================================================
 
-namespace fus
-{
-    struct auth_daemon_t
-    {
-        secure_daemon_t m_secure;
-    };
-};
-
-static fus::auth_daemon_t* s_authDaemon = nullptr;
+fus::auth_daemon_t* s_authDaemon = nullptr;
 
 // =================================================================================
 
