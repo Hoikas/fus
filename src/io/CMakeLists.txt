@@ -21,6 +21,7 @@ include_directories("../")
 set(FUS_IO_HEADERS
     crypt_stream.h
     io.h
+    log_file.h
     net_struct.h
     tcp_stream.h
 )
@@ -28,6 +29,7 @@ set(FUS_IO_HEADERS
 set(FUS_IO_SOURCES
     crypt_stream.cpp
     io.cpp
+    log_file.cpp
     net_struct.cpp
     tcp_stream.cpp
 )

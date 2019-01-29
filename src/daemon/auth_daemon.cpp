@@ -30,6 +30,7 @@ void fus::auth_daemon_init()
 
     s_authDaemon = (auth_daemon_t*)malloc(sizeof(auth_daemon_t));
     secure_daemon_init((secure_daemon_t*)s_authDaemon, ST_LITERAL("auth"));
+    s_authDaemon->m_log.open(uv_default_loop(), ST_LITERAL("auth"));
 }
 
 bool fus::auth_daemon_running()

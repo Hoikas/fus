@@ -68,6 +68,7 @@ static void auth_msg_pump(fus::auth_client_t* client, ssize_t nread, fus::protoc
         auth_read<fus::protocol::auth_clientRegisterRequest>(client, auth_registerClient);
         break;
     default:
+        s_authDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
         /// fixme
         fus::crypt_stream_close((fus::crypt_stream_t*)client);
     }
