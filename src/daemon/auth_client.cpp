@@ -33,9 +33,12 @@ void fus::auth_client_init(fus::auth_client_t* client)
 
 static void auth_pingpong(fus::auth_client_t* client, ssize_t nread, fus::protocol::auth_pingRequest* msg)
 {
+    fus::protocol::msg_std_header header;
+    header.set_type(fus::protocol::auth2client::e_pingReply);
+    fus::crypt_stream_write((fus::crypt_stream_t*)client, &header, sizeof(header));
+
     // Message reply is a bitwise copy, so we'll just throw the request back.
-    size_t bufsz = fus::net_struct_calcsz(fus::protocol::auth_pingReply::net_struct) + msg->get_payloadsz();
-    fus::crypt_stream_write((fus::crypt_stream_t*)client, msg, bufsz);
+    fus::crypt_stream_write((fus::crypt_stream_t*)client, msg, nread);
 }
 
 static void auth_registerClient(fus::auth_client_t* client, ssize_t nread, fus::protocol::auth_clientRegisterRequest* msg)
