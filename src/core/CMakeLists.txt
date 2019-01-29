@@ -16,6 +16,7 @@
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 
 set(FUS_CORE_HEADERS
+    build_info.h
     config_parser.h
     errors.h
     list.h
@@ -23,12 +24,14 @@ set(FUS_CORE_HEADERS
 )
 
 set(FUS_CORE_SOURCES
+    build_info.cpp
     config_parser.cpp
     errors.cpp
     uuid.cpp
 )
 
 add_library(fus_core STATIC ${FUS_CORE_HEADERS} ${FUS_CORE_SOURCES})
+target_link_libraries(fus_core buildinfoobj)
 target_link_libraries(fus_core ${STRING_THEORY_LIBRARIES})
 if(WIN32)
     target_link_libraries(fus_core Rpcrt4)

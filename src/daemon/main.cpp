@@ -20,6 +20,7 @@
 #include <string_theory/st_format.h>
 
 #include "auth.h"
+#include "core/build_info.h"
 #include "io/io.h"
 #include "server.h"
 
@@ -81,7 +82,9 @@ static void generate_all_keys(fus::config_parser& config)
 
 int main(int argc, char* argv[])
 {
-    /// fixme: set program name and version
+    fus::ro::dah(std::cout);
+
+    gflags::SetVersionString(fus::build_version());
     gflags::ParseCommandLineFlags(&argc, &argv, false);
 
     fus::io_init();

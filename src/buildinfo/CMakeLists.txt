@@ -13,8 +13,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(buildinfo)
-add_subdirectory(core)
-add_subdirectory(daemon)
-add_subdirectory(io)
-add_subdirectory(protocol)
+add_custom_target(buildinfo ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/_buildinfo.cpp)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.cpp
+                          ${CMAKE_CURRENT_BINARY_DIR}/_buildinfo.cpp
+                   COMMAND ${CMAKE_COMMAND} -P
+                           ${CMAKE_MODULE_PATH}/buildinfo.cmake)
+set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/buildinfo.cpp PROPERTIES GENERATED TRUE)
+add_library(buildinfoobj STATIC ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.cpp)
+add_dependencies(buildinfoobj buildinfo)

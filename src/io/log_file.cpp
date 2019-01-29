@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/build_info.h"
 #include "core/errors.h"
 #include <filesystem>
 #include "log_file.h"
@@ -58,6 +59,7 @@ int fus::log_file::open(uv_loop_t* loop, const ST::string& name)
         return file;
     } else {
         m_file = file;
+        write(ro::dah());
         write("... Opened \"{}.log\"", name);
         return 0;
     }
