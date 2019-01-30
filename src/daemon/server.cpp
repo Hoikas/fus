@@ -60,7 +60,7 @@ struct max_sizeof<_Arg0, _Args...>
 };
 
 /// FIXME: remove base types when more clients are available
-constexpr size_t k_clientMemsz = max_sizeof<fus::auth_client_t,
+constexpr size_t k_clientMemsz = max_sizeof<fus::auth_server_t,
                                             fus::crypt_stream_t,
                                             fus::tcp_stream_t>::value;
 
@@ -90,7 +90,7 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
     fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
     switch (header->get_connType()) {
     case e_protocolCli2Auth:
-        fus::auth_daemon_accept_client((fus::auth_client_t*)client, msg);
+        fus::auth_daemon_accept((fus::auth_server_t*)client, msg);
         break;
     }
 }

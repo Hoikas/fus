@@ -21,26 +21,26 @@
 
 namespace fus
 {
-    struct auth_client_t;
+    struct auth_server_t;
 
-    struct auth_client_t
+    struct auth_server_t
     {
         crypt_stream_t m_stream;
         uint32_t m_flags;
         uint32_t m_loginSalt;
     };
 
-    void auth_client_init(auth_client_t*);
-    void auth_client_free(auth_client_t*);
-    void auth_client_shutdown(auth_client_t*);
+    void auth_server_init(auth_server_t*);
+    void auth_server_free(auth_server_t*);
+    void auth_server_shutdown(auth_server_t*);
 
-    void auth_client_read(auth_client_t*);
+    void auth_server_read(auth_server_t*);
 
     void auth_daemon_init();
     bool auth_daemon_running();
     void auth_daemon_close();
 
-    void auth_daemon_accept_client(auth_client_t*, const void*);
+    void auth_daemon_accept(auth_server_t*, const void*);
 };
 
 #endif

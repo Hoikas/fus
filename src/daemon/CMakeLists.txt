@@ -20,8 +20,8 @@ include_directories("../")
 
 set(FUS_AUTH_DAEMON
     auth.h
-    auth_client.cpp
     auth_daemon.cpp
+    auth_server.cpp
     auth_private.h
 )
 

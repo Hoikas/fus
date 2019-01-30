@@ -49,20 +49,20 @@ void fus::auth_daemon_close()
 
 // =================================================================================
 
-static void auth_connection_encrypted(fus::auth_client_t* client, ssize_t result)
+static void auth_connection_encrypted(fus::auth_server_t* client, ssize_t result)
 {
     if (result < 0) {
-        fus::auth_client_shutdown(client);
+        fus::auth_server_shutdown(client);
         return;
     }
 
-    fus::auth_client_read(client);
+    fus::auth_server_read(client);
 }
 
-static void auth_connect_buffer_read(fus::auth_client_t* client, ssize_t nread, void* buf)
+static void auth_connect_buffer_read(fus::auth_server_t* client, ssize_t nread, void* buf)
 {
     if (nread < 0) {
-        fus::auth_client_shutdown(client);
+        fus::auth_server_shutdown(client);
         return;
     }
 
@@ -71,7 +71,7 @@ static void auth_connect_buffer_read(fus::auth_client_t* client, ssize_t nread, 
                                       (fus::crypt_established_cb)auth_connection_encrypted);
 }
 
-void fus::auth_daemon_accept_client(fus::auth_client_t* client, const void* msgbuf)
+void fus::auth_daemon_accept(fus::auth_server_t* client, const void* msgbuf)
 {
     // Validate connection
     if (!s_authDaemon || !daemon_verify_connection((daemon_t*)s_authDaemon, msgbuf, false)) {
@@ -80,7 +80,7 @@ void fus::auth_daemon_accept_client(fus::auth_client_t* client, const void* msgb
     }
 
     // Init
-    auth_client_init(client);
+    auth_server_init(client);
 
     // Unencrypted auth connection prefix:
     //     uint32_t msgsz
