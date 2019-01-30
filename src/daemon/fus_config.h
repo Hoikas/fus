@@ -67,7 +67,7 @@ namespace fus
                        "This specifies how closely the data provided in the client connection handshake should be verified.\n"
                        "Possible Values:\n"
                        "    - none: No verification, any client will be allowed to connect.\n"
-                       "    - default: Default verification, any client can connect to file or gatekeeper but all others must match the expected values"
+                       "    - default: Default verification, any client can connect to file or gatekeeper but all others must match the expected values\n"
                        "    - strict: Strict verification, like default but the product uuid is verified for file and gatekeeper connections")
 
         FUS_CONFIG_CRYPT("auth", 41)
