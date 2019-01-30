@@ -65,7 +65,6 @@ static inline void* _realloc_buffer(size_t bufsz)
 
 void fus::crypt_stream_init(fus::crypt_stream_t* stream)
 {
-    stream->m_readcb = nullptr;
     stream->m_encryptcb = nullptr;
 }
 
@@ -110,10 +109,6 @@ static EVP_CIPHER_CTX* _init_evp(const uint8_t* key, size_t keylen, int enc)
 
 static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, const uint8_t* key, size_t keylen)
 {
-    stream->m_stream.m_flags |= fus::tcp_stream_t::e_encrypted;
-    stream->m_crypt.encrypt = _init_evp(key, keylen, 1);
-    stream->m_crypt.decrypt = _init_evp(key, keylen, 0);
-
     // write encryption reply
     size_t msgsz = 2 + keylen;
     uint8_t* reply = (uint8_t*)alloca(msgsz);
@@ -126,6 +121,10 @@ static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, c
     }
     // not waiting for the write to finish, no more decrypted messages are allowed.
     fus::tcp_stream_write((fus::tcp_stream_t*)stream, reply, msgsz);
+
+    stream->m_crypt.encrypt = _init_evp(key, keylen, 1);
+    stream->m_crypt.decrypt = _init_evp(key, keylen, 0);
+    stream->m_stream.m_flags |= fus::tcp_stream_t::e_encrypted;
     if (stream->m_encryptcb)
         stream->m_encryptcb(stream, 0);
 }
@@ -188,51 +187,32 @@ void fus::crypt_stream_establish_server(fus::crypt_stream_t* stream, BIGNUM* k, 
 
 // =================================================================================
 
-static void _read_complete(fus::crypt_stream_t* stream, ssize_t nread, unsigned char* msg)
+static inline void _cipher(EVP_CIPHER_CTX* ctx, void* msg, size_t msgsz)
 {
-    if (nread > 0 && stream->m_stream.m_flags & fus::tcp_stream_t::e_encrypted) {
-        unsigned char* outbuf;
-        if (nread <= 1024)
-            outbuf = (unsigned char*)alloca(nread);
-        else
-            outbuf = (unsigned char*)_realloc_buffer(nread);
-        int encsize;
-        EVP_CipherUpdate(stream->m_crypt.decrypt, outbuf, &encsize, msg, nread);
-        memcpy(msg, outbuf, nread);
-    }
-
-    fus::tcp_read_cb cb = nullptr;
-    std::swap(cb, stream->m_readcb);
-    cb((fus::tcp_stream_t*)stream, nread, msg);
+    unsigned char* outbuf;
+    if (msgsz <= 4096)
+        outbuf = (unsigned char*)alloca(msgsz);
+    else
+        outbuf = (unsigned char*)_realloc_buffer(msgsz);
+    int encsize;
+    EVP_CipherUpdate(ctx, outbuf, &encsize, (unsigned char*)msg, msgsz);
+    FUS_ASSERTD(msgsz == encsize);
+    memcpy(msg, outbuf, msgsz);
 }
 
-void fus::crypt_stream_read_struct(fus::crypt_stream_t* stream, const struct fus::net_struct_t* ns, fus::tcp_read_cb read_cb)
+void fus::crypt_stream_decipher(fus::crypt_stream_t* stream, void* msg, size_t msgsz)
 {
     FUS_ASSERTD(stream);
-    FUS_ASSERTD(read_cb);
-
-    stream->m_readcb = read_cb;
-    tcp_stream_read_struct((tcp_stream_t*)stream, ns, (tcp_read_cb)_read_complete);
+    FUS_ASSERTD(msgsz);
+    FUS_ASSERTD((stream->m_stream.m_flags & fus::tcp_stream_t::e_encrypted));
+    _cipher(stream->m_crypt.decrypt, msg, msgsz);
 }
 
-// =================================================================================
-
-void fus::crypt_stream_write(fus::crypt_stream_t* stream, const void* buf, size_t bufsz, fus::tcp_write_cb write_cb)
+void fus::crypt_stream_encipher(fus::crypt_stream_t* stream, void* msg, size_t msgsz)
 {
     FUS_ASSERTD(stream);
-    FUS_ASSERTD(buf);
-    FUS_ASSERTD(bufsz);
-
-    if (stream->m_stream.m_flags & tcp_stream_t::e_encrypted) {
-        unsigned char* outbuf;
-        if (bufsz <= 1024)
-            outbuf = (unsigned char*)alloca(bufsz);
-        else
-            outbuf = (unsigned char*)_realloc_buffer(bufsz);
-        int encsize;
-        EVP_CipherUpdate(stream->m_crypt.encrypt, outbuf, &encsize, (unsigned char*)buf, bufsz);
-        tcp_stream_write((tcp_stream_t*)stream, outbuf, bufsz, write_cb);
-    } else {
-        tcp_stream_write((tcp_stream_t*)stream, buf, bufsz, write_cb);
-    }
+    FUS_ASSERTD(msg);
+    FUS_ASSERTD(msgsz);
+    FUS_ASSERTD((stream->m_stream.m_flags & fus::tcp_stream_t::e_encrypted));
+    _cipher(stream->m_crypt.encrypt, msg, msgsz);
 }

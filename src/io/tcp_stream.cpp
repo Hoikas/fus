@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "core/errors.h"
+#include "crypt_stream.h" // https://www.youtube.com/watch?v=IvzFt8PPXvE
 #include "net_struct.h"
 #include "tcp_stream.h"
 
@@ -259,6 +260,13 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
     if (nread == 0)
         return;
 
+    // Before we do ANYTHING else... The alloc callback assumes it can peak into the buffer and see
+    // decrypted contents. So, if this stream is encrypted, we need to decipher what we just read.
+    if (stream->m_flags & fus::tcp_stream_t::e_encrypted) {
+        FUS_ASSERTD(nread == buf->len);
+        fus::crypt_stream_decipher((fus::crypt_stream_t*)stream, buf->base, nread);
+    }
+
     // Determine how many fields we read in
     if (stream->m_readStruct) {
 #if 0
@@ -406,6 +414,8 @@ void fus::tcp_stream_write(fus::tcp_stream_t* stream, const void* buf, size_t bu
 
     if (!(stream->m_flags & tcp_stream_t::e_closing)) {
         write_buf_t* req = _get_write_req(buf, bufsz);
+        if (stream->m_flags & fus::tcp_stream_t::e_encrypted)
+            crypt_stream_encipher((crypt_stream_t*)stream, req->m_buf, req->m_bufsz);
         uv_req_set_data((uv_req_t*)req, write_cb);
         uv_buf_t uvbuf = uv_buf_init((char*)req->m_buf, req->m_bufsz);
         uv_write((uv_write_t*)req, (uv_stream_t*)stream, &uvbuf, 1, (uv_write_cb)_write_complete);

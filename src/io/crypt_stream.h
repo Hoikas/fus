@@ -51,15 +51,8 @@ namespace fus
 
     void crypt_stream_establish_server(crypt_stream_t*, BIGNUM*, BIGNUM*, crypt_established_cb cb=nullptr);
 
-    void crypt_stream_read_struct(crypt_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);
-
-    template<typename T>
-    inline void crypt_stream_read_msg(crypt_stream_t* s, tcp_read_cb read_cb)
-    {
-        crypt_stream_read_struct(s, T::net_struct, read_cb);
-    }
-
-    void crypt_stream_write(crypt_stream_t*, const void*, size_t, tcp_write_cb write_cb = nullptr);
+    void crypt_stream_decipher(crypt_stream_t*, void*, size_t);
+    void crypt_stream_encipher(crypt_stream_t*, void*, size_t);
 };
 
 #endif

@@ -40,7 +40,7 @@ using _auth_cb = void(fus::auth_server_t*, ssize_t, _Msg*);
 template<typename _Msg, typename _Cb=_auth_cb<_Msg>>
 static inline void auth_read(fus::auth_server_t* client, _Cb cb)
 {
-    fus::crypt_stream_read_msg<_Msg>((fus::crypt_stream_t*)client, (fus::tcp_read_cb)cb);
+    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
 }
 
 // =================================================================================
