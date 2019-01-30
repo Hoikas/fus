@@ -39,6 +39,17 @@ namespace fus
                        "Lobby Bind Port\n"
                        "Port that this fus server should listen for connections on")
 
+        FUS_CONFIG_STR("log", "directory", "",
+                       "Log Directory\n"
+                       "Directory that the server's log files will be written to")
+        FUS_CONFIG_STR("log", "level", "info",
+                       "Log Level\n"
+                       "Controls the verbosity of the server logs.\n"
+                       "Possible Values:\n"
+                       "    - debug: Highest level of verbosity.\n"
+                       "    - info: Normal level of verbosity.\n"
+                       "    - error: Lowest level of verbosity.")
+
         FUS_CONFIG_INT("client", "buildId", 918,
                        "Client Build ID\n"
                        "Build ID for clients connecting to this shard")

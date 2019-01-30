@@ -20,6 +20,7 @@
 #include <uv.h>
 
 #include "core/config_parser.h"
+#include "io/log_file.h"
 
 namespace fus
 {
@@ -29,6 +30,7 @@ namespace fus
 
         uv_tcp_t m_lobby;
         config_parser m_config;
+        log_file m_log;
         uint32_t m_flags;
 
     public:
@@ -40,6 +42,7 @@ namespace fus
         ~server();
 
         config_parser& config() { return m_config; }
+        log_file& log() { return m_log; }
 
         bool start_lobby();
         void run_forever();

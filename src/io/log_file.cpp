@@ -79,6 +79,17 @@ void fus::log_file::set_level(level level)
     m_level = level;
 }
 
+void fus::log_file::set_level(const ST::string& value)
+{
+    ST::string level = value.to_lower();
+    if (level == ST_LITERAL("debug"))
+        m_level = level::e_debug;
+    else if (level == ST_LITERAL("info"))
+        m_level = level::e_info;
+    else if (level == ST_LITERAL("error"))
+        m_level = level::e_error;
+}
+
 // =================================================================================
 
 struct log_write_t

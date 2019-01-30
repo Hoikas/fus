@@ -71,11 +71,16 @@ fus::server::server(const std::filesystem::path& config_path)
 {
     m_instance = this;
     m_config.read(config_path);
+
+    log_file::set_directory(m_config.get<const ST::string&>("log", "directory"));
+    m_log.set_level(m_config.get<const ST::string&>("log", "level"));
 }
 
 fus::server::~server()
 {
     m_instance = nullptr;
+    /// fixme: fus shutdown not properly implemented
+    m_log.close();
 }
 
 // =================================================================================
@@ -83,6 +88,9 @@ fus::server::~server()
 static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 {
     if (error < 0) {
+        fus::server::get()->log().write_debug("[{}]: Connection Header read error: {}",
+                                              fus::tcp_stream_peeraddr(client),
+                                              uv_strerror(error));
         fus::tcp_stream_shutdown(client);
         return;
     }
@@ -90,7 +98,14 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
     fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
     switch (header->get_connType()) {
     case e_protocolCli2Auth:
+        fus::server::get()->log().write_debug("[{}]: Incoming auth connection", fus::tcp_stream_peeraddr(client));
         fus::auth_daemon_accept((fus::auth_server_t*)client, msg);
+        break;
+    default:
+        fus::server::get()->log().write_error("[{}]: Invalid connection type '{2X}'",
+                                              fus::tcp_stream_peeraddr(client),
+                                              header->get_connType());
+        fus::tcp_stream_shutdown(client);
         break;
     }
 }
@@ -98,7 +113,7 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 static void _on_client_connect(uv_stream_t* lobby, int status)
 {
     if (status < 0) {
-        std::cerr << "New connection error " << uv_strerror(status) << std::endl;
+        fus::server::get()->log().write_debug("New connection error: {}", uv_strerror(status));
         return;
     }
 
@@ -120,17 +135,25 @@ bool fus::server::start_lobby()
     FUS_ASSERTD(!(m_flags & e_lobbyReady));
     FUS_ASSERTD(!(m_flags & e_running));
 
+    uv_loop_t* loop = uv_default_loop();
+    m_log.open(loop, ST_LITERAL("lobby"));
+
     const char* bindaddr = m_config.get<const char*>("lobby", "bindaddr");
     int port = m_config.get<int>("lobby", "port");
+    m_log.write_info("Binding to '{}/{}'", bindaddr, port);
 
-    uv_loop_t* loop = uv_default_loop();
     uv_tcp_init(loop, &m_lobby);
+    /// fixme: ipv6
     struct sockaddr_in addr;
     FUS_ASSERTD(uv_ip4_addr(bindaddr, port, &addr) == 0);
-    if (uv_tcp_bind(&m_lobby, (const struct sockaddr*)&addr, 0) < 0)
+    if (uv_tcp_bind(&m_lobby, (const struct sockaddr*)&addr, 0) < 0) {
+        m_log.write_error("Failed to bind to '{}/{}'", bindaddr, port);
         return false;
-    if (uv_listen((uv_stream_t*)&m_lobby, 128, _on_client_connect) < 0)
+    }
+    if (uv_listen((uv_stream_t*)&m_lobby, 128, _on_client_connect) < 0) {
+        m_log.write_error("Failed to listen for incoming connections on '{}/{}'", bindaddr, port);
         return false;
+    }
     m_flags |= e_lobbyReady;
     return true;
 }

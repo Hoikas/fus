@@ -113,6 +113,22 @@ void fus::tcp_stream_shutdown(fus::tcp_stream_t* stream, uv_close_cb cb)
 
 // =================================================================================
 
+ST::string fus::tcp_stream_peeraddr(const fus::tcp_stream_t* stream)
+{
+    sockaddr_storage addr;
+    int addrsz = sizeof(addr);
+    uv_tcp_getpeername((const uv_tcp_t*)stream, (sockaddr*)(&addr), &addrsz);
+
+    char addrstr[64] = {"???"};
+    if (addr.ss_family == AF_INET)
+        uv_ip4_name((sockaddr_in*)(&addr), addrstr, sizeof(addrstr));
+    else if (addr.ss_family == AF_INET6)
+        uv_ip6_name((sockaddr_in6*)(&addr), addrstr, sizeof(addrstr));
+    return ST::format("{}/{}", addrstr, ((sockaddr_in*)&addr)->sin_port);
+}
+
+// =================================================================================
+
 static inline bool _is_any_buffer(const fus::net_struct_t* ns, size_t idx)
 {
     const fus::net_field_t& field = ns->m_fields[idx];

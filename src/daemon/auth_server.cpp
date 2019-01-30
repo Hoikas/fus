@@ -41,12 +41,22 @@ void fus::auth_server_shutdown(fus::auth_server_t* client)
 
 // =================================================================================
 
-static void auth_pingpong(fus::auth_server_t* client, ssize_t nread, fus::protocol::auth_pingRequest* msg)
+static inline bool auth_check_read(fus::auth_server_t* client, ssize_t nread)
 {
     if (nread < 0) {
+        s_authDaemon->m_log.write_debug("[{}]: Read failed: {}",
+                                        fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
+                                        uv_strerror(nread));
         fus::auth_server_shutdown(client);
-        return;
+        return false;
     }
+    return true;
+}
+
+static void auth_pingpong(fus::auth_server_t* client, ssize_t nread, fus::protocol::auth_pingRequest* msg)
+{
+    if (!auth_check_read(client, nread))
+        return;
 
     fus::protocol::msg_std_header header;
     header.set_type(fus::protocol::auth2client::e_pingReply);
@@ -54,14 +64,15 @@ static void auth_pingpong(fus::auth_server_t* client, ssize_t nread, fus::protoc
 
     // Message reply is a bitwise copy, so we'll just throw the request back.
     fus::crypt_stream_write((fus::crypt_stream_t*)client, msg, nread);
+
+    // Continue reading
+    fus::auth_server_read(client);
 }
 
 static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::protocol::auth_clientRegisterRequest* msg)
 {
-    if (nread < 0) {
-        fus::auth_server_shutdown(client);
+    if (!auth_check_read(client, nread))
         return;
-    }
 
     // If a client tries to register more than once, they are obviously being nefarious.
     if (client->m_flags & e_clientRegistered)
@@ -74,16 +85,17 @@ static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::
     reply.m_header.set_type(fus::protocol::auth2client::e_clientRegisterReply);
     reply.m_contents.set_loginSalt(client->m_loginSalt);
     fus::crypt_stream_write((fus::crypt_stream_t*)client, reply, sizeof(reply));
+
+    // Continue reading
+    fus::auth_server_read(client);
 }
 
 // =================================================================================
 
 static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protocol::msg_std_header* msg)
 {
-    if (nread < 0) {
-        fus::auth_server_shutdown(client);
+    if (!auth_check_read(client, nread))
         return;
-    }
 
     switch (msg->get_type()) {
     case fus::protocol::client2auth::e_pingRequest:

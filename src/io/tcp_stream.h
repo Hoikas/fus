@@ -17,6 +17,7 @@
 #ifndef __FUS_TCP_STREAM_H
 #define __FUS_TCP_STREAM_H
 
+#include <string_theory/string>
 #include <uv.h>
 
 namespace fus
@@ -50,6 +51,8 @@ namespace fus
     int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
     void tcp_stream_free(tcp_stream_t*);
     void tcp_stream_shutdown(tcp_stream_t*, uv_close_cb cb=nullptr);
+
+    ST::string tcp_stream_peeraddr(const tcp_stream_t*);
 
     void tcp_stream_read(tcp_stream_t*, size_t msgsz, tcp_read_cb read_cb);
     void tcp_stream_read_struct(tcp_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);

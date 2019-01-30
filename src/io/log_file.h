@@ -49,6 +49,7 @@ namespace fus
         void close();
 
         void set_level(level);
+        void set_level(const ST::string&);
         void write(const ST::string&);
 
         template<typename... _Args>
