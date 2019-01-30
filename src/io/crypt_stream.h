@@ -47,8 +47,9 @@ namespace fus
     };
 
     void crypt_stream_init(crypt_stream_t*);
+    void crypt_stream_free(crypt_stream_t*);
+
     void crypt_stream_establish_server(crypt_stream_t*, BIGNUM*, BIGNUM*, crypt_established_cb cb=nullptr);
-    void crypt_stream_close(crypt_stream_t*, uv_close_cb=nullptr);
 
     void crypt_stream_read_struct(crypt_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);
 

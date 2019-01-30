@@ -51,9 +51,9 @@ void fus::auth_daemon_close()
 
 static void auth_connection_encrypted(fus::auth_client_t* client, ssize_t result)
 {
-    /// fixme
     if (result < 0) {
-        // ...
+        fus::auth_client_shutdown(client);
+        return;
     }
 
     fus::auth_client_read(client);
@@ -61,9 +61,9 @@ static void auth_connection_encrypted(fus::auth_client_t* client, ssize_t result
 
 static void auth_connect_buffer_read(fus::auth_client_t* client, ssize_t nread, void* buf)
 {
-    /// fixme
     if (nread < 0) {
-        // ...
+        fus::auth_client_shutdown(client);
+        return;
     }
 
     fus::secure_daemon_encrypt_stream((fus::secure_daemon_t*)s_authDaemon,
@@ -75,8 +75,8 @@ void fus::auth_daemon_accept_client(fus::auth_client_t* client, const void* msgb
 {
     // Validate connection
     if (!s_authDaemon || !daemon_verify_connection((daemon_t*)s_authDaemon, msgbuf, false)) {
-        /// fixme
-        tcp_stream_close((tcp_stream_t*)client);
+        tcp_stream_shutdown((tcp_stream_t*)client);
+        return;
     }
 
     // Init

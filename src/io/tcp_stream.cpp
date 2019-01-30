@@ -62,6 +62,9 @@ int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop)
     if (result < 0)
         return result;
 
+    // Zero init libuv stuff (just in case)
+    uv_handle_set_data((uv_handle_t*)stream, nullptr);
+
     // Zero init the fus structure
     stream->m_flags = 0;
     stream->m_readStruct = nullptr;
@@ -72,9 +75,40 @@ int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop)
     return 0;
 }
 
-void fus::tcp_stream_close(fus::tcp_stream_t* stream, uv_close_cb close_cb)
+void fus::tcp_stream_free(fus::tcp_stream_t* stream)
 {
-    uv_close((uv_handle_t*)stream, close_cb);
+    free(stream->m_readBuf);
+    free(stream);
+}
+
+// =================================================================================
+
+static void _tcp_close(uv_handle_t* stream)
+{
+    uv_close_cb cb = (uv_close_cb)uv_handle_get_data(stream);
+    // High level clients must free themselves
+    if (cb)
+        cb(stream);
+    fus::tcp_stream_free((fus::tcp_stream_t*)stream);
+}
+
+static void _tcp_shutdown(uv_shutdown_t* req, int status)
+{
+    FUS_ASSERTD(status == 0);
+
+    uv_close((uv_handle_t*)req->handle, _tcp_close);
+    free(req);
+}
+
+void fus::tcp_stream_shutdown(fus::tcp_stream_t* stream, uv_close_cb cb)
+{
+    FUS_ASSERTD(stream);
+    FUS_ASSERTD(cb);
+
+    stream->m_flags |= tcp_stream_t::e_closing;
+    uv_handle_set_data((uv_handle_t*)stream, cb);
+    uv_shutdown_t* req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
+    uv_shutdown(req, (uv_stream_t*)stream, _tcp_shutdown);
 }
 
 // =================================================================================
@@ -354,8 +388,10 @@ void fus::tcp_stream_write(fus::tcp_stream_t* stream, const void* buf, size_t bu
     FUS_ASSERTD(buf);
     FUS_ASSERTD(bufsz);
 
-    write_buf_t* req = _get_write_req(buf, bufsz);
-    uv_req_set_data((uv_req_t*)req, write_cb);
-    uv_buf_t uvbuf = uv_buf_init((char*)req->m_buf, req->m_bufsz);
-    uv_write((uv_write_t*)req, (uv_stream_t*)stream, &uvbuf, 1, (uv_write_cb)_write_complete);
+    if (!(stream->m_flags & tcp_stream_t::e_closing)) {
+        write_buf_t* req = _get_write_req(buf, bufsz);
+        uv_req_set_data((uv_req_t*)req, write_cb);
+        uv_buf_t uvbuf = uv_buf_init((char*)req->m_buf, req->m_bufsz);
+        uv_write((uv_write_t*)req, (uv_stream_t*)stream, &uvbuf, 1, (uv_write_cb)_write_complete);
+    }
 }

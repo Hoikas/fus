@@ -34,6 +34,7 @@ namespace fus
             e_readCallback = (1<<2),
             e_readAllocFailed = (1<<3),
             e_encrypted = (1<<4),
+            e_closing = (1<<5),
         };
 
         uv_tcp_t m_tcp;
@@ -47,7 +48,8 @@ namespace fus
     };
 
     int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
-    void tcp_stream_close(tcp_stream_t*, uv_close_cb close_cb=nullptr);
+    void tcp_stream_free(tcp_stream_t*);
+    void tcp_stream_shutdown(tcp_stream_t*, uv_close_cb cb=nullptr);
 
     void tcp_stream_read(tcp_stream_t*, size_t msgsz, tcp_read_cb read_cb);
     void tcp_stream_read_struct(tcp_stream_t*, const struct net_struct_t*, tcp_read_cb read_cb);

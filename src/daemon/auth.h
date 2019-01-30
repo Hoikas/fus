@@ -31,6 +31,9 @@ namespace fus
     };
 
     void auth_client_init(auth_client_t*);
+    void auth_client_free(auth_client_t*);
+    void auth_client_shutdown(auth_client_t*);
+
     void auth_client_read(auth_client_t*);
 
     void auth_daemon_init();

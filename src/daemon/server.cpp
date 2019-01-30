@@ -83,8 +83,7 @@ fus::server::~server()
 static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 {
     if (error < 0) {
-        std::cerr << "Read error " << uv_strerror(error) << std::endl;
-        uv_close((uv_handle_t*)client, nullptr);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
@@ -109,9 +108,10 @@ static void _on_client_connect(uv_stream_t* lobby, int status)
     fus::tcp_stream_t* client = (fus::tcp_stream_t*)malloc(k_clientMemsz);
     fus::tcp_stream_init(client, uv_default_loop());
     if (uv_accept(lobby, (uv_stream_t*)client) == 0) {
+        uv_tcp_nodelay((uv_tcp_t*)client, 1);
         fus::tcp_stream_read_msg<fus::protocol::connection_header>(client, _on_header_read);
     } else {
-        uv_close((uv_handle_t*)client, nullptr);
+        uv_close((uv_handle_t*)client, (uv_close_cb)fus::tcp_stream_free);
     }
 }
 

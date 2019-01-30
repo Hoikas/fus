@@ -69,13 +69,12 @@ void fus::crypt_stream_init(fus::crypt_stream_t* stream)
     stream->m_encryptcb = nullptr;
 }
 
-void fus::crypt_stream_close(fus::crypt_stream_t* stream, uv_close_cb cb)
+void fus::crypt_stream_free(fus::crypt_stream_t* stream)
 {
     if (stream->m_stream.m_flags & tcp_stream_t::e_encrypted) {
         EVP_CIPHER_CTX_free(stream->m_crypt.encrypt);
         EVP_CIPHER_CTX_free(stream->m_crypt.decrypt);
     }
-    tcp_stream_close((tcp_stream_t*)stream, cb);
 }
 
 // =================================================================================
@@ -134,7 +133,7 @@ static void _init_encryption(fus::crypt_stream_t* stream, const uint8_t* seed, c
 static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* buf)
 {
     if (nread < 0) {
-        fus::crypt_stream_close(stream);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)stream);
         return;
     }
 
@@ -161,7 +160,7 @@ static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, ui
 static void _handshake_header_read(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* msg)
 {
     if (nread < 0) {
-        fus::crypt_stream_close(stream);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)stream);
         return;
     }
 
