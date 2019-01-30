@@ -294,9 +294,16 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
         }
 
 
-        // Dream on...
-        if (stream->m_readField != stream->m_readStruct->m_size)
-            return;
+        // If we're not at the end of the struct and the next field is a buffer, we could be in the
+        // situation of having a zero length buffer. In that case, we need to dispatch this message.
+        // If we don't, the allocator will refuse to allocate more buffer space for this message, and
+        // the read will fail with UV_ENOBUFS...
+        if (stream->m_readField < stream->m_readStruct->m_size) {
+            size_t nextField = stream->m_readField;
+            if (!(_is_any_buffer(stream->m_readStruct, nextField) &&
+                  _determine_bufsz(stream->m_readStruct, nextField, stream->m_readBuf) == 0))
+                return;
+        }
     }
 
     // Some code does actually care about the read size, I know...
