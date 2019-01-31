@@ -243,7 +243,6 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
         stream->m_flags |= fus::tcp_stream_t::e_readCallback;
         fus::tcp_read_cb cb = nullptr;
         std::swap(cb, stream->m_readcb);
-        std::cerr << uv_strerror(nread);
         cb(stream, nread < 0 ? nread : -1, nullptr);
         stream->m_flags &= ~fus::tcp_stream_t::e_readCallback;
 
@@ -269,18 +268,6 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
 
     // Determine how many fields we read in
     if (stream->m_readStruct) {
-#if 0
-        // If we're at the last field+1 already, this is potentially a buffer that we finished reading.
-        // Otherwise, we need to determine how many fields we read in.
-        if (stream->m_readField != stream->m_readStruct->m_size) {
-            for (ssize_t count = nread; count > 0; stream->m_readField++) {
-                count -= stream->m_readStruct->m_fields[stream->m_readField].m_datasz;
-                /// fixme: more robost error handling here
-                FUS_ASSERTD(count > -1);
-                FUS_ASSERTD(stream->m_readField <= stream->m_readStruct->m_size);
-            }
-        }
-#endif
         // How many fields did we read in?
         for (ssize_t count = nread; count > 0; stream->m_readField++) {
             // This implies a buffer can be anywhere in the struct. Don't lie to yourself--that should
@@ -318,7 +305,6 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
         bufsz = stream->m_readField;
     }
 
-#define FUS_IO_DEBUG_READS 1
 #ifdef FUS_IO_DEBUG_READS
     if (stream->m_readStruct)
         fus::net_msg_print(stream->m_readStruct, stream->m_readBuf, std::cout);
