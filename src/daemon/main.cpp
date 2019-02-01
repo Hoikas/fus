@@ -17,6 +17,7 @@
 #include <fstream>
 #include <gflags/gflags.h>
 #include <iostream>
+#include <string_theory/iostream>
 #include <string_theory/st_format.h>
 
 #include "auth.h"
@@ -42,9 +43,9 @@ static void generate_client_keys(const fus::config_parser& config, std::ostream&
     const char* n_key = config.get<const char*>(ST_LITERAL("crypt"), ST::format("{}_n", srv_lower));
     const char* x_key = config.get<const char*>(ST_LITERAL("crypt"), ST::format("{}_x", srv_lower));
 
-    stream << "Server." << srv.c_str() << ".G " << g_val << std::endl;
-    stream << "Server." << srv.c_str() << ".N \"" << n_key << "\"" << std::endl;
-    stream << "Server." << srv.c_str() << ".X \"" << x_key << "\"" << std::endl;
+    stream << "Server." << srv << ".G " << g_val << std::endl;
+    stream << "Server." << srv << ".N \"" << n_key << "\"" << std::endl;
+    stream << "Server." << srv << ".X \"" << x_key << "\"" << std::endl;
 }
 
 static void generate_client_ini(const fus::config_parser& config, const std::filesystem::path& path)
@@ -58,7 +59,10 @@ static void generate_client_ini(const fus::config_parser& config, const std::fil
     generate_client_keys(config, stream, ST_LITERAL("Game"));
 
     // Shard addresses
-    /// todo
+    stream << std::endl;
+    const ST::string& extaddr = config.get<const ST::string&>("lobby", "extaddr");
+    const ST::string& bindaddr = config.get<const ST::string&>("lobby", "bindaddr");
+    stream << "Server.Auth.Host \"" << (extaddr.empty() ? bindaddr : extaddr) << "\"" << std::endl;
 }
 
 static void generate_daemon_keys(fus::config_parser& config, const ST::string& srv)
