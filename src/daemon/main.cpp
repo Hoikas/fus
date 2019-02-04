@@ -22,6 +22,7 @@
 
 #include "auth.h"
 #include "core/build_info.h"
+#include "io/console.h"
 #include "io/io.h"
 #include "server.h"
 
@@ -33,6 +34,7 @@ DEFINE_bool(generate_keys, false, "Generate a new set of encryption keys");
 DEFINE_bool(run_auth, true, "Launch the auth daemon");
 DEFINE_bool(run_lobby, true, "Launch the server lobby");
 DEFINE_bool(save_config, false, "Saves the server configuration file");
+DEFINE_bool(use_console, true, "Use the interactive server console");
 
 // =================================================================================
 
@@ -86,10 +88,11 @@ static void generate_all_keys(fus::config_parser& config)
 
 int main(int argc, char* argv[])
 {
-    fus::ro::dah(std::cout);
-
     gflags::SetVersionString(fus::build_version());
     gflags::ParseCommandLineFlags(&argc, &argv, false);
+
+    fus::console& console = fus::console::init(uv_default_loop());
+    console << fus::console::foreground_yellow << fus::console::weight_bold << fus::ro::dah() << fus::console::endl;
 
     fus::io_init();
     fus::server server(FLAGS_config_path);
@@ -106,6 +109,8 @@ int main(int argc, char* argv[])
     // Init the daemons
     if (FLAGS_run_auth)
         fus::auth_daemon_init();
+    if (FLAGS_use_console)
+        console.begin();
 
     // Run the lobby server to accept connections and pump the loop forever
     if (FLAGS_run_lobby) {
@@ -114,6 +119,7 @@ int main(int argc, char* argv[])
     }
 
     // Shutdown the daemons
+    console.end();
     if (fus::auth_daemon_running())
         fus::auth_daemon_close();
 
