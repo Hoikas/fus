@@ -35,8 +35,8 @@ if ("${GIT_REV}" STREQUAL "")
     set(GIT_BRANCH "")
 else()
     execute_process(
-        COMMAND bash -c "git diff --quiet --exit-code || echo +"
-        OUTPUT_VARIABLE GIT_DIFF)
+        COMMAND git diff --quiet --exit-code
+        RESULT_VARIABLE GIT_DIFF)
     execute_process(
         COMMAND git describe --exact-match --tags
         OUTPUT_VARIABLE GIT_TAG ERROR_QUIET)
@@ -44,9 +44,14 @@ else()
         COMMAND git rev-parse --abbrev-ref HEAD
         OUTPUT_VARIABLE GIT_BRANCH)
 
+    if(GIT_DIFF EQUAL 1)
+        set(GIT_DIRTY "+")
+    else()
+        set(GIT_DIRTY "")
+    endif()
+
     string(STRIP "${GIT_REV}" GIT_REV)
     string(SUBSTRING "${GIT_REV}" 1 7 GIT_REV)
-    string(STRIP "${GIT_DIFF}" GIT_DIFF)
     string(STRIP "${GIT_TAG}" GIT_TAG)
     string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
 endif()
@@ -64,7 +69,7 @@ set(VERSION
 {
     namespace buildinfo
     {
-        const char* BUILD_HASH = \"${GIT_REV}${GIT_DIFF}\";
+        const char* BUILD_HASH = \"${GIT_REV}${GIT_DIRTY}\";
         const char* BUILD_TAG = \"${GIT_TAG}\";
         const char* BUILD_BRANCH = \"${GIT_BRANCH}\";
         const char* BUILD_DATE = \"${BUILD_DATE}\";
