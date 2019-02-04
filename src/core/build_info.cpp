@@ -45,6 +45,12 @@ const char* fus::build_hash()
     return fus::buildinfo::BUILD_HASH;
 }
 
+const char* fus::build_branch()
+{
+    return fus::buildinfo::BUILD_BRANCH;
+}
+
+
 const char* fus::build_tag()
 {
     return fus::buildinfo::BUILD_TAG;

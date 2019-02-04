@@ -25,6 +25,7 @@ namespace fus
     const char* build_date();
     const char* build_hash();
     const char* build_tag();
+    const char* build_branch();
     const char* build_time();
     const char* build_version();
 
