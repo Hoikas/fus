@@ -34,5 +34,11 @@ if(WIN32)
     add_definitions(-DNOMINMAX)
 endif()
 
+# Disable MSVC++ warning C4200
+# "nonstandard extension used: zero-sized array in struct/union"
+if(MSVC)
+    add_compile_options(/wd4200)
+endif()
+
 # Allow the libs and exes to fondle themselves
 add_subdirectory(src)

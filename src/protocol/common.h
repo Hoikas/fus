@@ -23,9 +23,11 @@
 #include "common.inl"
 #include "protocol_fields_end.inl"
 
+#include "protocol_warnings_silence.inl"
 #include "protocol_structs_begin.inl"
 #include "common.inl"
 #include "protocol_structs_end.inl"
+#include "protocol_warnings_restore.inl"
 
 namespace fus
 {

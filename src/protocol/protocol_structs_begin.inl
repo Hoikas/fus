@@ -14,10 +14,6 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef _MSC_VER
-#   pragma warning(disable:4103)
-#   pragma warning(disable:4200)
-#endif
 #pragma pack(push,1)
 
 #define FUS_NET_STRUCT_BEGIN(name) \

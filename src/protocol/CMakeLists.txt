@@ -29,6 +29,8 @@ set(FUS_PROTOCOL_INLINES
     protocol_objects_end.inl
     protocol_structs_begin.inl
     protocol_structs_end.inl
+    protocol_warnings_restore.inl
+    protocol_warnings_silence.inl
 )
 
 set(FUS_PROTOCOL_PROTOCOLS

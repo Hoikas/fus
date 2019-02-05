@@ -14,18 +14,6 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#undef FUS_NET_STRUCT_BEGIN
-#undef FUS_NET_FIELD_BUFFER
-#undef FUS_NET_FIELD_BUFFER_TINY
-#undef FUS_NET_FIELD_BUFFER_HUGE
-#undef FUS_NET_FIELD_BUFFER_REDUNDANT
-#undef FUS_NET_FIELD_BUFFER_REDUNDANT_TINY
-#undef FUS_NET_FIELD_BUFFER_REDUNDANT_HUGE
-#undef FUS_NET_FIELD_UINT8
-#undef FUS_NET_FIELD_UINT16
-#undef FUS_NET_FIELD_UINT32
-#undef FUS_NET_FIELD_STRING
-#undef FUS_NET_FIELD_UUID
-#undef FUS_NET_STRUCT_END
-
-#pragma pack(pop)
+#ifdef _MSC_VER
+#   pragma warning(default:4103)
+#endif
