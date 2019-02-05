@@ -52,6 +52,7 @@ namespace fus
             e_processing = (1<<0),
             e_outputAnsiDirty = (1<<1),
             e_outputAnsiChanged = (1<<2),
+            e_execCommand = (1<<3),
         };
 
         static console* m_instance;
@@ -156,7 +157,7 @@ namespace fus
         {
             if (m_flags & e_outputAnsiDirty) {
                 output_ansi();
-                m_flags &= e_outputAnsiDirty;
+                m_flags &= ~e_outputAnsiDirty;
                 m_flags |= e_outputAnsiChanged;
             }
             m_outputBuf.operator<<(value);

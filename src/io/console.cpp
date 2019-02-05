@@ -243,20 +243,26 @@ void fus::console::handle_input_line()
     m_historyIt = m_history.cend();
 
     // Reset the display
-    char buf[1024];
-    int len = snprintf(buf, sizeof(buf), "\n%s", m_prompt.c_str());
-    write(buf, len);
+    ST::string output = ST::format("\r\x1B[K{}{}\n", m_prompt, line);
+    write(output.c_str(), output.size());
 
     // Reset internal state
     m_inputBuf.truncate();
     m_inputCharacters = 0;
     m_cursorPos = 0;
 
+    // Supress the console input while a command is executing
+    m_flags |= e_execCommand;
+
     // Fire off any valid command...
     std::vector<ST::string> cmd = line.split(' ', 1);
     if (!cmd.empty()) {
         fire_command(cmd[0], cmd.size() == 2 ? cmd[1] : ST::null);
     }
+
+    // Implicitly write out the prompt
+    m_flags &= ~e_execCommand;
+    *this << endl;
 }
 
 void fus::console::handle_ctrl(const char* buf, size_t bufsz)
@@ -409,9 +415,7 @@ void fus::console::allocate(uv_stream_t* stream, size_t suggestion, uv_buf_t* bu
 void fus::console::read_complete(uv_stream_t* stream, ssize_t nread, uv_buf_t* buf)
 {
     fus::console* console = (fus::console*)uv_handle_get_data((uv_handle_t*)stream);
-    if (nread < 0) {
-        console->end();
-    } else {
+    if (nread >= 0) {
         size_t idx = std::max((size_t)(buf->len - 1), (size_t)nread);
         buf->base[idx] = 0;
         console->process_character(buf->base, nread);
@@ -534,16 +538,13 @@ fus::console& fus::console::flush(fus::console& c)
     }
     c.m_flags &= ~e_outputAnsiDirty;
 
-    // We MUST end with a newline for the prompt
-    if (c.m_outputBuf.raw_buffer()[c.m_outputBuf.size() - 1] != '\n')
-        c.m_outputBuf.append_char('\n');
-
     // Flush the output
     c.write(c.m_outputBuf.raw_buffer(), c.m_outputBuf.size());
     c.m_outputBuf.truncate();
 
     // Write the working line back out.
-    c.flush_input_line();
+    if (!(c.m_flags & e_execCommand))
+        c.flush_input_line();
 
     return c;
 }

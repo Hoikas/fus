@@ -38,61 +38,13 @@ DEFINE_bool(use_console, true, "Use the interactive server console");
 
 // =================================================================================
 
-static void generate_client_keys(const fus::config_parser& config, std::ostream& stream, const ST::string& srv)
-{
-    ST::string srv_lower = srv.to_lower();
-    unsigned int g_val = config.get<unsigned int>(ST_LITERAL("crypt"), ST::format("{}_g", srv_lower));
-    const char* n_key = config.get<const char*>(ST_LITERAL("crypt"), ST::format("{}_n", srv_lower));
-    const char* x_key = config.get<const char*>(ST_LITERAL("crypt"), ST::format("{}_x", srv_lower));
-
-    stream << "Server." << srv << ".G " << g_val << std::endl;
-    stream << "Server." << srv << ".N \"" << n_key << "\"" << std::endl;
-    stream << "Server." << srv << ".X \"" << x_key << "\"" << std::endl;
-}
-
-static void generate_client_ini(const fus::config_parser& config, const std::filesystem::path& path)
-{
-    std::ofstream stream;
-    stream.open(path, std::ios_base::out | std::ios_base::trunc);
-
-    // Encryption keys
-    generate_client_keys(config, stream, ST_LITERAL("Auth"));
-    generate_client_keys(config, stream, ST_LITERAL("Gate"));
-    generate_client_keys(config, stream, ST_LITERAL("Game"));
-
-    // Shard addresses
-    stream << std::endl;
-    const ST::string& extaddr = config.get<const ST::string&>("lobby", "extaddr");
-    const ST::string& bindaddr = config.get<const ST::string&>("lobby", "bindaddr");
-    stream << "Server.Auth.Host \"" << (extaddr.empty() ? bindaddr : extaddr) << "\"" << std::endl;
-}
-
-static void generate_daemon_keys(fus::config_parser& config, const ST::string& srv)
-{
-    ST::string section = ST_LITERAL("crypt");
-    unsigned int g_value = config.get<unsigned int>(section, ST::format("{}_g", srv));
-    auto keys = fus::io_generate_keys(g_value);
-    config.set<const ST::string&>(section, ST::format("{}_k", srv), std::get<0>(keys));
-    config.set<const ST::string&>(section, ST::format("{}_n", srv), std::get<1>(keys));
-    config.set<const ST::string&>(section, ST::format("{}_x", srv), std::get<2>(keys));
-}
-
-static void generate_all_keys(fus::config_parser& config)
-{
-    generate_daemon_keys(config, ST_LITERAL("auth"));
-    generate_daemon_keys(config, ST_LITERAL("game"));
-    generate_daemon_keys(config, ST_LITERAL("gate"));
-}
-
-// =================================================================================
-
 int main(int argc, char* argv[])
 {
     gflags::SetVersionString(fus::build_version());
     gflags::ParseCommandLineFlags(&argc, &argv, false);
 
     fus::console& console = fus::console::init(uv_default_loop());
-    console << fus::console::foreground_yellow << fus::console::weight_bold << fus::ro::dah() << fus::console::endl;
+    console << fus::console::foreground_yellow << fus::console::weight_bold << fus::ro::dah() << "\n\n" << fus::console::flush;
 
     fus::io_init();
     fus::server server(FLAGS_config_path);
