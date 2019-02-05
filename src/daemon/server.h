@@ -17,6 +17,7 @@
 #ifndef __FUS_SERVER_H
 #define __FUS_SERVER_H
 
+#include <filesystem>
 #include <uv.h>
 
 #include "core/config_parser.h"
@@ -24,6 +25,8 @@
 
 namespace fus
 {
+    class console;
+
     class server
     {
         static server* m_instance;
@@ -33,6 +36,9 @@ namespace fus
         log_file m_log;
         uint32_t m_flags;
 
+    protected:
+        bool generate_keys(console&, const ST::string&);
+
     public:
         static server* get() { return m_instance; }
 
@@ -41,12 +47,19 @@ namespace fus
         server(server&&) = delete;
         ~server();
 
-        config_parser& config() { return m_config; }
-        log_file& log() { return m_log; }
-
+        void start_console();
         bool start_lobby();
         void run_forever();
         void run_once();
+
+    public:
+        config_parser& config() { return m_config; }
+        log_file& log() { return m_log; }
+
+    public:
+        void generate_client_ini(const std::filesystem::path& path) const;
+        void generate_daemon_keys();
+        void generate_daemon_keys(const ST::string&);
     };
 };
 

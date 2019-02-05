@@ -19,6 +19,7 @@
 #include "auth.h"
 #include "core/errors.h"
 #include "fus_config.h"
+#include "io/console.h"
 #include "io/io.h"
 #include "io/net_struct.h"
 #include "io/tcp_stream.h"
@@ -67,6 +68,7 @@ fus::server::server(const std::filesystem::path& config_path)
 fus::server::~server()
 {
     m_instance = nullptr;
+    console::get().end(); // idempotent
     /// fixme: fus shutdown not properly implemented
     m_log.close();
 }

@@ -14,14 +14,9 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <fstream>
-#include <gflags/gflags.h>
-#include <iostream>
-#include <string_theory/iostream>
-#include <string_theory/st_format.h>
-
 #include "auth.h"
 #include "core/build_info.h"
+#include <gflags/gflags.h>
 #include "io/console.h"
 #include "io/io.h"
 #include "server.h"
@@ -52,9 +47,9 @@ int main(int argc, char* argv[])
     // Do anything that might change the server's configuration here and optionally save the new
     // configuration file at the end of the process.
     if (FLAGS_generate_keys)
-        generate_all_keys(server.config());
+        server.generate_daemon_keys();
     if (!FLAGS_generate_client_ini.empty())
-        generate_client_ini(server.config(), FLAGS_generate_client_ini);
+        server.generate_client_ini(FLAGS_generate_client_ini);
     if (FLAGS_save_config)
         server.config().write(FLAGS_config_path);
 
@@ -62,7 +57,7 @@ int main(int argc, char* argv[])
     if (FLAGS_run_auth)
         fus::auth_daemon_init();
     if (FLAGS_use_console)
-        console.begin();
+        server.start_console();
 
     // Run the lobby server to accept connections and pump the loop forever
     if (FLAGS_run_lobby) {
@@ -71,7 +66,6 @@ int main(int argc, char* argv[])
     }
 
     // Shutdown the daemons
-    console.end();
     if (fus::auth_daemon_running())
         fus::auth_daemon_close();
 

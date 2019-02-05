@@ -35,6 +35,7 @@ set(FUS_DAEMON_SOURCES
     daemon_base.cpp
     main.cpp
     server.cpp
+    server_console.cpp
 )
 
 add_executable(fus_daemon ${FUS_AUTH_DAEMON} ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
