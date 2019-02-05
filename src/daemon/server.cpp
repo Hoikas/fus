@@ -87,24 +87,21 @@ fus::server::~server()
 
 static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 {
+    fus::log_file& log = fus::server::get()->log();
     if (error < 0) {
-        fus::server::get()->log().write_debug("[{}]: Connection Header read error: {}",
-                                              fus::tcp_stream_peeraddr(client),
-                                              uv_strerror(error));
+        log.write_debug("[{}] Connection Header read error: {}", fus::tcp_stream_peeraddr(client), uv_strerror(error));
         fus::tcp_stream_shutdown(client);
         return;
     }
 
     fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
     switch (header->get_connType()) {
-    case e_protocolCli2Auth:
-        fus::server::get()->log().write_debug("[{}]: Incoming auth connection", fus::tcp_stream_peeraddr(client));
+    case fus::protocol::e_protocolCli2Auth:
+        log.write_debug("[{}] Incoming auth connection", fus::tcp_stream_peeraddr(client));
         fus::auth_daemon_accept((fus::auth_server_t*)client, msg);
         break;
     default:
-        fus::server::get()->log().write_error("[{}]: Invalid connection type '{2X}'",
-                                              fus::tcp_stream_peeraddr(client),
-                                              header->get_connType());
+        log.write_error("[{}] Invalid connection type '{2X}'", fus::tcp_stream_peeraddr(client), header->get_connType());
         fus::tcp_stream_shutdown(client);
         break;
     }

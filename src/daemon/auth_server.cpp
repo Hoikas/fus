@@ -44,7 +44,7 @@ void fus::auth_server_shutdown(fus::auth_server_t* client)
 static inline bool auth_check_read(fus::auth_server_t* client, ssize_t nread)
 {
     if (nread < 0) {
-        s_authDaemon->m_log.write_debug("[{}]: Read failed: {}",
+        s_authDaemon->m_log.write_debug("[{}] Read failed: {}",
                                         fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
                                         uv_strerror(nread));
         fus::auth_server_shutdown(client);
@@ -105,7 +105,8 @@ static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protoc
         auth_read<fus::protocol::auth_clientRegisterRequest>(client, auth_registerClient);
         break;
     default:
-        s_authDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
+        s_authDaemon->m_log.write_error("[{}] Received unimplemented message type 0x{04X} -- kicking client",
+                                        fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_type());
         fus::auth_server_shutdown(client);
     }
 }
