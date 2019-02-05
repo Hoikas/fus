@@ -32,19 +32,6 @@ enum
     e_running = (1<<1),
 };
 
-enum
-{
-    // Externally facing services
-    e_protocolCli2Auth = 0x0A,
-    e_protocolCli2Game = 0x0B,
-    e_protocolCli2File = 0x10,
-    e_protocolCli2Gate = 0x16,
-
-    // Internal services
-    e_protocolSrv2Master = 0x80,
-    e_protocolSrv2Database = 0x81,
-};
-
 // =================================================================================
 
 template<typename... _Args>
