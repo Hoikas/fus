@@ -36,6 +36,31 @@ bool fus::server::generate_keys(fus::console& console, const ST::string& args)
     return true;
 }
 
+bool fus::server::save_config(fus::console& console, const ST::string& args)
+{
+    bool srv_config = true;
+    std::filesystem::path path = "fus.ini";
+
+    if (!args.empty()) {
+        std::vector<ST::string> params = args.split(' ', 1);
+        srv_config = params[0].to_lower() == ST_LITERAL("server");
+        if (args.size() > 1)
+            path = params[1].to_path();
+    }
+
+    if (srv_config)
+        m_config.write(path);
+    else
+        generate_client_ini(path);
+    console << "Saved ";
+    if (srv_config)
+        console << "server ";
+    else
+        console << "client ";
+    console << "configuration to '" << path.c_str() << "'" << console::endl;
+    return true;
+}
+
 // =================================================================================
 
 void fus::server::start_console()
@@ -43,7 +68,9 @@ void fus::server::start_console()
     fus::console& console = console::get();
 
     // Add all console commands.
-    console.add_command("keygen", "[server(s)]", "Generates encryption keys for the requested servers",
+    console.add_command("config", "config [server|client] [output]", "Generates fus or plClient configuration",
+                        std::bind(&fus::server::save_config, this, std::placeholders::_1, std::placeholders::_2));
+    console.add_command("keygen", "keygen [server(s)]", "Generates encryption keys for the requested servers",
                         std::bind(&fus::server::generate_keys, this, std::placeholders::_1, std::placeholders::_2));
 
     console.begin();

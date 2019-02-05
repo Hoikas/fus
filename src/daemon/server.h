@@ -38,6 +38,7 @@ namespace fus
 
     protected:
         bool generate_keys(console&, const ST::string&);
+        bool save_config(console&, const ST::string&);
 
     public:
         static server* get() { return m_instance; }
