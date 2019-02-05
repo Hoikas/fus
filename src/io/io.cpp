@@ -52,6 +52,19 @@ void fus::io_close()
 
 // ============================================================================
 
+bool fus::str2addr(const char* str, uint16_t port, sockaddr_storage* addr)
+{
+    int ipv4result = uv_ip4_addr(str, port, (sockaddr_in*)addr);
+    if (ipv4result < 0) {
+        int ipv6result = uv_ip6_addr(str, port, (sockaddr_in6*)addr);
+        return ipv6result >= 0;
+    } else {
+        return ipv4result >= 0;
+    }
+}
+
+// ============================================================================
+
 template <size_t _KSz, size_t _NSz, size_t _XSz>
 void fus::io_generate_keys(uint32_t g_value, uint8_t (&k_key)[_KSz], uint8_t (&n_key)[_NSz], uint8_t (&x_key)[_XSz])
 {

@@ -34,10 +34,10 @@ namespace fus
     config_item daemon_config[] = {
         FUS_CONFIG_STR("lobby", "bindaddr", "127.0.0.1",
                        "Lobby Bind Address\n"
-                       "IPv4 Address that this fus server should listen for connections on")
+                       "IP Address that this fus server should listen for connections on")
         FUS_CONFIG_STR("lobby", "extaddr", "",
                        "External Address\n"
-                       "Address that this server should communicate to clients.\n"
+                       "IP Address that this server should communicate to clients.\n"
                        "This should be configured when NAT is in use.")
         FUS_CONFIG_INT("lobby", "port", 14617,
                        "Lobby Bind Port\n"

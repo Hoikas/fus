@@ -20,6 +20,7 @@
 #include <openssl/ossl_typ.h>
 #include <string_theory/string>
 #include <tuple>
+#include <uv.h>
 
 namespace fus
 {
@@ -30,6 +31,8 @@ namespace fus
 
     void io_init();
     void io_close();
+
+    bool str2addr(const char*, uint16_t, sockaddr_storage*);
 
     std::tuple<ST::string, ST::string, ST::string> io_generate_keys(uint32_t g_value);
 

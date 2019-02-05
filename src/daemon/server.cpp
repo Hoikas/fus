@@ -19,6 +19,7 @@
 #include "auth.h"
 #include "core/errors.h"
 #include "fus_config.h"
+#include "io/io.h"
 #include "io/net_struct.h"
 #include "io/tcp_stream.h"
 #include "protocol/common.h"
@@ -127,10 +128,9 @@ bool fus::server::start_lobby()
     m_log.write_info("Binding to '{}/{}'", bindaddr, port);
 
     uv_tcp_init(loop, &m_lobby);
-    /// fixme: ipv6
-    struct sockaddr_in addr;
-    FUS_ASSERTD(uv_ip4_addr(bindaddr, port, &addr) == 0);
-    if (uv_tcp_bind(&m_lobby, (const struct sockaddr*)&addr, 0) < 0) {
+    sockaddr_storage addr;
+    FUS_ASSERTD(str2addr(bindaddr, port, &addr));
+    if (uv_tcp_bind(&m_lobby, (sockaddr*)&addr, 0) < 0) {
         m_log.write_error("Failed to bind to '{}/{}'", bindaddr, port);
         return false;
     }
