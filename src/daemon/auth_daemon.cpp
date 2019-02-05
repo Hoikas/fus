@@ -61,18 +61,6 @@ static void auth_connection_encrypted(fus::auth_server_t* client, ssize_t result
     fus::auth_server_read(client);
 }
 
-static void auth_connect_buffer_read(fus::auth_server_t* client, ssize_t nread, void* buf)
-{
-    if (nread < 0) {
-        fus::auth_server_shutdown(client);
-        return;
-    }
-
-    fus::secure_daemon_encrypt_stream((fus::secure_daemon_t*)s_authDaemon,
-                                      (fus::crypt_stream_t*)client,
-                                      (fus::crypt_established_cb)auth_connection_encrypted);
-}
-
 void fus::auth_daemon_accept(fus::auth_server_t* client, const void* msgbuf)
 {
     // Validate connection
@@ -83,10 +71,7 @@ void fus::auth_daemon_accept(fus::auth_server_t* client, const void* msgbuf)
 
     // Init
     auth_server_init(client);
-
-    // Unencrypted auth connection prefix:
-    //     uint32_t msgsz
-    //     uuid (junk)
-    // Read in as a buffer to accept any arbitrary trash without choking too badly
-    tcp_stream_read_msg<protocol::connection_buffer>((tcp_stream_t*)client, (tcp_read_cb)auth_connect_buffer_read);
+    fus::secure_daemon_encrypt_stream((fus::secure_daemon_t*)s_authDaemon,
+                                      (fus::crypt_stream_t*)client,
+                                      (fus::crypt_established_cb)auth_connection_encrypted);
 }
