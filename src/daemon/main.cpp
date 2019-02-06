@@ -64,10 +64,11 @@ int main(int argc, char* argv[])
         server.start_console();
 
     // Run the lobby server to accept connections and pump the loop forever
-    if (FLAGS_run_lobby) {
-        if (server.start_lobby())
-            server.run_forever();
-    }
+    if (FLAGS_run_lobby)
+        server.start_lobby();
+
+    // Run the thingy...
+    server.run_forever();
 
     // Shutdown the daemons
     if (fus::admin_daemon_running())

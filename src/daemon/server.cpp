@@ -155,7 +155,6 @@ bool fus::server::start_lobby()
 
 void fus::server::run_forever()
 {
-    FUS_ASSERTD((m_flags & e_lobbyReady));
     FUS_ASSERTD(!(m_flags & e_running));
 
     m_flags |= e_running;
@@ -165,7 +164,6 @@ void fus::server::run_forever()
 
 void fus::server::run_once()
 {
-    FUS_ASSERTD((m_flags & e_lobbyReady));
     FUS_ASSERTD(!(m_flags & e_running));
 
     m_flags |= e_running;
