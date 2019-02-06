@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "admin.h"
 #include "auth.h"
 #include "core/build_info.h"
 #include <gflags/gflags.h>
@@ -26,6 +27,7 @@
 DEFINE_string(config_path, "fus.ini", "Path to fus configuration file");
 DEFINE_string(generate_client_ini, "", "Generates a server.ini file for plClient");
 DEFINE_bool(generate_keys, false, "Generate a new set of encryption keys");
+DEFINE_bool(run_admin, true, "Launch the admin daemon");
 DEFINE_bool(run_auth, true, "Launch the auth daemon");
 DEFINE_bool(run_lobby, true, "Launch the server lobby");
 DEFINE_bool(save_config, false, "Saves the server configuration file");
@@ -54,6 +56,8 @@ int main(int argc, char* argv[])
         server.config().write(FLAGS_config_path);
 
     // Init the daemons
+    if (FLAGS_run_admin)
+        fus::admin_daemon_init();
     if (FLAGS_run_auth)
         fus::auth_daemon_init();
     if (FLAGS_use_console)
@@ -66,6 +70,8 @@ int main(int argc, char* argv[])
     }
 
     // Shutdown the daemons
+    if (fus::admin_daemon_running())
+        fus::admin_daemon_close();
     if (fus::auth_daemon_running())
         fus::auth_daemon_close();
 

@@ -36,6 +36,13 @@ namespace fus
         log_file m_log;
         uint32_t m_flags;
 
+        struct admin_client_t* m_admin;
+
+    protected:
+        void admin_connect();
+        bool admin_check(console&) const;
+        bool admin_ping(console&, const ST::string&);
+
     protected:
         bool generate_keys(console&, const ST::string&);
         bool save_config(console&, const ST::string&);
@@ -52,6 +59,10 @@ namespace fus
         bool start_lobby();
         void run_forever();
         void run_once();
+
+    public:
+        bool config2addr(const ST::string&, sockaddr_storage*);
+        void fill_connection_header(void* packet);
 
     public:
         config_parser& config() { return m_config; }

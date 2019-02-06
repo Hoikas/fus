@@ -14,6 +14,7 @@
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
 add_subdirectory(buildinfo)
+add_subdirectory(client)
 add_subdirectory(core)
 add_subdirectory(daemon)
 add_subdirectory(io)

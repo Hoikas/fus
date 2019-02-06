@@ -14,13 +14,71 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "client/admin_client.h"
 #include <fstream>
 #include "io/console.h"
 #include "io/io.h"
+#include "protocol/admin.h"
 #include "server.h"
 #include <string_theory/iostream>
 #include <string_theory/st_format.h>
 #include <vector>
+
+// =================================================================================
+
+void fus::server::admin_connect()
+{
+    if (m_admin == nullptr) {
+        m_admin = (admin_client_t*)malloc(sizeof(admin_client_t));
+        admin_client_init(m_admin, uv_default_loop());
+        uv_handle_set_data((uv_handle_t*)m_admin, this);
+
+        unsigned int g = m_config.get<unsigned int>("crypt", "admin_g");
+        const ST::string& n = m_config.get<const ST::string&>("crypt", "admin_n");
+        const ST::string& x = m_config.get<const ST::string&>("crypt", "admin_x");
+        crypt_stream_set_keys_client((crypt_stream_t*)m_admin, g, n, x);
+    }
+
+    sockaddr_storage addr;
+    config2addr(ST_LITERAL("admin"), &addr);
+
+    void* header = alloca(admin_client_header_size());
+    fill_connection_header(header);
+    admin_client_connect(m_admin, (sockaddr*)&addr, header, admin_client_header_size(), nullptr);
+}
+
+bool fus::server::admin_check(console& console) const
+{
+    if (!tcp_stream_connected((const tcp_stream_t*)m_admin)) {
+        console << console::foreground_red << console::weight_bold << "Error: AdminSrv not available" << console::endl;
+        return false;
+    }
+    return true;
+}
+
+static void admin_pong(fus::admin_client_t* client, fus::net_error result, ssize_t nread, const fus::protocol::admin_pingReply* pong)
+{
+    if (result != fus::net_error::e_success) {
+        fus::console::get() << fus::console::foreground_red << fus::console::weight_bold << "Error: Ping failed" << fus::console::endl;
+        return;
+    }
+    uint32_t nowTimeMs = (uint32_t)uv_now(uv_default_loop());
+    uint32_t pingpong = nowTimeMs - pong->get_pingTime();
+
+    fus::console::get() << fus::console::foreground_cyan << fus::console::weight_bold << "PONG ("
+                        << pingpong << "ms)!" << fus::console::endl;
+}
+
+bool fus::server::admin_ping(console& console, const ST::string&)
+{
+    if (!admin_check(console))
+        return true;
+
+    // I know, I know...
+    uint32_t pingTimeMs = (uint32_t)uv_now(uv_default_loop());
+    admin_client_ping(m_admin, pingTimeMs, (client_trans_cb)admin_pong);
+    return true;
+}
 
 // =================================================================================
 
@@ -72,6 +130,11 @@ void fus::server::start_console()
                         std::bind(&fus::server::save_config, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("keygen", "keygen [server(s)]", "Generates encryption keys for the requested servers",
                         std::bind(&fus::server::generate_keys, this, std::placeholders::_1, std::placeholders::_2));
+    console.add_command("ping", "ping", "Pings the admin daemon",
+                        std::bind(&fus::server::admin_ping, this, std::placeholders::_1, std::placeholders::_2));
+
+    // Many commands require deep integration with the server, so we will naughtily connect to ourselves
+    admin_connect();
 
     console.begin();
 }

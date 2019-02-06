@@ -14,17 +14,30 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Include all protocol headers here
-#include "admin.h"
-#include "auth.h"
-#include "common.h"
+#ifndef __FUS_ADMIN_CLIENT_H
+#define __FUS_ADMIN_CLIENT_H
 
-// Protocol utilities will help with compile-time verifications
-#include "utils.h"
+#include "client_base.h"
 
-// Reinclude all of the protocol inlines to define objects
-#include "protocol_objects_begin.inl"
-#include "admin.inl"
-#include "auth.inl"
-#include "common.inl"
-#include "protocol_objects_end.inl"
+namespace fus
+{
+    struct admin_client_t;
+
+    struct admin_client_t
+    {
+        client_t m_client;
+    };
+
+    int admin_client_init(admin_client_t*, uv_loop_t*);
+    void admin_client_free(admin_client_t*);
+    void admin_client_shutdown(admin_client_t*);
+
+    void admin_client_connect(admin_client_t*, const sockaddr*, void*, size_t, client_connect_cb);
+    size_t admin_client_header_size();
+
+    void admin_client_ping(admin_client_t*, uint32_t, client_trans_cb cb=nullptr);
+
+    void admin_client_read(admin_client_t*);
+};
+
+#endif

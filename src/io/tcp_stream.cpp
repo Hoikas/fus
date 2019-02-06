@@ -56,15 +56,12 @@ static inline bool _alloc_buffer(T*& buf, size_t& bufsz, size_t alloc)
 
 // =================================================================================
 
-int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop)
+int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop, unsigned int flags)
 {
     // I realize the arguments are inverted. This is to better mirror the intention of the function.
-    int result = uv_tcp_init(loop, (uv_tcp_t*)stream);
+    int result = uv_tcp_init_ex(loop, (uv_tcp_t*)stream, flags);
     if (result < 0)
         return result;
-
-    // Zero init libuv stuff (just in case)
-    uv_handle_set_data((uv_handle_t*)stream, nullptr);
 
     // Zero init the fus structure
     stream->m_flags = 0;
@@ -73,6 +70,8 @@ int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop)
     stream->m_readBuf = nullptr;
     stream->m_readBufsz = 0;
     stream->m_readcb = nullptr;
+    stream->m_closecb = nullptr;
+    stream->m_shutdowncb = nullptr;
     return 0;
 }
 
@@ -84,35 +83,69 @@ void fus::tcp_stream_free(fus::tcp_stream_t* stream)
 
 // =================================================================================
 
-static void _tcp_close(uv_handle_t* stream)
+static void _tcp_close(fus::tcp_stream_t* stream)
 {
-    uv_close_cb cb = (uv_close_cb)uv_handle_get_data(stream);
-    // High level clients must free themselves
-    if (cb)
-        cb(stream);
-    fus::tcp_stream_free((fus::tcp_stream_t*)stream);
+    stream->m_flags &= ~fus::tcp_stream_t::e_connected;
+
+    // Usually used to handle disconnect logic
+    if (stream->m_closecb)
+        stream->m_closecb((uv_handle_t*)stream);
+    // Usually used by high level streams to free themselves
+    if (stream->m_shutdowncb)
+        stream->m_shutdowncb((uv_handle_t*)stream);
+    if (stream->m_flags & fus::tcp_stream_t::e_freeOnClose)
+        fus::tcp_stream_free(stream);
 }
 
 static void _tcp_shutdown(uv_shutdown_t* req, int status)
 {
-    FUS_ASSERTD(status == 0);
-
-    uv_close((uv_handle_t*)req->handle, _tcp_close);
+    uv_close((uv_handle_t*)req->handle, (uv_close_cb)_tcp_close);
     free(req);
 }
 
 void fus::tcp_stream_shutdown(fus::tcp_stream_t* stream, uv_close_cb cb)
 {
     FUS_ASSERTD(stream);
-    FUS_ASSERTD(cb);
 
     stream->m_flags |= tcp_stream_t::e_closing;
-    uv_handle_set_data((uv_handle_t*)stream, cb);
+    stream->m_shutdowncb = cb;
     uv_shutdown_t* req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
     uv_shutdown(req, (uv_stream_t*)stream, _tcp_shutdown);
 }
 
 // =================================================================================
+
+int fus::tcp_stream_accept(fus::tcp_stream_t* server, fus::tcp_stream_t* client)
+{
+    int result = uv_accept((uv_stream_t*)server, (uv_stream_t*)client);
+    if (result == 0) {
+        uv_tcp_nodelay((uv_tcp_t*)client, 1);
+        client->m_flags |= tcp_stream_t::e_connected;
+    }
+    return result;
+}
+
+// =================================================================================
+
+void fus::tcp_stream_close_cb(fus::tcp_stream_t* stream, uv_close_cb cb)
+{
+    stream->m_closecb = cb;
+}
+
+void fus::tcp_stream_free_on_close(fus::tcp_stream_t* stream, bool value)
+{
+    if (value)
+        stream->m_flags |= tcp_stream_t::e_freeOnClose;
+    else
+        stream->m_flags &= ~tcp_stream_t::e_freeOnClose;
+}
+
+// =================================================================================
+
+bool fus::tcp_stream_connected(const fus::tcp_stream_t* stream)
+{
+    return stream->m_flags & tcp_stream_t::e_connected;
+}
 
 ST::string fus::tcp_stream_peeraddr(const fus::tcp_stream_t* stream)
 {

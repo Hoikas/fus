@@ -14,34 +14,25 @@
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
 include_directories(${LIBUV_INCLUDE_DIRS})
-include_directories(${OPENSSL_INCLUDE_DIRS})
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../")
 
-set(FUS_IO_HEADERS
-    console.h
-    crypt_stream.h
-    io.h
-    log_file.h
-    net_struct.h
-    net_error.h
-    tcp_stream.h
+set(FUS_CLIENT_HEADERS
+    admin_client.h
+    client_base.h
 )
 
-set(FUS_IO_SOURCES
-    console.cpp
-    crypt_stream.cpp
-    io.cpp
-    log_file.cpp
-    net_struct.cpp
-    tcp_stream.cpp
+set(FUS_CLIENT_SOURCES
+    admin_client.cpp
+    client_base.cpp
 )
 
-add_library(fus_io STATIC ${FUS_IO_HEADERS} ${FUS_IO_SOURCES})
-target_link_libraries(fus_io ${LIBUV_LIBRARIES})
-target_link_openssl_crypto(fus_io)
-target_link_libraries(fus_io ${STRING_THEORY_LIBRARIES})
-target_link_libraries(fus_io fus_core)
+add_library(fus_client STATIC ${FUS_CLIENT_HEADERS} ${FUS_CLIENT_SOURCES})
+target_link_libraries(fus_client ${LIBUV_LIBRARIES})
+target_link_libraries(fus_client ${STRING_THEORY_LIBRARIES})
+target_link_libraries(fus_client fus_core)
+target_link_libraries(fus_client fus_io)
+target_link_libraries(fus_client fus_protocol)
 
-source_group("Header Files" FILES ${FUS_IO_HEADERS})
-source_group("Source Files" FILES ${FUS_IO_SOURCES})
+source_group("Header Files" FILES ${FUS_CLIENT_HEADERS})
+source_group("Source Files" FILES ${FUS_CLIENT_SOURCES})

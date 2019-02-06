@@ -35,8 +35,24 @@ namespace fus
         {
             struct
             {
-                BIGNUM* k;
                 BIGNUM* n;
+                union
+                {
+                    // clients
+                    struct
+                    {
+                        uint32_t g;
+                        BIGNUM* n;
+                        BIGNUM* seed;
+                        BIGNUM* x;
+                    };
+
+                    // servers
+                    struct
+                    {
+                        BIGNUM* k;
+                    };
+                };
             };
             struct
             {
@@ -48,8 +64,14 @@ namespace fus
 
     void crypt_stream_init(crypt_stream_t*);
     void crypt_stream_free(crypt_stream_t*);
+    void crypt_stream_free_keys(crypt_stream_t*);
 
-    void crypt_stream_establish_server(crypt_stream_t*, BIGNUM*, BIGNUM*, crypt_established_cb cb=nullptr);
+    void crypt_stream_set_keys_client(crypt_stream_t*, uint32_t, BIGNUM*, BIGNUM*);
+    void crypt_stream_set_keys_client(crypt_stream_t*, uint32_t, const ST::string&, const ST::string&);
+    void crypt_stream_set_keys_server(crypt_stream_t*, BIGNUM*, BIGNUM*);
+
+    void crypt_stream_establish_server(crypt_stream_t*, crypt_established_cb cb=nullptr);
+    void crypt_stream_establish_client(crypt_stream_t*, crypt_established_cb cb=nullptr);
 
     void crypt_stream_decipher(crypt_stream_t*, void*, size_t);
     void crypt_stream_encipher(crypt_stream_t*, void*, size_t);

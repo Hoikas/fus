@@ -17,6 +17,7 @@
 #include <openssl/bn.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <string_theory/st_codecs.h>
 
 #include "core/errors.h"
 #include "crypt_stream.h"
@@ -70,10 +71,75 @@ void fus::crypt_stream_init(fus::crypt_stream_t* stream)
 
 void fus::crypt_stream_free(fus::crypt_stream_t* stream)
 {
-    if (stream->m_stream.m_flags & tcp_stream_t::e_encrypted) {
+    tcp_stream_t* tcp = (tcp_stream_t*)stream;
+    if (tcp->m_flags & tcp_stream_t::e_encrypted) {
         EVP_CIPHER_CTX_free(stream->m_crypt.encrypt);
         EVP_CIPHER_CTX_free(stream->m_crypt.decrypt);
+        tcp->m_flags &= ~tcp_stream_t::e_encrypted;
     }
+    crypt_stream_free_keys(stream);
+}
+
+void fus::crypt_stream_free_keys(fus::crypt_stream_t* stream)
+{
+    tcp_stream_t* tcp = (tcp_stream_t*)stream;
+    if (tcp->m_flags & tcp_stream_t::e_hasCliKeys) {
+        if (tcp->m_flags & tcp_stream_t::e_ownKeys) {
+            BN_free(stream->m_crypt.n);
+            BN_free(stream->m_crypt.x);
+            tcp->m_flags &= ~tcp_stream_t::e_ownKeys;
+        }
+        if (tcp->m_flags & tcp_stream_t::e_ownSeed) {
+            BN_free(stream->m_crypt.seed);
+            tcp->m_flags &= ~tcp_stream_t::e_ownSeed;
+        }
+        tcp->m_flags &= ~tcp_stream_t::e_hasCliKeys;
+    }
+    if (tcp->m_flags & tcp_stream_t::e_ownSrvKeysMask) {
+        BN_free(stream->m_crypt.k);
+        BN_free(stream->m_crypt.n);
+        tcp->m_flags &= ~tcp_stream_t::e_ownSrvKeysMask;
+    }
+}
+
+// =================================================================================
+
+void fus::crypt_stream_set_keys_client(fus::crypt_stream_t* stream, uint32_t g, BIGNUM* n, BIGNUM* x)
+{
+    FUS_ASSERTD(!(((tcp_stream_t*)stream)->m_flags & tcp_stream_t::e_encrypted));
+    ((tcp_stream_t*)stream)->m_flags |= tcp_stream_t::e_hasCliKeys;
+
+    stream->m_crypt.g = g;
+    stream->m_crypt.n = n;
+    stream->m_crypt.x = x;
+}
+
+static inline void _load_key(BIGNUM* bn, const ST::string& key)
+{
+    uint8_t buf[64];
+    FUS_ASSERTD(ST::base64_decode(key, buf, sizeof(buf)) == sizeof(buf));
+    BN_bin2bn((unsigned char*)buf, sizeof(buf), bn);
+}
+
+void fus::crypt_stream_set_keys_client(fus::crypt_stream_t* stream, uint32_t g, const ST::string& n, const ST::string& x)
+{
+    BIGNUM* nkey = BN_new();
+    BIGNUM* xkey = BN_new();
+
+    _load_key(nkey, n);
+    _load_key(xkey, x);
+
+    crypt_stream_set_keys_client(stream, g, nkey, xkey);
+    ((tcp_stream_t*)stream)->m_flags |= tcp_stream_t::e_ownKeys;
+}
+
+void fus::crypt_stream_set_keys_server(fus::crypt_stream_t* stream, BIGNUM* k, BIGNUM* n)
+{
+    FUS_ASSERTD(!(((tcp_stream_t*)stream)->m_flags & tcp_stream_t::e_encrypted));
+    ((tcp_stream_t*)stream)->m_flags |= tcp_stream_t::e_hasSrvKeys;
+
+    stream->m_crypt.k = k;
+    stream->m_crypt.n = n;
 }
 
 // =================================================================================
@@ -148,6 +214,7 @@ static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, ui
     uint8_t srv_seed[7];
     BN_bn2lebinpad(seed, cli_seed, sizeof(cli_seed));
     BN_CTX_end(fus::io_crypt_bn.ctx);
+    fus::crypt_stream_free_keys(stream);
 
     RAND_bytes(srv_seed, sizeof(srv_seed));
     uint8_t key[7];
@@ -156,7 +223,7 @@ static void _handshake_ydata_read(fus::crypt_stream_t* stream, ssize_t nread, ui
     _init_encryption(stream, srv_seed, key, sizeof(key));
 }
 
-static void _handshake_header_read(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* msg)
+static void _handshake_header_read_srv(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* msg)
 {
     if (nread < 0) {
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)stream);
@@ -177,12 +244,88 @@ static void _handshake_header_read(fus::crypt_stream_t* stream, ssize_t nread, u
     }
 }
 
-void fus::crypt_stream_establish_server(fus::crypt_stream_t* stream, BIGNUM* k, BIGNUM* n, crypt_established_cb cb)
+void fus::crypt_stream_establish_server(fus::crypt_stream_t* stream, crypt_established_cb cb)
 {
-    stream->m_crypt.k = k;
-    stream->m_crypt.n = n;
+    FUS_ASSERTD(((tcp_stream_t*)stream)->m_flags & tcp_stream_t::e_hasSrvKeys);
     stream->m_encryptcb = cb;
-    tcp_stream_read_struct((tcp_stream_t*)stream, &s_cryptHandshakeStruct, (tcp_read_cb)_handshake_header_read);
+    tcp_stream_read_struct((tcp_stream_t*)stream, &s_cryptHandshakeStruct, (tcp_read_cb)_handshake_header_read_srv);
+}
+
+// =================================================================================
+
+static void _srvseed_read(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* srv_seed)
+{
+    if (nread < 0) {
+        if (stream->m_encryptcb)
+            stream->m_encryptcb(stream, nread);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)stream);
+        return;
+    }
+
+    uint8_t cli_seed[64];
+    BN_bn2lebinpad(stream->m_crypt.seed, cli_seed, sizeof(cli_seed));
+    fus::crypt_stream_free_keys(stream);
+
+    uint8_t* key = (uint8_t*)alloca(nread);
+    for (ssize_t i = 0; i < nread; ++i) {
+        key[i] = cli_seed[i] ^ srv_seed[i];
+    }
+    stream->m_crypt.encrypt = _init_evp(key, nread, 1);
+    stream->m_crypt.decrypt = _init_evp(key, nread, 0);
+    ((fus::tcp_stream_t*)stream)->m_flags |= fus::tcp_stream_t::e_encrypted;
+
+    if (stream->m_encryptcb)
+        stream->m_encryptcb(stream, 0);
+}
+
+static void _handshake_header_read_cli(fus::crypt_stream_t* stream, ssize_t nread, uint8_t* msg)
+{
+    if (nread < 0 || msg[0] != e_encrypt || msg[1] < 9 || msg[1] > 4096) {
+        if (stream->m_encryptcb)
+            stream->m_encryptcb(stream, nread < 0 ? nread : UV_EMSGSIZE);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)stream);
+        return;
+    }
+
+    uint8_t bufsz = msg[1] - 2;
+    fus::tcp_stream_read((fus::tcp_stream_t*)stream, bufsz, (fus::tcp_read_cb)_srvseed_read);
+}
+
+void fus::crypt_stream_establish_client(fus::crypt_stream_t* stream, crypt_established_cb cb)
+{
+    FUS_ASSERTD(((tcp_stream_t*)stream)->m_flags & tcp_stream_t::e_hasCliKeys);
+    stream->m_encryptcb = cb;
+
+    // What a turd. We're going to need to keep this bignum for a bit.
+    stream->m_crypt.seed = BN_new();
+    ((tcp_stream_t*)stream)->m_flags |= tcp_stream_t::e_ownSeed;
+
+    BN_CTX_start(fus::io_crypt_bn.ctx);
+    BIGNUM* b = BN_CTX_get(fus::io_crypt_bn.ctx);
+    BIGNUM* y = BN_CTX_get(fus::io_crypt_bn.ctx);
+    BIGNUM* g = BN_CTX_get(fus::io_crypt_bn.ctx);
+
+    // Values taken from CWE's plBigNum::Rand(), used by NetMsgCryptClientStart()
+    BN_rand(b, 512, BN_RAND_TOP_ONE, BN_RAND_BOTTOM_ANY);
+    BN_set_word(g, stream->m_crypt.g);
+
+    // This is easier to follow in the old timey pyfus. Maybe one day, its code will be resurrected...
+    BN_mod_exp(stream->m_crypt.seed, stream->m_crypt.x, b, stream->m_crypt.n, fus::io_crypt_bn.ctx);
+    BN_mod_exp(y, g, b, stream->m_crypt.n, fus::io_crypt_bn.ctx);
+
+    // Send the Y-data to the server and await its crypt response.
+    uint8_t connect[66];
+    {
+        uint8_t* ptr = connect;
+        *ptr++ = e_connect;
+        *ptr++ = sizeof(connect);
+        BN_bn2lebinpad(y, ptr, sizeof(connect) - 2);
+    }
+    tcp_stream_write((tcp_stream_t*)stream, connect, sizeof(connect));
+    tcp_stream_read_struct((tcp_stream_t*)stream, &s_cryptHandshakeStruct, (tcp_read_cb)_handshake_header_read_cli);
+
+    // Nukes the temp bignums
+    BN_CTX_end(fus::io_crypt_bn.ctx);
 }
 
 // =================================================================================

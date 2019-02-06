@@ -30,12 +30,22 @@ namespace fus
     {
         enum
         {
+            // TCP Stream Flags
             e_reading = (1<<0),
             e_readQueued = (1<<1),
             e_readCallback = (1<<2),
             e_readAllocFailed = (1<<3),
-            e_encrypted = (1<<4),
-            e_closing = (1<<5),
+            e_closing = (1<<4),
+            e_freeOnClose = (1<<5),
+            e_connected = (1<<6),
+
+            // Crypt Stream Flags
+            e_encrypted = (1<<7),
+            e_ownSeed = (1<<8),
+            e_ownKeys = (1<<9),
+            e_hasSrvKeys = (1<<10),
+            e_hasCliKeys = (1<<11),
+            e_ownSrvKeysMask = e_ownKeys | e_hasSrvKeys,
         };
 
         uv_tcp_t m_tcp;
@@ -46,12 +56,20 @@ namespace fus
         char* m_readBuf;
         size_t m_readBufsz;
         tcp_read_cb m_readcb;
+        uv_close_cb m_closecb;
+        uv_close_cb m_shutdowncb;
     };
 
-    int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
+    int tcp_stream_init(tcp_stream_t*, uv_loop_t*, unsigned int flags=0);
     void tcp_stream_free(tcp_stream_t*);
     void tcp_stream_shutdown(tcp_stream_t*, uv_close_cb cb=nullptr);
 
+    int tcp_stream_accept(fus::tcp_stream_t* server, fus::tcp_stream_t* client);
+
+    void tcp_stream_close_cb(tcp_stream_t*, uv_close_cb);
+    void tcp_stream_free_on_close(tcp_stream_t*, bool);
+
+    bool tcp_stream_connected(const tcp_stream_t*);
     ST::string tcp_stream_peeraddr(const tcp_stream_t*);
 
     void tcp_stream_read(tcp_stream_t*, size_t msgsz, tcp_read_cb read_cb);

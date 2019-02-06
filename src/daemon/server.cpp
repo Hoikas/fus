@@ -16,7 +16,9 @@
 
 #include <iostream>
 
+#include "admin.h"
 #include "auth.h"
+#include "client/admin_client.h"
 #include "core/errors.h"
 #include "fus_config.h"
 #include "io/console.h"
@@ -48,15 +50,12 @@ struct max_sizeof<_Arg0, _Args...>
     static constexpr size_t value = std::max(sizeof(_Arg0), max_sizeof<_Args...>::value);
 };
 
-/// FIXME: remove base types when more clients are available
-constexpr size_t k_clientMemsz = max_sizeof<fus::auth_server_t,
-                                            fus::crypt_stream_t,
-                                            fus::tcp_stream_t>::value;
+constexpr size_t k_clientMemsz = max_sizeof<fus::admin_server_t, fus::auth_server_t>::value;
 
 // =================================================================================
 
 fus::server::server(const std::filesystem::path& config_path)
-    : m_config(fus::daemon_config), m_flags()
+    : m_config(fus::daemon_config), m_flags(), m_admin(nullptr)
 {
     m_instance = this;
     m_config.read(config_path);
@@ -68,6 +67,10 @@ fus::server::server(const std::filesystem::path& config_path)
 fus::server::~server()
 {
     m_instance = nullptr;
+    if (m_admin) {
+        admin_client_free(m_admin);
+        m_admin = nullptr;
+    }
     console::get().end(); // idempotent
     /// fixme: fus shutdown not properly implemented
     m_log.close();
@@ -86,6 +89,10 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
 
     fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
     switch (header->get_connType()) {
+    case fus::protocol::e_protocolCli2Admin:
+        log.write_debug("[{}] Incoming admin connection", fus::tcp_stream_peeraddr(client));
+        fus::admin_daemon_accept((fus::admin_server_t*)client, msg);
+        break;
     case fus::protocol::e_protocolCli2Auth:
         log.write_debug("[{}] Incoming auth connection", fus::tcp_stream_peeraddr(client));
         fus::auth_daemon_accept((fus::auth_server_t*)client, msg);
@@ -97,7 +104,7 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
     }
 }
 
-static void _on_client_connect(uv_stream_t* lobby, int status)
+static void _on_client_connect(fus::tcp_stream_t* lobby, int status)
 {
     if (status < 0) {
         fus::server::get()->log().write_debug("New connection error: {}", uv_strerror(status));
@@ -109,8 +116,8 @@ static void _on_client_connect(uv_stream_t* lobby, int status)
     // the pointer address changing. That's a generally a bad thing for non-POD, like us.
     fus::tcp_stream_t* client = (fus::tcp_stream_t*)malloc(k_clientMemsz);
     fus::tcp_stream_init(client, uv_default_loop());
-    if (uv_accept(lobby, (uv_stream_t*)client) == 0) {
-        uv_tcp_nodelay((uv_tcp_t*)client, 1);
+    fus::tcp_stream_free_on_close(client, true);
+    if (fus::tcp_stream_accept(lobby, client) == 0) {
         fus::tcp_stream_read_msg<fus::protocol::connection_header>(client, _on_header_read);
     } else {
         uv_close((uv_handle_t*)client, (uv_close_cb)fus::tcp_stream_free);
@@ -136,7 +143,7 @@ bool fus::server::start_lobby()
         m_log.write_error("Failed to bind to '{}/{}'", bindaddr, port);
         return false;
     }
-    if (uv_listen((uv_stream_t*)&m_lobby, 128, _on_client_connect) < 0) {
+    if (uv_listen((uv_stream_t*)&m_lobby, 128, (uv_connection_cb)_on_client_connect) < 0) {
         m_log.write_error("Failed to listen for incoming connections on '{}/{}'", bindaddr, port);
         return false;
     }
@@ -164,4 +171,29 @@ void fus::server::run_once()
     m_flags |= e_running;
     uv_run(uv_default_loop(), UV_RUN_ONCE);
     m_flags &= ~e_running;
+}
+
+// =================================================================================
+
+bool fus::server::config2addr(const ST::string& section, sockaddr_storage* addr)
+{
+    const ST::string& addrstr = m_config.get<const ST::string&>(section, ST_LITERAL("addr"));
+    unsigned int port = m_config.get<unsigned int>(section, ST_LITERAL("port"));
+    if (addrstr.empty()) {
+        const char* bindaddr = m_config.get<const char*>("lobby", "bindaddr");
+        return str2addr(bindaddr, port, addr);
+    } else {
+        return str2addr(addrstr.c_str(), (uint16_t)port, addr);
+    }
+}
+
+void fus::server::fill_connection_header(void* packet)
+{
+    auto header = (fus::protocol::connection_header*)packet;
+    header->set_msgsz(sizeof(fus::protocol::connection_header) - 4); // does not include the buf field
+    header->set_buildId(m_config.get<unsigned int>("client", "buildId"));
+    header->set_buildType(m_config.get<unsigned int>("client", "buildType"));
+    header->set_branchId(m_config.get<unsigned int>("client", "branchId"));
+    header->get_product()->from_string(m_config.get<const char*>("client", "product"));
+    header->set_bufsz(0);
 }

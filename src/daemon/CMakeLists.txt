@@ -18,6 +18,13 @@ include_directories(${LIBUV_INCLUDE_DIRS})
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../")
 
+set(FUS_ADMIN_DAEMON
+    admin.h
+    admin_daemon.cpp
+    admin_server.cpp
+    admin_private.h
+)
+
 set(FUS_AUTH_DAEMON
     auth.h
     auth_daemon.cpp
@@ -38,14 +45,16 @@ set(FUS_DAEMON_SOURCES
     server_console.cpp
 )
 
-add_executable(fus_daemon ${FUS_AUTH_DAEMON} ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
+add_executable(fus_daemon ${FUS_ADMIN_DAEMON} ${FUS_AUTH_DAEMON} ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
 target_link_libraries(fus_daemon ${GFLAGS_LIBRARIES})
 target_link_libraries(fus_daemon ${LIBUV_LIBRARIES})
 target_link_libraries(fus_daemon ${STRING_THEORY_LIBRARIES})
+target_link_libraries(fus_daemon fus_client)
 target_link_libraries(fus_daemon fus_core)
 target_link_libraries(fus_daemon fus_io)
 target_link_libraries(fus_daemon fus_protocol)
 
+source_group("Admin Daemon" FILES ${FUS_ADMIN_DAEMON})
 source_group("Auth Daemon" FILES ${FUS_AUTH_DAEMON})
 source_group("Header Files" FILES ${FUS_DAEMON_HEADERS})
 source_group("Source Files" FILES ${FUS_DAEMON_SOURCES})

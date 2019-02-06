@@ -19,16 +19,6 @@
 
 #include "core/config_parser.h"
 
-#define FUS_CONFIG_CRYPT(server, gval) \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_k"), fus::config_item::value_type::e_string, \
-      ST::null, ST::null }, \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_n"), fus::config_item::value_type::e_string, \
-      ST::null, ST::null }, \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_x"), fus::config_item::value_type::e_string, \
-      ST::null, ST::null }, \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_g"), fus::config_item::value_type::e_integer, \
-      ST_LITERAL(#gval), ST::null }, \
-
 namespace fus
 {
     config_item daemon_config[] = {
@@ -74,12 +64,35 @@ namespace fus
                        "    - default: Default verification, any client can connect to file or gatekeeper but all others must match the expected values\n"
                        "    - strict: Strict verification, like default but the product uuid is verified for file and gatekeeper connections")
 
+#define FUS_CONFIG_CLIENT(type) \
+    FUS_CONFIG_STR(type, "addr", "", \
+                   "Server Address\n" \
+                   "Address to connect all " type " clients to") \
+    FUS_CONFIG_INT(type, "port", 14617, \
+                   "Server Port\n" \
+                   "Port to connect all " type " clients to")
+
+        FUS_CONFIG_CLIENT("admin")
+
+#undef FUS_CONFIG_CLIENT
+
+#define FUS_CONFIG_CRYPT(server, gval) \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_k"), fus::config_item::value_type::e_string, \
+      ST::null, ST::null }, \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_n"), fus::config_item::value_type::e_string, \
+      ST::null, ST::null }, \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_x"), fus::config_item::value_type::e_string, \
+      ST::null, ST::null }, \
+    { ST_LITERAL("crypt"), ST_LITERAL(server##"_g"), fus::config_item::value_type::e_integer, \
+      ST_LITERAL(#gval), ST::null }, \
+
+        FUS_CONFIG_CRYPT("admin", 19)
         FUS_CONFIG_CRYPT("auth", 41)
         FUS_CONFIG_CRYPT("game", 73)
         FUS_CONFIG_CRYPT("gate", 4)
-    };
-};
 
 #undef FUS_CONFIG_CRYPT
+    };
+};
 
 #endif
