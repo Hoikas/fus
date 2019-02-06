@@ -17,6 +17,7 @@
 #include "admin_private.h"
 #include "core/errors.h"
 #include "daemon_base.h"
+#include <new>
 #include "protocol/admin.h"
 
 // =================================================================================
@@ -24,10 +25,12 @@
 void fus::admin_server_init(fus::admin_server_t* client)
 {
     crypt_stream_init((crypt_stream_t*)client);
+    new(&client->m_link) FUS_LIST_LINK(admin_server_t);
 }
 
 void fus::admin_server_free(fus::admin_server_t* client)
 {
+    client->m_link.~list_link();
     crypt_stream_free((crypt_stream_t*)client);
 }
 
@@ -66,6 +69,28 @@ static void admin_pingpong(fus::admin_server_t* client, ssize_t nread, fus::prot
     fus::admin_server_read(client);
 }
 
+static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol::admin_wallRequest* msg)
+{
+    if (!admin_check_read(client, nread))
+        return;
+
+    ST::string senderaddr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client);
+
+    fus::protocol::admin_msg<fus::protocol::admin_wallBCast> bcast;
+    bcast.m_header.set_type(fus::protocol::admin2client::e_wallBCast);
+    bcast.m_contents.set_sender(senderaddr);
+    bcast.m_contents.set_text(msg->get_text());
+
+    auto it = s_adminDaemon->m_clients.front();
+    while (it) {
+        fus::tcp_stream_write((fus::tcp_stream_t*)it, bcast, sizeof(bcast));
+        it = s_adminDaemon->m_clients.next(it);
+    }
+
+    // Continue reading
+    fus::admin_server_read(client);
+}
+
 // =================================================================================
 
 static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::protocol::msg_std_header* msg)
@@ -76,6 +101,9 @@ static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::prot
     switch (msg->get_type()) {
     case fus::protocol::client2admin::e_pingRequest:
         admin_read<fus::protocol::admin_pingRequest>(client, admin_pingpong);
+        break;
+    case fus::protocol::client2admin::e_wallRequest:
+        admin_read<fus::protocol::admin_wallRequest>(client, admin_wall);
         break;
     default:
         s_adminDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());

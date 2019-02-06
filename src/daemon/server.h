@@ -42,6 +42,7 @@ namespace fus
         void admin_connect();
         bool admin_check(console&) const;
         bool admin_ping(console&, const ST::string&);
+        bool admin_wall(console&, const ST::string&);
 
     protected:
         bool generate_keys(console&, const ST::string&);

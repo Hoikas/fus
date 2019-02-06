@@ -17,6 +17,7 @@
 #ifndef __FUS_ADMIN_DAEMON_H
 #define __FUS_ADMIN_DAEMON_H
 
+#include "core/list.h"
 #include "io/crypt_stream.h"
 
 namespace fus
@@ -26,6 +27,7 @@ namespace fus
     struct admin_server_t
     {
         crypt_stream_t m_stream;
+        FUS_LIST_LINK(admin_server_t) m_link;
     };
 
     void admin_server_init(admin_server_t*);

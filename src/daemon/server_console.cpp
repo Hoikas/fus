@@ -26,12 +26,23 @@
 
 // =================================================================================
 
+static void admin_wallBCast(fus::admin_client_t* client, const ST::string& sender, const ST::string& text)
+{
+    fus::console& c = fus::console::get();
+    c << fus::console::weight_bold << fus::console::foreground_cyan << "From " << sender << ": "
+      << fus::console::weight_normal << fus::console::foreground_white << text << fus::console::endl;
+}
+
+// =================================================================================
+
 void fus::server::admin_connect()
 {
     if (m_admin == nullptr) {
         m_admin = (admin_client_t*)malloc(sizeof(admin_client_t));
         admin_client_init(m_admin, uv_default_loop());
+
         uv_handle_set_data((uv_handle_t*)m_admin, this);
+        admin_client_wall_handler(m_admin, admin_wallBCast);
 
         unsigned int g = m_config.get<unsigned int>("crypt", "admin_g");
         const ST::string& n = m_config.get<const ST::string&>("crypt", "admin_n");
@@ -77,6 +88,15 @@ bool fus::server::admin_ping(console& console, const ST::string&)
     // I know, I know...
     uint32_t pingTimeMs = (uint32_t)uv_now(uv_default_loop());
     admin_client_ping(m_admin, pingTimeMs, (client_trans_cb)admin_pong);
+    return true;
+}
+
+bool fus::server::admin_wall(console& console, const ST::string& msg)
+{
+    if (msg.empty())
+        return false;
+    if (admin_check(console))
+        admin_client_wall(m_admin, msg);
     return true;
 }
 
@@ -132,6 +152,8 @@ void fus::server::start_console()
                         std::bind(&fus::server::generate_keys, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("ping", "ping", "Pings the admin daemon",
                         std::bind(&fus::server::admin_ping, this, std::placeholders::_1, std::placeholders::_2));
+    console.add_command("wall", "wall [msg]", "Sends a message to all server consoles and players in the cavern",
+                        std::bind(&fus::server::admin_wall, this, std::placeholders::_1, std::placeholders::_2));
 
     // Many commands require deep integration with the server, so we will naughtily connect to ourselves
     admin_connect();

@@ -50,6 +50,7 @@ namespace fus
             enum
             {
                 e_pingRequest,
+                e_wallRequest,
 
                 e_numMsgs
             };
@@ -60,6 +61,7 @@ namespace fus
             enum
             {
                 e_pingReply,
+                e_wallBCast,
 
                 e_numMsgs
             };

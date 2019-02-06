@@ -22,10 +22,12 @@
 namespace fus
 {
     struct admin_client_t;
+    typedef void (*admin_client_wall_cb)(admin_client_t*, const ST::string&, const ST::string&);
 
     struct admin_client_t
     {
         client_t m_client;
+        admin_client_wall_cb m_wallcb;
     };
 
     int admin_client_init(admin_client_t*, uv_loop_t*);
@@ -35,7 +37,10 @@ namespace fus
     void admin_client_connect(admin_client_t*, const sockaddr*, void*, size_t, client_connect_cb);
     size_t admin_client_header_size();
 
+    void admin_client_wall_handler(admin_client_t*, admin_client_wall_cb cb=nullptr);
+
     void admin_client_ping(admin_client_t*, uint32_t, client_trans_cb cb=nullptr);
+    void admin_client_wall(admin_client_t*, const ST::string&);
 
     void admin_client_read(admin_client_t*);
 };

@@ -16,6 +16,7 @@
 
 #include "admin_private.h"
 #include "core/errors.h"
+#include <new>
 #include "protocol/common.h"
 #include "server.h"
 
@@ -33,6 +34,7 @@ void fus::admin_daemon_init()
     secure_daemon_init((secure_daemon_t*)s_adminDaemon, ST_LITERAL("admin"));
     s_adminDaemon->m_log.set_level(server::get()->config().get<const ST::string&>("log", "level"));
     s_adminDaemon->m_log.open(uv_default_loop(), ST_LITERAL("admin_daemon"));
+    new(&s_adminDaemon->m_clients) FUS_LIST_DECL(admin_server_t, m_link);
 }
 
 bool fus::admin_daemon_running()
@@ -58,6 +60,7 @@ static void admin_connection_encrypted(fus::admin_server_t* client, ssize_t resu
         return;
     }
 
+    s_adminDaemon->m_clients.push_back(client);
     fus::admin_server_read(client);
 }
 
