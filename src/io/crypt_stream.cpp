@@ -95,10 +95,13 @@ void fus::crypt_stream_free_keys(fus::crypt_stream_t* stream)
         }
         tcp->m_flags &= ~tcp_stream_t::e_hasCliKeys;
     }
-    if (tcp->m_flags & tcp_stream_t::e_ownSrvKeysMask) {
-        BN_free(stream->m_crypt.k);
-        BN_free(stream->m_crypt.n);
-        tcp->m_flags &= ~tcp_stream_t::e_ownSrvKeysMask;
+    if (tcp->m_flags & tcp_stream_t::e_hasSrvKeys) {
+        if (tcp->m_flags & tcp_stream_t::e_ownKeys) {
+            BN_free(stream->m_crypt.k);
+            BN_free(stream->m_crypt.n);
+            tcp->m_flags &= ~tcp_stream_t::e_ownKeys;
+        }
+        tcp->m_flags &= ~tcp_stream_t::e_hasSrvKeys;
     }
 }
 
