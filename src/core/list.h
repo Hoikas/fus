@@ -195,7 +195,7 @@ namespace fus
     T* list_link<T>::next()
     {
         if ((size_t)m_nextNode & 1)
-            return NULL;
+            return nullptr;
         return m_nextNode;
     }
 
@@ -361,7 +361,7 @@ namespace fus
     list_link<T>* list<T>::get_link(const T* node) const
     {
         FUS_ASSERTD(m_offset != (size_t)-1);
-        return (link<T>*)((size_t)node + m_offset);
+        return (list_link<T>*)((size_t)node + m_offset);
     }
 
 // =================================================================================
