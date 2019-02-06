@@ -44,7 +44,7 @@ else()
         COMMAND git rev-parse --abbrev-ref HEAD
         OUTPUT_VARIABLE GIT_BRANCH)
 
-    if(GIT_DIFF EQUAL 1)
+    if(${GIT_DIFF} STREQUAL "1")
         set(GIT_DIRTY "+")
     else()
         set(GIT_DIRTY "")
