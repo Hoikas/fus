@@ -50,6 +50,8 @@ namespace fus
         bool operator ==(const uuid& rhs) const { return equals(rhs); }
         bool operator <(const uuid& rhs) const;
 
+        uuid& operator =(const uuid& rhs) { memcpy(m_data, rhs.m_data, sizeof(m_data)); return *this; }
+
         static uuid generate();
         static uuid null;
     };
