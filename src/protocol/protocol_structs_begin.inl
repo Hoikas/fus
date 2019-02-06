@@ -21,6 +21,13 @@
         struct name final { \
             static const fus::net_struct_t* net_struct;
 
+#define FUS_NET_FIELD_BLOB(name, size) \
+    uint8_t m_##name##[size]; \
+    \
+    uint32_t get_##name##sz() const { return size; } \
+    const uint8_t* get_##name() const { return m_##name; } \
+    uint8_t* get_##name() { return m_##name; }
+
 #define FUS_NET_FIELD_BUFFER(name) \
     uint32_t m_##name##sz; \
     uint8_t m_##name[]; \

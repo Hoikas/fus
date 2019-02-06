@@ -18,6 +18,7 @@
     const fus::net_struct_t* fus::protocol::name::net_struct = &fus::protocol::_net_structs::name;
 
 // noops
+#define FUS_NET_FIELD_BLOB(name, size) ;
 #define FUS_NET_FIELD_BUFFER(name) ;
 #define FUS_NET_FIELD_BUFFER_TINY(name) ;
 #define FUS_NET_FIELD_BUFFER_HUGE(name) ;

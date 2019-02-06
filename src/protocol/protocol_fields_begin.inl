@@ -18,6 +18,9 @@
     namespace fus { namespace protocol { namespace _fields { \
         static const fus::net_field_t name[] = {
 
+#define FUS_NET_FIELD_BLOB(name, size) \
+    { fus::net_field_t::data_type::e_blob, #name, size },
+
 #define FUS_NET_FIELD_BUFFER(name) \
     { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer, #name, 0 },
