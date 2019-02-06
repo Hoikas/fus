@@ -21,12 +21,20 @@
 #include "client/admin_client.h"
 #include "core/errors.h"
 #include "fus_config.h"
+#include <gflags/gflags.h>
 #include "io/console.h"
 #include "io/io.h"
 #include "io/net_struct.h"
 #include "io/tcp_stream.h"
 #include "protocol/common.h"
 #include "server.h"
+
+// =================================================================================
+
+DEFINE_bool(run_admin, true, "Launch the admin daemon");
+DEFINE_bool(run_auth, true, "Launch the auth daemon");
+
+// =================================================================================
 
 fus::server* fus::server::m_instance = nullptr;
 
@@ -71,6 +79,7 @@ fus::server::~server()
         admin_client_free(m_admin);
         m_admin = nullptr;
     }
+    shutdown_daemons();
     console::get().end(); // idempotent
     /// fixme: fus shutdown not properly implemented
     m_log.close();
@@ -128,6 +137,7 @@ bool fus::server::start_lobby()
 {
     FUS_ASSERTD(!(m_flags & e_lobbyReady));
     FUS_ASSERTD(!(m_flags & e_running));
+    init_daemons();
 
     uv_loop_t* loop = uv_default_loop();
     m_log.open(loop, ST_LITERAL("lobby"));
@@ -169,6 +179,24 @@ void fus::server::run_once()
     m_flags |= e_running;
     uv_run(uv_default_loop(), UV_RUN_ONCE);
     m_flags &= ~e_running;
+}
+
+// =================================================================================
+
+void fus::server::init_daemons()
+{
+    if (FLAGS_run_admin)
+        admin_daemon_init();
+    if (FLAGS_run_auth)
+        auth_daemon_init();
+}
+
+void fus::server::shutdown_daemons()
+{
+    if (admin_daemon_running())
+        admin_daemon_free();
+    if (auth_daemon_running())
+        auth_daemon_free();
 }
 
 // =================================================================================

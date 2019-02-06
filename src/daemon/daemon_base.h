@@ -52,7 +52,7 @@ namespace fus
     };
 
     void secure_daemon_init(secure_daemon_t*, const ST::string&);
-    void secure_daemon_close(secure_daemon_t*);
+    void secure_daemon_free(secure_daemon_t*);
     void secure_daemon_encrypt_stream(secure_daemon_t*, crypt_stream_t*, crypt_established_cb=nullptr);
 };
 

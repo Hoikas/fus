@@ -84,7 +84,7 @@ void fus::secure_daemon_init(fus::secure_daemon_t* daemon, const ST::string& srv
     FUS_ASSERTD(!BN_is_zero(daemon->m_bnN));
 }
 
-void fus::secure_daemon_close(fus::secure_daemon_t* daemon)
+void fus::secure_daemon_free(fus::secure_daemon_t* daemon)
 {
     BN_free(daemon->m_bnK);
     BN_free(daemon->m_bnN);

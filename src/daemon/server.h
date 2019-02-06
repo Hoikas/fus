@@ -61,6 +61,10 @@ namespace fus
         void run_forever();
         void run_once();
 
+    protected:
+        void init_daemons();
+        void shutdown_daemons();
+
     public:
         bool config2addr(const ST::string&, sockaddr_storage*);
         void fill_connection_header(void* packet);

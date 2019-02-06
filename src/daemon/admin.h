@@ -38,7 +38,7 @@ namespace fus
 
     void admin_daemon_init();
     bool admin_daemon_running();
-    void admin_daemon_close();
+    void admin_daemon_free();
 
     void admin_daemon_accept(admin_server_t*, const void*);
 };

@@ -42,11 +42,11 @@ bool fus::admin_daemon_running()
     return s_adminDaemon != nullptr;
 }
 
-void fus::admin_daemon_close()
+void fus::admin_daemon_free()
 {
     FUS_ASSERTD(s_adminDaemon);
 
-    secure_daemon_close((secure_daemon_t*)s_adminDaemon);
+    secure_daemon_free((secure_daemon_t*)s_adminDaemon);
     free(s_adminDaemon);
     s_adminDaemon = nullptr;
 }

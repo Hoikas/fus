@@ -14,8 +14,6 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "admin.h"
-#include "auth.h"
 #include "core/build_info.h"
 #include <gflags/gflags.h>
 #include "io/console.h"
@@ -27,8 +25,6 @@
 DEFINE_string(config_path, "fus.ini", "Path to fus configuration file");
 DEFINE_string(generate_client_ini, "", "Generates a server.ini file for plClient");
 DEFINE_bool(generate_keys, false, "Generate a new set of encryption keys");
-DEFINE_bool(run_admin, true, "Launch the admin daemon");
-DEFINE_bool(run_auth, true, "Launch the auth daemon");
 DEFINE_bool(run_lobby, true, "Launch the server lobby");
 DEFINE_bool(save_config, false, "Saves the server configuration file");
 DEFINE_bool(use_console, true, "Use the interactive server console");
@@ -44,39 +40,29 @@ int main(int argc, char* argv[])
     console << fus::console::foreground_yellow << fus::console::weight_bold << fus::ro::dah() << "\n\n" << fus::console::flush;
 
     fus::io_init();
-    fus::server server(FLAGS_config_path);
+    {
+        fus::server server(FLAGS_config_path);
 
-    // Do anything that might change the server's configuration here and optionally save the new
-    // configuration file at the end of the process.
-    if (FLAGS_generate_keys)
-        server.generate_daemon_keys();
-    if (!FLAGS_generate_client_ini.empty())
-        server.generate_client_ini(FLAGS_generate_client_ini);
-    if (FLAGS_save_config)
-        server.config().write(FLAGS_config_path);
+        // Do anything that might change the server's configuration here and optionally save the new
+        // configuration file at the end of the process.
+        if (FLAGS_generate_keys)
+            server.generate_daemon_keys();
+        if (!FLAGS_generate_client_ini.empty())
+            server.generate_client_ini(FLAGS_generate_client_ini);
+        if (FLAGS_save_config)
+            server.config().write(FLAGS_config_path);
 
-    // Init the daemons
-    if (FLAGS_run_admin)
-        fus::admin_daemon_init();
-    if (FLAGS_run_auth)
-        fus::auth_daemon_init();
-    if (FLAGS_use_console)
-        server.start_console();
+        // Init the daemons
+        if (FLAGS_use_console)
+            server.start_console();
 
-    // Run the lobby server to accept connections and pump the loop forever
-    if (FLAGS_run_lobby)
-        server.start_lobby();
+        // Run the lobby server to accept connections and pump the loop forever
+        if (FLAGS_run_lobby)
+            server.start_lobby();
 
-    // Run the thingy...
-    server.run_forever();
-
-    // Shutdown the daemons
-    if (fus::admin_daemon_running())
-        fus::admin_daemon_close();
-    if (fus::auth_daemon_running())
-        fus::auth_daemon_close();
-
-    // Done
+        // Run the thingy...
+        server.run_forever();
+    }
     fus::io_close();
     return 0;
 }

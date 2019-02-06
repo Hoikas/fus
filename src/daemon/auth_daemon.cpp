@@ -40,11 +40,11 @@ bool fus::auth_daemon_running()
     return s_authDaemon != nullptr;
 }
 
-void fus::auth_daemon_close()
+void fus::auth_daemon_free()
 {
     FUS_ASSERTD(s_authDaemon);
 
-    secure_daemon_close((secure_daemon_t*)s_authDaemon);
+    secure_daemon_free((secure_daemon_t*)s_authDaemon);
     free(s_authDaemon);
     s_authDaemon = nullptr;
 }
