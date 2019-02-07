@@ -570,6 +570,12 @@ void fus::console::end()
     uv_tty_reset_mode();
 }
 
+void fus::console::shutdown()
+{
+    uv_unref((uv_handle_t*)&m_stdin);
+    uv_unref((uv_handle_t*)&m_stdout);
+}
+
 void fus::console::set_prompt(const ST::string& value)
 {
     m_prompt = value;

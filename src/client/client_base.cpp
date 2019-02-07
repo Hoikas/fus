@@ -51,9 +51,9 @@ int fus::client_init(fus::client_t* client, uv_loop_t* loop)
 
     // Init members
     result = uv_timer_init(loop, &client->m_reconnect);
-    uv_handle_set_data((uv_handle_t*)&client->m_reconnect, client);
-    client->m_connectReq = nullptr;
+    tcp_stream_ref((tcp_stream_t*)client, (uv_handle_t*)&client->m_reconnect);
 
+    client->m_connectReq = nullptr;
     client->m_connectcb = nullptr;
     client->m_transId = 0;
     new(&client->m_trans) std::map<uint32_t, transaction_t>;
@@ -68,7 +68,7 @@ void fus::client_free(fus::client_t* client)
         BN_free(client->m_connectReq->m_xKey);
     }
     uv_timer_stop(&client->m_reconnect);
-    uv_close((uv_handle_t*)&client->m_reconnect, nullptr);
+    uv_close((uv_handle_t*)&client->m_reconnect, tcp_stream_unref);
     client_kill_trans(client, net_error::e_remoteShutdown, UV_ECANCELED);
     client->m_trans.~map();
 }

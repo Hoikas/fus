@@ -72,19 +72,35 @@ int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop)
     stream->m_readcb = nullptr;
     stream->m_closecb = nullptr;
     stream->m_freecb = nullptr;
+    stream->m_refcount = 1;
     return 0;
 }
 
 void fus::tcp_stream_free(fus::tcp_stream_t* stream)
 {
-    if (stream->m_freecb)
-        stream->m_freecb((uv_handle_t*)stream);
+    if (--stream->m_refcount > 0)
+        return;
 
     // This is safe because crypt_stream_t tracks its resources using our flags field
     fus::crypt_stream_free((fus::crypt_stream_t*)stream);
 
     free(stream->m_readBuf);
     free(stream);
+}
+
+// =================================================================================
+
+void fus::tcp_stream_ref(fus::tcp_stream_t* stream, uv_handle_t* handle)
+{
+    uv_handle_set_data(handle, stream);
+    stream->m_refcount++;
+}
+
+void fus::tcp_stream_unref(uv_handle_t* handle)
+{
+    fus::tcp_stream_t* stream = (fus::tcp_stream_t*)uv_handle_get_data(handle);
+    // Unrefs and frees us, if applicable
+    tcp_stream_free(stream);
 }
 
 // =================================================================================
@@ -97,6 +113,10 @@ static void _tcp_close(fus::tcp_stream_t* stream)
     if (stream->m_closecb)
         stream->m_closecb((uv_handle_t*)stream);
     if ((stream->m_flags & fus::tcp_stream_t::e_freeOnClose)) {
+        // Our "subclasses" might have ref'd us, so we need to call its free method, which will
+        // unref us in a defferred manner. We'll release our main ref as well.
+        if (stream->m_freecb)
+            stream->m_freecb(stream);
         fus::tcp_stream_free(stream);
     } else {
         // need to reset to a clean, reusable state
@@ -109,7 +129,8 @@ static void _tcp_close(fus::tcp_stream_t* stream)
 
 static void _tcp_shutdown(uv_shutdown_t* req, int status)
 {
-    uv_close((uv_handle_t*)req->handle, (uv_close_cb)_tcp_close);
+    fus::tcp_stream_t* stream = (fus::tcp_stream_t*)req->handle;
+    uv_close((uv_handle_t*)stream, (uv_close_cb)_tcp_close);
 }
 
 void fus::tcp_stream_shutdown(fus::tcp_stream_t* stream)
@@ -139,7 +160,7 @@ void fus::tcp_stream_close_cb(fus::tcp_stream_t* stream, uv_close_cb cb)
     stream->m_closecb = cb;
 }
 
-void fus::tcp_stream_free_cb(fus::tcp_stream_t* stream, uv_close_cb cb)
+void fus::tcp_stream_free_cb(fus::tcp_stream_t* stream, tcp_free_cb cb)
 {
     stream->m_freecb = cb;
 }

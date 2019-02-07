@@ -18,7 +18,6 @@
 #define __FUS_ADMIN_DAEMON_PRIVATE_H
 
 #include "admin.h"
-#include "core/list.h"
 #include "daemon_base.h"
 #include "io/log_file.h"
 
@@ -28,6 +27,8 @@ namespace fus
     {
         secure_daemon_t m_secure;
         log_file m_log;
+        uint32_t m_flags;
+
         FUS_LIST_DECL(admin_server_t, m_link) m_clients;
     };
 };
@@ -46,5 +47,10 @@ static inline void admin_read(fus::admin_server_t* client, _Cb cb)
 }
 
 // =================================================================================
+
+enum
+{
+    e_shuttingDown = (1<<0),
+};
 
 #endif

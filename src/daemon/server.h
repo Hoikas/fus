@@ -31,7 +31,14 @@ namespace fus
     {
         static server* m_instance;
 
+        enum
+        {
+            e_shuttingDown = (1<<0),
+            e_hasShutdownTimer = (1<<1),
+        };
+
         uv_tcp_t m_lobby;
+        uv_timer_t m_shutdown;
         config_parser m_config;
         log_file m_log;
         uint32_t m_flags;
@@ -39,6 +46,7 @@ namespace fus
         struct admin_client_t* m_admin;
 
     protected:
+        static void admin_disconnected(fus::admin_client_t*);
         void admin_init();
         bool admin_check(console&) const;
         bool admin_ping(console&, const ST::string&);
@@ -46,6 +54,7 @@ namespace fus
 
     protected:
         bool generate_keys(console&, const ST::string&);
+        bool quit(console&, const ST::string&);
         bool save_config(console&, const ST::string&);
 
     public:
@@ -63,7 +72,9 @@ namespace fus
 
     protected:
         void init_daemons();
-        void shutdown_daemons();
+        void free_daemons();
+        void shutdown();
+        static void force_shutdown(uv_timer_t*);
 
     public:
         bool config2addr(const ST::string&, sockaddr_storage*);

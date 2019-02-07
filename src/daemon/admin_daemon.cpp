@@ -34,6 +34,7 @@ void fus::admin_daemon_init()
     secure_daemon_init((secure_daemon_t*)s_adminDaemon, ST_LITERAL("admin"));
     s_adminDaemon->m_log.set_level(server::get()->config().get<const ST::string&>("log", "level"));
     s_adminDaemon->m_log.open(uv_default_loop(), ST_LITERAL("admin_daemon"));
+    s_adminDaemon->m_flags = 0;
     new(&s_adminDaemon->m_clients) FUS_LIST_DECL(admin_server_t, m_link);
 }
 
@@ -46,16 +47,30 @@ void fus::admin_daemon_free()
 {
     FUS_ASSERTD(s_adminDaemon);
 
+    s_adminDaemon->m_clients.~list_declare();
     secure_daemon_free((secure_daemon_t*)s_adminDaemon);
     free(s_adminDaemon);
     s_adminDaemon = nullptr;
+}
+
+void fus::admin_daemon_shutdown()
+{
+    FUS_ASSERTD(s_adminDaemon);
+    s_adminDaemon->m_flags |= e_shuttingDown;
+
+    // Clients will be removed from the list by admin_server_free
+    auto it = s_adminDaemon->m_clients.front();
+    while (it) {
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)it);
+        it = s_adminDaemon->m_clients.next(it);
+    }
 }
 
 // =================================================================================
 
 static void admin_connection_encrypted(fus::admin_server_t* client, ssize_t result)
 {
-    if (result < 0) {
+    if (result < 0 || (s_adminDaemon->m_flags & e_shuttingDown)) {
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
@@ -67,7 +82,7 @@ static void admin_connection_encrypted(fus::admin_server_t* client, ssize_t resu
 void fus::admin_daemon_accept(fus::admin_server_t* client, const void* msgbuf)
 {
     // Validate connection
-    if (!s_adminDaemon || !daemon_verify_connection((daemon_t*)s_adminDaemon, msgbuf, false)) {
+    if (!s_adminDaemon || (s_adminDaemon->m_flags & e_shuttingDown) || !daemon_verify_connection((daemon_t*)s_adminDaemon, msgbuf, false)) {
         tcp_stream_shutdown((tcp_stream_t*)client);
         return;
     }

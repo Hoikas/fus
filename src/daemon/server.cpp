@@ -75,13 +75,8 @@ fus::server::server(const std::filesystem::path& config_path)
 fus::server::~server()
 {
     m_instance = nullptr;
-    if (m_admin) {
-        admin_client_free(m_admin);
-        m_admin = nullptr;
-    }
-    shutdown_daemons();
+    free_daemons();
     console::get().end(); // idempotent
-    /// fixme: fus shutdown not properly implemented
     m_log.close();
 }
 
@@ -191,12 +186,52 @@ void fus::server::init_daemons()
         auth_daemon_init();
 }
 
-void fus::server::shutdown_daemons()
+void fus::server::free_daemons()
 {
     if (admin_daemon_running())
         admin_daemon_free();
     if (auth_daemon_running())
         auth_daemon_free();
+}
+
+void fus::server::shutdown()
+{
+    m_flags |= e_shuttingDown;
+
+    // First attempt: be a nice guy and request for everyone to shutdown.
+    console::get().shutdown();
+    if (m_admin) {
+        fus::tcp_stream_free_on_close((fus::tcp_stream_t*)m_admin, true);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)m_admin);
+    }
+
+    if (admin_daemon_running())
+        admin_daemon_shutdown();
+    if (auth_daemon_running())
+        auth_daemon_shutdown();
+    uv_close((uv_handle_t*)&m_lobby, nullptr);
+
+    // The "nice" shutdown may take a few loop iterations, so we'll wait nicely for a bit.
+    m_flags |= e_hasShutdownTimer;
+    uv_timer_init(uv_default_loop(), &m_shutdown);
+    uv_handle_set_data((uv_handle_t*)&m_shutdown, this);
+    uv_timer_start(&m_shutdown, force_shutdown, 5000, 0);
+    uv_unref((uv_handle_t*)&m_shutdown);
+}
+
+void fus::server::force_shutdown(uv_timer_t* timer)
+{
+    // https://www.youtube.com/watch?v=ujBjn1qeCLs
+    console::get() << console::weight_bold << console::foreground_red
+                   << "Shutdown has potentially hung... Forcibly terminating local fus daemon."
+                   << console::endl;
+
+    fus::server* server = (fus::server*)uv_handle_get_data((uv_handle_t*)timer);
+
+    // Forcibly closes all handles and the loop
+    uv_walk(uv_default_loop(), (uv_walk_cb)uv_close, nullptr);
+    server->m_flags &= ~fus::server::e_hasShutdownTimer;
+    uv_stop(uv_default_loop());
 }
 
 // =================================================================================

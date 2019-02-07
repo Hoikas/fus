@@ -49,13 +49,17 @@ static void admin_connected(fus::admin_client_t* client, ssize_t status)
     }
 }
 
-static void admin_disconnected(fus::admin_client_t* client)
+void fus::server::admin_disconnected(fus::admin_client_t* client)
 {
-    /// TODO: check for shutdown status
+    fus::server* server = (fus::server*)uv_handle_get_data((uv_handle_t*)client);
     fus::console& c = fus::console::get();
-    c << fus::console::weight_bold << fus::console::foreground_red
-      << "Disconnected from AdminSrv - reconnecting in 5s" << fus::console::endl;
-    fus::client_reconnect((fus::client_t*)client, 5000);
+
+    c << fus::console::weight_bold << fus::console::foreground_red << "Disconnected from AdminSrv";
+    if (!(server->m_flags & fus::server::e_shuttingDown)) {
+        c << " - reconnecting in 5s";
+        fus::client_reconnect((fus::client_t*)client, 5000);
+    }
+    c << fus::console::endl;
 }
 
 void fus::server::admin_init()
@@ -135,6 +139,13 @@ bool fus::server::generate_keys(fus::console& console, const ST::string& args)
     return true;
 }
 
+bool fus::server::quit(fus::console& console, const ST::string&)
+{
+    console << console::weight_bold << console::foreground_cyan << "Shutting down local fus daemon..." << console::endl;
+    shutdown();
+    return true;
+}
+
 bool fus::server::save_config(fus::console& console, const ST::string& args)
 {
     bool srv_config = true;
@@ -173,6 +184,8 @@ void fus::server::start_console()
                         std::bind(&fus::server::generate_keys, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("ping", "ping", "Pings the admin daemon",
                         std::bind(&fus::server::admin_ping, this, std::placeholders::_1, std::placeholders::_2));
+    console.add_command("quit", "quit", "Shuts down the local fus daemon",
+                        std::bind(&fus::server::quit, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("wall", "wall [msg]", "Sends a message to all server consoles and players in the cavern",
                         std::bind(&fus::server::admin_wall, this, std::placeholders::_1, std::placeholders::_2));
 

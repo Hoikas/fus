@@ -17,6 +17,7 @@
 #include "auth_private.h"
 #include "core/errors.h"
 #include "daemon_base.h"
+#include <new>
 #include <openssl/rand.h>
 #include "protocol/auth.h"
 
@@ -24,15 +25,16 @@
 
 void fus::auth_server_init(fus::auth_server_t* client)
 {
-    tcp_stream_free_cb((tcp_stream_t*)client, (uv_close_cb)auth_server_free);
+    tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)auth_server_free);
     crypt_stream_init((crypt_stream_t*)client);
+    new(&client->m_link) FUS_LIST_LINK(auth_server_t);
     client->m_flags = 0;
     client->m_loginSalt = 0;
 }
 
 void fus::auth_server_free(fus::auth_server_t* client)
 {
-    // Nothing to free presently. There will be in the future, however.
+    client->m_link.~list_link();
 }
 
 // =================================================================================

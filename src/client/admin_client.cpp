@@ -37,7 +37,7 @@ int fus::admin_client_init(fus::admin_client_t* client, uv_loop_t* loop)
     int result = client_init((client_t*)client, loop);
     if (result < 0)
         return result;
-    tcp_stream_free_cb((tcp_stream_t*)client, (uv_close_cb)admin_client_free);
+    tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)admin_client_free);
 
     ((client_t*)client)->m_proc = (client_pump_proc)admin_client_read;
     client->m_wallcb = nullptr;

@@ -17,6 +17,7 @@
 #ifndef __FUS_AUTH_DAEMON_H
 #define __FUS_AUTH_DAEMON_H
 
+#include "core/list.h"
 #include "io/crypt_stream.h"
 
 namespace fus
@@ -26,6 +27,8 @@ namespace fus
     struct auth_server_t
     {
         crypt_stream_t m_stream;
+        FUS_LIST_LINK(auth_server_t) m_link;
+
         uint32_t m_flags;
         uint32_t m_loginSalt;
     };
@@ -38,6 +41,7 @@ namespace fus
     void auth_daemon_init();
     bool auth_daemon_running();
     void auth_daemon_free();
+    void auth_daemon_shutdown();
 
     void auth_daemon_accept(auth_server_t*, const void*);
 };

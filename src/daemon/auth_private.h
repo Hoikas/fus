@@ -27,6 +27,9 @@ namespace fus
     {
         secure_daemon_t m_secure;
         log_file m_log;
+        uint32_t m_flags;
+
+        FUS_LIST_DECL(auth_server_t, m_link) m_clients;
     };
 };
 
@@ -48,6 +51,11 @@ static inline void auth_read(fus::auth_server_t* client, _Cb cb)
 enum
 {
     e_clientRegistered = (1<<0),
+};
+
+enum
+{
+    e_shuttingDown = (1<<0),
 };
 
 #endif

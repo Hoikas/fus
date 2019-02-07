@@ -23,6 +23,7 @@
 namespace fus
 {
     struct tcp_stream_t;
+    typedef void (*tcp_free_cb)(tcp_stream_t*);
     typedef void (*tcp_read_cb)(tcp_stream_t*, ssize_t, void*);
     typedef void (*tcp_write_cb)(tcp_stream_t*, ssize_t);
 
@@ -58,17 +59,21 @@ namespace fus
         size_t m_readBufsz;
         tcp_read_cb m_readcb;
         uv_close_cb m_closecb;
-        uv_close_cb m_freecb;
+        tcp_free_cb m_freecb;
+        size_t m_refcount;
     };
 
     int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
     void tcp_stream_free(tcp_stream_t*);
     void tcp_stream_shutdown(tcp_stream_t*);
 
+    void tcp_stream_ref(tcp_stream_t*, uv_handle_t*);
+    void tcp_stream_unref(uv_handle_t*);
+
     int tcp_stream_accept(fus::tcp_stream_t* server, fus::tcp_stream_t* client);
 
     void tcp_stream_close_cb(tcp_stream_t*, uv_close_cb);
-    void tcp_stream_free_cb(tcp_stream_t*, uv_close_cb);
+    void tcp_stream_free_cb(tcp_stream_t*, tcp_free_cb);
     void tcp_stream_free_on_close(tcp_stream_t*, bool);
 
     bool tcp_stream_closing(const tcp_stream_t*);
