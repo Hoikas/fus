@@ -240,6 +240,8 @@ void fus::console::handle_input_line()
     if (line.empty())
         return;
     m_history.push_back(line);
+    while (m_history.size() > 200)
+        m_history.pop_front();
     m_historyIt = m_history.cend();
 
     // Reset the display
