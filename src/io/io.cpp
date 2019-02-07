@@ -63,6 +63,26 @@ bool fus::str2addr(const char* str, uint16_t port, sockaddr_storage* addr)
     }
 }
 
+ST::string fus::addr2str(const sockaddr* addr)
+{
+    if (!addr)
+        return ST::null;
+
+    char buf[64];
+    uint16_t port;
+    if (addr->sa_family == AF_INET) {
+        FUS_ASSERTD(uv_ip4_name((const sockaddr_in*)addr, buf, sizeof(buf)) == 0);
+        port = ((const sockaddr_in*)addr)->sin_port;
+    } else if (addr->sa_family == AF_INET6) {
+        FUS_ASSERTD(uv_ip6_name((const sockaddr_in6*)addr, buf, sizeof(buf)) == 0);
+        port = ((const sockaddr_in6*)addr)->sin6_port;
+    } else {
+        FUS_ASSERTR(0);
+    }
+
+    return ST::format("{}/{}", buf, port);
+}
+
 // ============================================================================
 
 template <size_t _KSz, size_t _NSz, size_t _XSz>

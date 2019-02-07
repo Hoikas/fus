@@ -33,6 +33,7 @@ namespace fus
     void io_close();
 
     bool str2addr(const char*, uint16_t, sockaddr_storage*);
+    ST::string addr2str(const sockaddr*);
 
     std::tuple<ST::string, ST::string, ST::string> io_generate_keys(uint32_t g_value);
 
