@@ -262,7 +262,7 @@ void fus::console::handle_input_line()
 
     // Implicitly write out the prompt
     m_flags &= ~e_execCommand;
-    *this << endl;
+    *this << flush;
 }
 
 void fus::console::handle_ctrl(const char* buf, size_t bufsz)
