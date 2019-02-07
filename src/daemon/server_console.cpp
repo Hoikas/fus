@@ -35,27 +35,48 @@ static void admin_wallBCast(fus::admin_client_t* client, const ST::string& sende
 
 // =================================================================================
 
-void fus::server::admin_connect()
+static void admin_connected(fus::admin_client_t* client, ssize_t status)
 {
-    if (m_admin == nullptr) {
-        m_admin = (admin_client_t*)malloc(sizeof(admin_client_t));
-        admin_client_init(m_admin, uv_default_loop());
-
-        uv_handle_set_data((uv_handle_t*)m_admin, this);
-        admin_client_wall_handler(m_admin, admin_wallBCast);
-
-        unsigned int g = m_config.get<unsigned int>("crypt", "admin_g");
-        const ST::string& n = m_config.get<const ST::string&>("crypt", "admin_n");
-        const ST::string& x = m_config.get<const ST::string&>("crypt", "admin_x");
-        crypt_stream_set_keys_client((crypt_stream_t*)m_admin, g, n, x);
+    fus::console& c = fus::console::get();
+    if (status < 0) {
+        c << fus::console::weight_bold << fus::console::foreground_red
+          << "Error: Connection to AdminSrv failed (" << uv_strerror(status) << ") - retrying in 5s"
+          << fus::console::endl;
+        fus::client_reconnect((fus::client_t*)client, 5000);
+    } else {
+        c << fus::console::foreground_green << "Connected to AdminSrv "
+          << fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client) << fus::console::endl;
     }
+}
+
+static void admin_disconnected(fus::admin_client_t* client)
+{
+    /// TODO: check for shutdown status
+    fus::console& c = fus::console::get();
+    c << fus::console::weight_bold << fus::console::foreground_red
+      << "Disconnected from AdminSrv - reconnecting in 5s" << fus::console::endl;
+    fus::client_reconnect((fus::client_t*)client, 5000);
+}
+
+void fus::server::admin_init()
+{
+    m_admin = (admin_client_t*)malloc(sizeof(admin_client_t));
+    admin_client_init(m_admin, uv_default_loop());
+
+    uv_handle_set_data((uv_handle_t*)m_admin, this);
+    tcp_stream_close_cb((tcp_stream_t*)m_admin, (uv_close_cb)admin_disconnected);
+    admin_client_wall_handler(m_admin, admin_wallBCast);
+
+    unsigned int g = m_config.get<unsigned int>("crypt", "admin_g");
+    const ST::string& n = m_config.get<const ST::string&>("crypt", "admin_n");
+    const ST::string& x = m_config.get<const ST::string&>("crypt", "admin_x");
 
     sockaddr_storage addr;
     config2addr(ST_LITERAL("admin"), &addr);
 
     void* header = alloca(admin_client_header_size());
     fill_connection_header(header);
-    admin_client_connect(m_admin, (sockaddr*)&addr, header, admin_client_header_size(), nullptr);
+    admin_client_connect(m_admin, (sockaddr*)&addr, header, admin_client_header_size(), g, n, x, (client_connect_cb)admin_connected);
 }
 
 bool fus::server::admin_check(console& console) const
@@ -156,7 +177,7 @@ void fus::server::start_console()
                         std::bind(&fus::server::admin_wall, this, std::placeholders::_1, std::placeholders::_2));
 
     // Many commands require deep integration with the server, so we will naughtily connect to ourselves
-    admin_connect();
+    admin_init();
 
     console.begin();
 }

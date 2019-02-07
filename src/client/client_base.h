@@ -21,6 +21,8 @@
 #include "io/net_error.h"
 #include <map>
 
+struct connect_req_t;
+
 namespace fus
 {
     struct client_t;
@@ -41,6 +43,9 @@ namespace fus
         client_connect_cb m_connectcb;
         client_pump_proc m_proc;
 
+        uv_timer_t m_reconnect;
+        ::connect_req_t* m_connectReq;
+
         uint32_t m_transId;
         trans_map_t m_trans;
     };
@@ -49,7 +54,9 @@ namespace fus
     void client_free(client_t*);
 
     void client_crypt_connect(client_t*, const sockaddr*, const void*, size_t, client_connect_cb);
+    void client_crypt_connect(client_t*, const sockaddr*, const void*, size_t, uint32_t, const ST::string&, const ST::string&, client_connect_cb);
     void client_connect(client_t*, const sockaddr*, const void*, size_t, client_connect_cb);
+    void client_reconnect(client_t*, uint64_t reconnectTimeMs=30000);
 
     uint32_t client_next_transId(client_t*);
     uint32_t client_gen_trans(client_t*, client_trans_cb);

@@ -61,7 +61,7 @@ namespace fus
         uv_close_cb m_freecb;
     };
 
-    int tcp_stream_init(tcp_stream_t*, uv_loop_t*, unsigned int flags=0);
+    int tcp_stream_init(tcp_stream_t*, uv_loop_t*);
     void tcp_stream_free(tcp_stream_t*);
     void tcp_stream_shutdown(tcp_stream_t*);
 

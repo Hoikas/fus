@@ -56,10 +56,10 @@ static inline bool _alloc_buffer(T*& buf, size_t& bufsz, size_t alloc)
 
 // =================================================================================
 
-int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop, unsigned int flags)
+int fus::tcp_stream_init(fus::tcp_stream_t* stream, uv_loop_t* loop)
 {
     // I realize the arguments are inverted. This is to better mirror the intention of the function.
-    int result = uv_tcp_init_ex(loop, (uv_tcp_t*)stream, flags);
+    int result = uv_tcp_init(loop, (uv_tcp_t*)stream);
     if (result < 0)
         return result;
 
@@ -96,8 +96,15 @@ static void _tcp_close(fus::tcp_stream_t* stream)
 
     if (stream->m_closecb)
         stream->m_closecb((uv_handle_t*)stream);
-    if ((stream->m_flags & fus::tcp_stream_t::e_freeOnClose))
+    if ((stream->m_flags & fus::tcp_stream_t::e_freeOnClose)) {
         fus::tcp_stream_free(stream);
+    } else {
+        // need to reset to a clean, reusable state
+        fus::crypt_stream_free((fus::crypt_stream_t*)stream);
+        uv_loop_t* loop = uv_handle_get_loop((uv_handle_t*)stream);
+        FUS_ASSERTD(uv_tcp_init(loop, (uv_tcp_t*)stream) == 0);
+        stream->m_flags = 0;
+    }
 }
 
 static void _tcp_shutdown(uv_shutdown_t* req, int status)

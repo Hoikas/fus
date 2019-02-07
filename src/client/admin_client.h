@@ -34,6 +34,7 @@ namespace fus
     void admin_client_free(admin_client_t*);
 
     void admin_client_connect(admin_client_t*, const sockaddr*, void*, size_t, client_connect_cb);
+    void admin_client_connect(admin_client_t*, const sockaddr*, void*, size_t, uint32_t, const ST::string&, const ST::string&, client_connect_cb);
     size_t admin_client_header_size();
 
     void admin_client_wall_handler(admin_client_t*, admin_client_wall_cb cb=nullptr);

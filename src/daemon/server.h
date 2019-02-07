@@ -39,7 +39,7 @@ namespace fus
         struct admin_client_t* m_admin;
 
     protected:
-        void admin_connect();
+        void admin_init();
         bool admin_check(console&) const;
         bool admin_ping(console&, const ST::string&);
         bool admin_wall(console&, const ST::string&);

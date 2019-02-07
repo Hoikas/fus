@@ -62,6 +62,17 @@ void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr
     fus::client_crypt_connect((client_t*)client, addr, buf, bufsz, cb);
 }
 
+void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr, void* buf, size_t bufsz,
+                               uint32_t g, const ST::string& n, const ST::string& x, fus::client_connect_cb cb)
+{
+    FUS_ASSERTD(buf);
+    FUS_ASSERTD(bufsz);
+
+    auto header = (protocol::connection_header*)buf;
+    header->set_connType(protocol::e_protocolCli2Admin);
+    fus::client_crypt_connect((client_t*)client, addr, buf, bufsz, g, n, x, cb);
+}
+
 size_t fus::admin_client_header_size()
 {
     return sizeof(protocol::connection_header);
