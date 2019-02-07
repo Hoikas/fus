@@ -24,8 +24,8 @@
 #   define FUS_ASSERTD(cond) if ((cond) == 0) { fus::assert::handle(#cond, __FILE__, __LINE__, nullptr); }
 #   define FUS_ASSERTD_MSG(cond, msg, ...) if ((cond) == 0) { fus::assert::_handle(#cond, __FILE__, __LINE__, msg, __VA_ARGS__); }
 #else
-#   define FUS_ASSERTD(cond) cond;
-#   define FUS_ASSERTD_MSG(cond, msg, ...) cond;
+#   define FUS_ASSERTD(cond) (cond);
+#   define FUS_ASSERTD_MSG(cond, msg, ...) (cond);
 #endif
 #define FUS_ASSERTR(cond) if ((cond) == 0) { fus::assert::handle(#cond, __FILE__, __LINE__, nullptr); }
 #define FUS_ASSERTR_MSG(cond, msg, ...) if ((cond) == 0) { fus::assert::_handle(#cond, __FILE__, __LINE__, msg, __VA_ARGS__); }
