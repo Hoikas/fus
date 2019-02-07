@@ -32,7 +32,6 @@ namespace fus
 
     void admin_server_init(admin_server_t*);
     void admin_server_free(admin_server_t*);
-    void admin_server_shutdown(admin_server_t*);
 
     void admin_server_read(admin_server_t*);
 

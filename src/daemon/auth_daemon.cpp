@@ -54,7 +54,7 @@ void fus::auth_daemon_free()
 static void auth_connection_encrypted(fus::auth_server_t* client, ssize_t result)
 {
     if (result < 0) {
-        fus::auth_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
 

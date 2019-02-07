@@ -32,7 +32,6 @@ namespace fus
 
     int admin_client_init(admin_client_t*, uv_loop_t*);
     void admin_client_free(admin_client_t*);
-    void admin_client_shutdown(admin_client_t*);
 
     void admin_client_connect(admin_client_t*, const sockaddr*, void*, size_t, client_connect_cb);
     size_t admin_client_header_size();

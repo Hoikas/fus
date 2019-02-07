@@ -24,6 +24,7 @@
 
 void fus::auth_server_init(fus::auth_server_t* client)
 {
+    tcp_stream_free_cb((tcp_stream_t*)client, (uv_close_cb)auth_server_free);
     crypt_stream_init((crypt_stream_t*)client);
     client->m_flags = 0;
     client->m_loginSalt = 0;
@@ -31,12 +32,7 @@ void fus::auth_server_init(fus::auth_server_t* client)
 
 void fus::auth_server_free(fus::auth_server_t* client)
 {
-    crypt_stream_free((crypt_stream_t*)client);
-}
-
-void fus::auth_server_shutdown(fus::auth_server_t* client)
-{
-    tcp_stream_shutdown((tcp_stream_t*)client, (uv_close_cb)auth_server_free);
+    // Nothing to free presently. There will be in the future, however.
 }
 
 // =================================================================================
@@ -47,7 +43,7 @@ static inline bool auth_check_read(fus::auth_server_t* client, ssize_t nread)
         s_authDaemon->m_log.write_debug("[{}] Read failed: {}",
                                         fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
                                         uv_strerror(nread));
-        fus::auth_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return false;
     }
     return true;
@@ -76,7 +72,7 @@ static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::
 
     // If a client tries to register more than once, they are obviously being nefarious.
     if (client->m_flags & e_clientRegistered)
-        fus::auth_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
 
     RAND_bytes((unsigned char*)(&client->m_loginSalt), sizeof(client->m_loginSalt));
     client->m_flags |= e_clientRegistered;
@@ -107,7 +103,7 @@ static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protoc
     default:
         s_authDaemon->m_log.write_error("[{}] Received unimplemented message type 0x{04X} -- kicking client",
                                         fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_type());
-        fus::auth_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
     }
 }
 

@@ -24,6 +24,7 @@
 
 void fus::admin_server_init(fus::admin_server_t* client)
 {
+    tcp_stream_free_cb((tcp_stream_t*)client, (uv_close_cb)admin_server_free);
     crypt_stream_init((crypt_stream_t*)client);
     new(&client->m_link) FUS_LIST_LINK(admin_server_t);
 }
@@ -31,12 +32,6 @@ void fus::admin_server_init(fus::admin_server_t* client)
 void fus::admin_server_free(fus::admin_server_t* client)
 {
     client->m_link.~list_link();
-    crypt_stream_free((crypt_stream_t*)client);
-}
-
-void fus::admin_server_shutdown(fus::admin_server_t* client)
-{
-    tcp_stream_shutdown((tcp_stream_t*)client, (uv_close_cb)admin_server_free);
 }
 
 // =================================================================================
@@ -47,7 +42,7 @@ static inline bool admin_check_read(fus::admin_server_t* client, ssize_t nread)
         s_adminDaemon->m_log.write_debug("[{}]: Read failed: {}",
                                         fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
                                         uv_strerror(nread));
-        fus::admin_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return false;
     }
     return true;
@@ -107,7 +102,7 @@ static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::prot
         break;
     default:
         s_adminDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
-        fus::admin_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
     }
 }
 

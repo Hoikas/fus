@@ -56,7 +56,7 @@ void fus::admin_daemon_free()
 static void admin_connection_encrypted(fus::admin_server_t* client, ssize_t result)
 {
     if (result < 0) {
-        fus::admin_server_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
 

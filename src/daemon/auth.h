@@ -32,7 +32,6 @@ namespace fus
 
     void auth_server_init(auth_server_t*);
     void auth_server_free(auth_server_t*);
-    void auth_server_shutdown(auth_server_t*);
 
     void auth_server_read(auth_server_t*);
 

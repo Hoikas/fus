@@ -37,6 +37,7 @@ int fus::admin_client_init(fus::admin_client_t* client, uv_loop_t* loop)
     int result = client_init((client_t*)client, loop);
     if (result < 0)
         return result;
+    tcp_stream_free_cb((tcp_stream_t*)client, (uv_close_cb)admin_client_free);
 
     ((client_t*)client)->m_proc = (client_pump_proc)admin_client_read;
     client->m_wallcb = nullptr;
@@ -47,16 +48,6 @@ int fus::admin_client_init(fus::admin_client_t* client, uv_loop_t* loop)
 void fus::admin_client_free(fus::admin_client_t* client)
 {
     client_free((client_t*)client);
-}
-
-void fus::admin_client_shutdown(fus::admin_client_t* client)
-{
-    client_kill_trans((client_t*)client, net_error::e_remoteShutdown, UV_ECANCELED);
-
-    uv_close_cb cb = nullptr;
-    if (((tcp_stream_t*)client)->m_flags & tcp_stream_t::e_freeOnClose)
-        cb = (uv_close_cb)admin_client_free;
-    tcp_stream_shutdown((tcp_stream_t*)client, cb);
 }
 
 // =================================================================================
@@ -107,7 +98,7 @@ void fus::admin_client_wall(fus::admin_client_t* client, const ST::string& text)
 static void admin_pingpong(fus::admin_client_t* client, ssize_t nread, fus::protocol::admin_pingReply* reply)
 {
     if (nread < 0) {
-        fus::admin_client_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
 
@@ -124,7 +115,7 @@ static void admin_pingpong(fus::admin_client_t* client, ssize_t nread, fus::prot
 static void admin_wallBCast(fus::admin_client_t* client, ssize_t nread, fus::protocol::admin_wallBCast* bcast)
 {
     if (nread < 0) {
-        fus::admin_client_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
 
@@ -137,7 +128,7 @@ static void admin_wallBCast(fus::admin_client_t* client, ssize_t nread, fus::pro
 static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::protocol::msg_std_header* header)
 {
     if (nread < 0) {
-        fus::admin_client_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
 
@@ -149,7 +140,7 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
         admin_read<fus::protocol::admin_wallBCast>(client, admin_wallBCast);
         break;
     default:
-        fus::admin_client_shutdown(client);
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         break;
     }
 }

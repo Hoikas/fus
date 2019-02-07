@@ -49,6 +49,7 @@ namespace fus
         };
 
         uv_tcp_t m_tcp;
+        uv_shutdown_t m_shutdown;
         uint32_t m_flags;
 
         const struct net_struct_t* m_readStruct;
@@ -57,18 +58,20 @@ namespace fus
         size_t m_readBufsz;
         tcp_read_cb m_readcb;
         uv_close_cb m_closecb;
-        uv_close_cb m_shutdowncb;
+        uv_close_cb m_freecb;
     };
 
     int tcp_stream_init(tcp_stream_t*, uv_loop_t*, unsigned int flags=0);
     void tcp_stream_free(tcp_stream_t*);
-    void tcp_stream_shutdown(tcp_stream_t*, uv_close_cb cb=nullptr);
+    void tcp_stream_shutdown(tcp_stream_t*);
 
     int tcp_stream_accept(fus::tcp_stream_t* server, fus::tcp_stream_t* client);
 
     void tcp_stream_close_cb(tcp_stream_t*, uv_close_cb);
+    void tcp_stream_free_cb(tcp_stream_t*, uv_close_cb);
     void tcp_stream_free_on_close(tcp_stream_t*, bool);
 
+    bool tcp_stream_closing(const tcp_stream_t*);
     bool tcp_stream_connected(const tcp_stream_t*);
     ST::string tcp_stream_peeraddr(const tcp_stream_t*);
 

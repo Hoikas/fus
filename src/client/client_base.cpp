@@ -40,7 +40,6 @@ void fus::client_free(fus::client_t* client)
 {
     client_kill_trans(client, net_error::e_remoteShutdown, UV_ECANCELED);
     client->m_trans.~map();
-    crypt_stream_free((crypt_stream_t*)client);
 }
 
 // =================================================================================
