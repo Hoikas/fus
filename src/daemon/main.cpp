@@ -52,13 +52,12 @@ int main(int argc, char* argv[])
         if (FLAGS_save_config)
             server.config().write(FLAGS_config_path);
 
-        // Init the daemons
-        if (FLAGS_use_console)
-            server.start_console();
-
-        // Run the lobby server to accept connections and pump the loop forever
+        // Start the lobby so anyone who wants to connect to the server can go ahead and enqueue that
         if (FLAGS_run_lobby)
             server.start_lobby();
+
+        if (FLAGS_use_console)
+            server.start_console();
 
         // Run the thingy...
         server.run_forever();

@@ -132,7 +132,6 @@ bool fus::server::start_lobby()
 {
     FUS_ASSERTD(!(m_flags & e_lobbyReady));
     FUS_ASSERTD(!(m_flags & e_running));
-    init_daemons();
 
     uv_loop_t* loop = uv_default_loop();
     m_log.open(loop, ST_LITERAL("lobby"));
@@ -153,6 +152,8 @@ bool fus::server::start_lobby()
         return false;
     }
     m_flags |= e_lobbyReady;
+
+    init_daemons();
     return true;
 }
 
