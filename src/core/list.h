@@ -243,7 +243,7 @@ namespace fus
 
         list(size_t offset);
         list_link<T>* get_link(const T * node) const;
-        template<class T, size_t offset> friend class list_declare;
+        template<class _BaseT, size_t offset> friend class list_declare;
     };
 
 // =================================================================================
@@ -365,11 +365,11 @@ namespace fus
     }
 
 // =================================================================================
-    template<class T, size_t offset>
-    class list_declare : public list<T>
+    template<class _BaseT, size_t offset>
+    class list_declare : public list<_BaseT>
     {
     public:
-        list_declare() : list<T>(offset) { }
+        list_declare() : list<_BaseT>(offset) { }
     };
 };
 

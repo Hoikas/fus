@@ -18,6 +18,7 @@
 #include "console.h"
 #include "core/build_info.h"
 #include "core/errors.h"
+#include <cstring>
 #include <vector>
 
 // =================================================================================

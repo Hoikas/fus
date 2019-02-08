@@ -77,13 +77,13 @@ namespace fus
 #undef FUS_CONFIG_CLIENT
 
 #define FUS_CONFIG_CRYPT(server, gval) \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_k"), fus::config_item::value_type::e_string, \
+    { ST_LITERAL("crypt"), ST_LITERAL(#server "_k"), fus::config_item::value_type::e_string, \
       ST::null, ST::null }, \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_n"), fus::config_item::value_type::e_string, \
+    { ST_LITERAL("crypt"), ST_LITERAL(#server "_n"), fus::config_item::value_type::e_string, \
       ST::null, ST::null }, \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_x"), fus::config_item::value_type::e_string, \
+    { ST_LITERAL("crypt"), ST_LITERAL(#server "_x"), fus::config_item::value_type::e_string, \
       ST::null, ST::null }, \
-    { ST_LITERAL("crypt"), ST_LITERAL(server##"_g"), fus::config_item::value_type::e_integer, \
+    { ST_LITERAL("crypt"), ST_LITERAL(#server "_g"), fus::config_item::value_type::e_integer, \
       ST_LITERAL(#gval), ST::null }, \
 
         FUS_CONFIG_CRYPT("admin", 19)

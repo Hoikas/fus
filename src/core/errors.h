@@ -39,9 +39,9 @@ namespace fus
 
         static void handle(const char* cond, const char* file, int line, const char* msg);
         template<typename... args>
-        static inline void _handle(const char* cond, const char* file, int line, const char* fmt, args... args)
+        static inline void _handle(const char* cond, const char* file, int line, const char* fmt, args... _Args)
         {
-            ST::string msg = ST::format(fmt, args...);
+            ST::string msg = ST::format(fmt, _Args...);
             handle(cond, file, line, msg.c_str());
         }
 

@@ -16,6 +16,7 @@
 
 #include "core/build_info.h"
 #include "core/errors.h"
+#include <cstring>
 #include <filesystem>
 #include "log_file.h"
 

@@ -18,13 +18,16 @@
 #define __FUS_UUID_H
 
 #include <cstdint>
+#include <cstring>
 #include <string_theory/string>
+
+typedef unsigned char uuid_t[16];
 
 namespace fus
 {
     class uuid
     {
-        uint8_t m_data[16];
+        uuid_t m_data;
 
     public:
         uuid() { memset(m_data, 0, sizeof(m_data)); }

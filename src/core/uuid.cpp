@@ -30,13 +30,15 @@ fus::uuid fus::uuid::null{};
 
 fus::uuid fus::uuid::generate()
 {
-    uint8_t data[16];
 #ifdef _WIN32
+    uint8_t data[16];
     UuidCreate((UUID*)data);
-#else
-    uuid_generate((uuid_t)data));
-#endif
     return fus::uuid(data);
+#else
+    uuid_t data;
+    uuid_generate(data);
+    return fus::uuid(data);
+#endif
 }
 
 // =================================================================================
@@ -51,7 +53,7 @@ ST::string fus::uuid::as_string() const
     return result;
 #else
     char str[37];
-    uuid_unparse((uuid_t)m_data, str);
+    uuid_unparse(m_data, str);
     return ST::string::from_utf8(str, 36);
 #endif
 }
@@ -61,7 +63,7 @@ bool fus::uuid::from_string(const char* str)
 #if _WIN32
     return UuidFromStringA((RPC_CSTR)str, (UUID*)m_data) == RPC_S_OK;
 #else
-    return uuid_parse((char*)str, (uuid_t)m_data) == 0;
+    return uuid_parse((char*)str, m_data) == 0;
 #endif
 }
 
@@ -75,7 +77,7 @@ bool fus::uuid::empty() const
     FUS_ASSERTD(result == RPC_S_OK);
     return result == 1;
 #else
-    return uuid_is_null((uuid_t)m_data) == 1;
+    return uuid_is_null(m_data) == 1;
 #endif
 }
 
@@ -87,7 +89,7 @@ bool fus::uuid::equals(const fus::uuid& rhs) const
     FUS_ASSERTD(result == RPC_S_OK);
     return result == 0;
 #else
-    return uuid_compare((uuid_t)m_data, (uuid_t)rhs.m_data) == 0;
+    return uuid_compare(m_data, rhs.m_data) == 0;
 #endif
 }
 
@@ -99,6 +101,6 @@ bool fus::uuid::operator <(const fus::uuid& rhs) const
     FUS_ASSERTD(result == RPC_S_OK);
     return result == -1;
 #else
-    return uuid_compare((uuid_t)m_data, (uuid_t)rhs.m_data) == -1;
+    return uuid_compare(m_data, rhs.m_data) == -1;
 #endif
 }

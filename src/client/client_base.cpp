@@ -16,6 +16,7 @@
 
 #include "client_base.h"
 #include "core/errors.h"
+#include <cstring>
 #include <new>
 #include <openssl/bn.h>
 #include <string_theory/st_codecs.h>

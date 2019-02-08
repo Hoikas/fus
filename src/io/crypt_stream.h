@@ -35,24 +35,11 @@ namespace fus
         {
             struct
             {
+                uint32_t g;
                 BIGNUM* n;
-                union
-                {
-                    // clients
-                    struct
-                    {
-                        uint32_t g;
-                        BIGNUM* n;
-                        BIGNUM* seed;
-                        BIGNUM* x;
-                    };
-
-                    // servers
-                    struct
-                    {
-                        BIGNUM* k;
-                    };
-                };
+                BIGNUM* seed;
+                BIGNUM* x;
+                BIGNUM* k;
             };
             struct
             {

@@ -22,27 +22,27 @@
     { fus::net_field_t::data_type::e_blob, #name, size },
 
 #define FUS_NET_FIELD_BUFFER(name) \
-    { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer, #name, 0 },
 
 #define FUS_NET_FIELD_BUFFER_TINY(name) \
-    { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer_tiny, #name, 0 },
 
 #define FUS_NET_FIELD_BUFFER_HUGE(name) \
-    { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer_huge, #name, 0 },
 
 #define FUS_NET_FIELD_BUFFER_REDUNDANT(name) \
-    { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer_redundant, #name, 0 },
 
 #define FUS_NET_FIELD_BUFFER_REDUNDANT_TINY(name) \
-    { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer_redundant_tiny, #name, 0 },
 
 #define FUS_NET_FIELD_BUFFER_REDUNDANT_HUGE(name) \
-    { fus::net_field_t::data_type::e_integer, #name##"sz", sizeof(uint32_t) }, \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint32_t) }, \
     { fus::net_field_t::data_type::e_buffer_redundant_huge, #name, 0 },
 
 #define FUS_NET_FIELD_UINT8(name) \

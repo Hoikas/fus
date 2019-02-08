@@ -165,7 +165,6 @@ namespace fus
             return *this;
         }
 
-        template<>
         console& operator <<(console&(*func)(console&))
         {
             return func(*this);

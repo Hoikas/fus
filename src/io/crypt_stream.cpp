@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstring>
 #include <openssl/bn.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>

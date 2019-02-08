@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstring>
 #include <iostream>
 
 #include "core/errors.h"
@@ -449,6 +450,7 @@ void fus::tcp_stream_read_struct(fus::tcp_stream_t* stream, const fus::net_struc
 struct write_buf_t
 {
     uv_write_t m_req;
+    fus::tcp_write_cb m_cb;
     size_t m_bufsz;
     uint8_t m_buf[]; // chicanery
 };
@@ -464,9 +466,8 @@ static inline write_buf_t* _get_write_req(const void* buf, size_t bufsz)
 
 static void _write_complete(write_buf_t* req, int status)
 {
-    fus::tcp_write_cb cb = (fus::tcp_write_cb)uv_req_get_data((uv_req_t*)req);
-    if (cb)
-        cb((fus::tcp_stream_t*)req->m_req.handle, status < 0 ? status : req->m_bufsz);
+    if (req->m_cb)
+        req->m_cb((fus::tcp_stream_t*)req->m_req.handle, status < 0 ? status : req->m_bufsz);
     free(req);
 }
 
@@ -480,7 +481,7 @@ void fus::tcp_stream_write(fus::tcp_stream_t* stream, const void* buf, size_t bu
         write_buf_t* req = _get_write_req(buf, bufsz);
         if (stream->m_flags & fus::tcp_stream_t::e_encrypted)
             crypt_stream_encipher((crypt_stream_t*)stream, req->m_buf, req->m_bufsz);
-        uv_req_set_data((uv_req_t*)req, write_cb);
+        req->m_cb = write_cb;
         uv_buf_t uvbuf = uv_buf_init((char*)req->m_buf, req->m_bufsz);
         uv_write((uv_write_t*)req, (uv_stream_t*)stream, &uvbuf, 1, (uv_write_cb)_write_complete);
     }
