@@ -29,7 +29,7 @@ fus::console* fus::console::m_instance = nullptr;
 
 fus::console::console(uv_loop_t* loop)
     : m_charBuf(), m_flags(),  m_lastBell(), m_cursorPos(), m_historyIt(m_history.cend()), m_inputCharacters(),
-      m_outForeColor(color::e_white), m_outBackColor(color::e_black), m_outWeight(weight::e_normal)
+      m_outForeColor(color::e_default), m_outBackColor(color::e_default), m_outWeight(weight::e_normal)
 {
     FUS_ASSERTD(!m_instance);
     m_instance = this;
@@ -469,61 +469,57 @@ void fus::console::output_ansi()
     else
         m_outputBuf.append_char('0');
 
-    m_outputBuf.append_char(';');
     switch (m_outForeColor) {
     case color::e_black:
-        m_outputBuf.append("30", 2);
+        m_outputBuf.append(";30", 3);
         break;
     case color::e_red:
-        m_outputBuf.append("31", 2);
+        m_outputBuf.append(";31", 3);
         break;
     case color::e_green:
-        m_outputBuf.append("32", 2);
+        m_outputBuf.append(";32", 3);
         break;
     case color::e_yellow:
-        m_outputBuf.append("33", 2);
+        m_outputBuf.append(";33", 3);
         break;
     case color::e_blue:
-        m_outputBuf.append("34", 2);
+        m_outputBuf.append(";34", 3);
         break;
     case color::e_magenta:
-        m_outputBuf.append("35", 2);
+        m_outputBuf.append(";35", 3);
         break;
     case color::e_cyan:
-        m_outputBuf.append("36", 2);
+        m_outputBuf.append(";36", 3);
         break;
     case color::e_white:
-    default:
-        m_outputBuf.append("37", 2);
+        m_outputBuf.append(";37", 3);
         break;
     }
 
-    m_outputBuf.append_char(';');
     switch (m_outBackColor) {
     case color::e_black:
-    default:
-        m_outputBuf.append("40", 2);
+        m_outputBuf.append(";40", 3);
         break;
     case color::e_red:
-        m_outputBuf.append("41", 2);
+        m_outputBuf.append(";41", 3);
         break;
     case color::e_green:
-        m_outputBuf.append("42", 2);
+        m_outputBuf.append(";42", 3);
         break;
     case color::e_yellow:
-        m_outputBuf.append("43", 2);
+        m_outputBuf.append(";43", 3);
         break;
     case color::e_blue:
-        m_outputBuf.append("44", 2);
+        m_outputBuf.append(";44", 3);
         break;
     case color::e_magenta:
-        m_outputBuf.append("45", 2);
+        m_outputBuf.append(";45", 3);
         break;
     case color::e_cyan:
-        m_outputBuf.append("46", 2);
+        m_outputBuf.append(";46", 3);
         break;
     case color::e_white:
-        m_outputBuf.append("47", 2);
+        m_outputBuf.append(";47", 3);
         break;
     }
     m_outputBuf.append_char('m');
@@ -536,10 +532,13 @@ fus::console& fus::console::flush(fus::console& c)
 
     // If the ANSI text mode was changed, we need to reset to something sensible.
     if (c.m_flags & e_outputAnsiChanged) {
-        c.m_outputBuf << "\x1B[0;37;40m";
+        c.m_outputBuf << "\x1B[0m";
         c.m_flags &= ~e_outputAnsiChanged;
     }
     c.m_flags &= ~e_outputAnsiDirty;
+    c.m_outBackColor = color::e_default;
+    c.m_outForeColor = color::e_default;
+    c.m_outWeight = weight::e_normal;
 
     // Flush the output
     c.write(c.m_outputBuf.raw_buffer(), c.m_outputBuf.size());

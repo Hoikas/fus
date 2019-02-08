@@ -39,7 +39,7 @@ namespace fus
     {
         enum class color
         {
-            e_black, e_red, e_green, e_yellow, e_blue, e_magenta, e_cyan, e_white
+            e_black, e_red, e_green, e_yellow, e_blue, e_magenta, e_cyan, e_white, e_default,
         };
 
         enum class weight
