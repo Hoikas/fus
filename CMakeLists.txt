@@ -21,7 +21,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${fus_BINARY_DIR}/bin)
 
 # Required third party libraries
 find_package(gflags REQUIRED)
-find_package(LibUV REQUIRED)
+find_package(libuv REQUIRED)
+if (NOT WIN32)
+    find_package(LibUUID REQUIRED)
+endif()
 include(OpenSSL) # some extra logic in there
 find_package(string_theory REQUIRED)
 

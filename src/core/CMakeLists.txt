@@ -14,6 +14,9 @@
 #    along with fus.  If not, see <https://www.gnu.org/licenses/>.
 
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
+if (NOT WIN32)
+    include_directories(${LibUUID_INCLUDE_DIR})
+endif()
 
 set(FUS_CORE_HEADERS
     build_info.h
@@ -35,6 +38,8 @@ target_link_libraries(fus_core buildinfoobj)
 target_link_libraries(fus_core ${STRING_THEORY_LIBRARIES})
 if(WIN32)
     target_link_libraries(fus_core Rpcrt4)
+else()
+    target_link_libraries(fus_core LibUUID::LibUUID)
 endif()
 
 source_group("Header Files" FILES ${FUS_CORE_HEADERS})
