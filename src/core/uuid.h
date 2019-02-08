@@ -21,12 +21,11 @@
 #include <cstring>
 #include <string_theory/string>
 
-typedef unsigned char uuid_t[16];
-
 namespace fus
 {
     class uuid
     {
+        typedef unsigned char uuid_t[16];
         uuid_t m_data;
 
     public:
