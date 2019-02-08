@@ -17,7 +17,7 @@
 # This file is based largely off the work of Matt Keeter
 # See: https://www.mattkeeter.com/blog/2018-01-06-versioning/
 # Updated to use FindGit :)
-find_package(git)
+find_package(Git)
 if(GIT_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:'%h' -n 1
                     OUTPUT_VARIABLE GIT_REV
