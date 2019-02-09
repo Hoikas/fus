@@ -298,7 +298,7 @@ void fus::console::handle_ctrl(const char* buf, size_t bufsz)
             // Kiss my rump.
             return;
         }
-    } else if (*buf == 0x08) {
+    } else if (*buf == 0x08 || *buf == 0x7F) {
         handle_backspace();
     } else if (*buf == '\r' || *buf == '\n') {
         handle_input_line();
