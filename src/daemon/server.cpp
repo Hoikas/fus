@@ -200,7 +200,7 @@ void fus::server::shutdown()
     m_flags |= e_shuttingDown;
 
     // First attempt: be a nice guy and request for everyone to shutdown.
-    console::get().shutdown();
+    console::get().end();
     if (m_admin) {
         fus::tcp_stream_free_on_close((fus::tcp_stream_t*)m_admin, true);
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)m_admin);

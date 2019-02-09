@@ -144,7 +144,6 @@ namespace fus
 
         void begin();
         void end();
-        void shutdown();
 
         void set_prompt(const ST::string&);
 

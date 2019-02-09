@@ -392,8 +392,10 @@ void fus::console::insert_character(const char* buf, size_t bufsz)
 
 void fus::console::flush_input_line()
 {
-    ST::string line = ST::format("\r\x1B[K{}{}", m_prompt, m_inputBuf.to_string());
-    write(line.c_str(), line.size());
+    if (m_flags & e_processing) {
+        ST::string line = ST::format("\r\x1B[K{}{}", m_prompt, m_inputBuf.to_string());
+        write(line.c_str(), line.size());
+    }
 }
 
 void fus::console::set_input_line(const ST::string& value)
@@ -566,14 +568,13 @@ void fus::console::begin()
 
 void fus::console::end()
 {
-    uv_read_stop((uv_stream_t*)&m_stdin);
-    uv_tty_reset_mode();
-}
+    FUS_ASSERTD(m_flags & e_processing);
 
-void fus::console::shutdown()
-{
     uv_unref((uv_handle_t*)&m_stdin);
     uv_unref((uv_handle_t*)&m_stdout);
+    uv_read_stop((uv_stream_t*)&m_stdin);
+    uv_tty_reset_mode();
+    m_flags &= ~e_processing;
 }
 
 void fus::console::set_prompt(const ST::string& value)
