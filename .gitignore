@@ -12,6 +12,7 @@ tags
 
 Makefile
 CMakeCache.txt
+CMakeSettings.json
 CMakeFiles
 cmake_install.cmake
 install_manifest.txt
@@ -29,3 +30,6 @@ Docs/Doxygen/
 [Bb]uild[Ll]og.*
 [Tt]est[Rr]esult*
 [Tt]humbs.db
+
+*.kdev4
+*.vs
