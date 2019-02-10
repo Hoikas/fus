@@ -20,7 +20,7 @@
 #include <functional>
 #include <string_theory/format>
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #   define FUS_ASSERTD(cond) if ((cond) == 0) { fus::assert::handle(#cond, __FILE__, __LINE__, nullptr); }
 #   define FUS_ASSERTD_MSG(cond, msg, ...) if ((cond) == 0) { fus::assert::_handle(#cond, __FILE__, __LINE__, msg, __VA_ARGS__); }
 #else
