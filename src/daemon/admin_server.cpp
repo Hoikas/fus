@@ -70,6 +70,7 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
         return;
 
     ST::string senderaddr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client);
+    s_adminDaemon->m_log.write("[{}] wall: {}", senderaddr, msg->get_text());
 
     fus::protocol::admin_msg<fus::protocol::admin_wallBCast> bcast;
     bcast.m_header.set_type(fus::protocol::admin2client::e_wallBCast);
