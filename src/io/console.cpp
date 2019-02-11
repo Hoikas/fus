@@ -568,13 +568,13 @@ void fus::console::begin()
 
 void fus::console::end()
 {
-    FUS_ASSERTD(m_flags & e_processing);
-
-    uv_unref((uv_handle_t*)&m_stdin);
-    uv_unref((uv_handle_t*)&m_stdout);
-    uv_read_stop((uv_stream_t*)&m_stdin);
-    uv_tty_reset_mode();
-    m_flags &= ~e_processing;
+    if (m_flags & e_processing) {
+        uv_unref((uv_handle_t*)&m_stdin);
+        uv_unref((uv_handle_t*)&m_stdout);
+        uv_read_stop((uv_stream_t*)&m_stdin);
+        uv_tty_reset_mode();
+        m_flags &= ~e_processing;
+    }
 }
 
 void fus::console::set_prompt(const ST::string& value)
