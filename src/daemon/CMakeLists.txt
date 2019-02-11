@@ -34,7 +34,7 @@ set(FUS_AUTH_DAEMON
 
 set(FUS_DAEMON_HEADERS
     daemon_base.h
-    fus_config.h
+    daemon_config.h
     server.h
 )
 

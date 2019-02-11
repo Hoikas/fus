@@ -20,7 +20,7 @@
 #include "auth.h"
 #include "client/admin_client.h"
 #include "core/errors.h"
-#include "fus_config.h"
+#include "daemon_config.h"
 #include <gflags/gflags.h>
 #include "io/console.h"
 #include "io/io.h"

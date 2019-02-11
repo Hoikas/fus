@@ -24,6 +24,7 @@ set(FUS_CORE_HEADERS
     errors.h
     list.h
     uuid.h
+    "${PROJECT_BINARY_DIR}/include/fus_config.h"
 )
 
 set(FUS_CORE_SOURCES

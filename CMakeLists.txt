@@ -19,6 +19,9 @@ project(fus)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${fus_BINARY_DIR}/bin)
 
+configure_file("${PROJECT_SOURCE_DIR}/src/fus_config.h.in" "${PROJECT_BINARY_DIR}/include/fus_config.h")
+include_directories("${PROJECT_BINARY_DIR}/include")
+
 # Required third party libraries
 find_package(gflags REQUIRED)
 find_package(libuv REQUIRED)
