@@ -207,6 +207,15 @@ uint32_t fus::client_gen_trans(fus::client_t* client, fus::client_trans_cb cb, v
     return transId;
 }
 
+void fus::client_fire_trans(fus::client_t* client, uint32_t transId, ssize_t nread, const void* msg)
+{
+    auto it = client->m_trans.find(transId);
+    if (it != client->m_trans.end()) {
+        it->second.m_cb(it->second.m_param, (fus::client_t*)client, fus::net_error::e_success, nread, msg);
+        client->m_trans.erase(it);
+    }
+}
+
 void fus::client_kill_trans(fus::client_t* client, net_error result, ssize_t nread)
 {
     for (auto& it : client->m_trans)

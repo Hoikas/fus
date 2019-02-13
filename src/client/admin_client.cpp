@@ -21,17 +21,6 @@
 
 // =================================================================================
 
-template<typename _Msg>
-using _admin_cb = void(fus::admin_client_t*, ssize_t, _Msg*);
-
-template<typename _Msg, typename _Cb=_admin_cb<_Msg>>
-static inline void admin_read(fus::admin_client_t* client, _Cb cb)
-{
-    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
-}
-
-// =================================================================================
-
 int fus::admin_client_init(fus::admin_client_t* client, uv_loop_t* loop)
 {
     int result = client_init((client_t*)client, loop);
@@ -106,22 +95,28 @@ void fus::admin_client_wall(fus::admin_client_t* client, const ST::string& text)
 
 // =================================================================================
 
-static void admin_pingpong(fus::admin_client_t* client, ssize_t nread, fus::protocol::admin_pingReply* reply)
+template<typename _Msg>
+using _admin_cb = void(fus::admin_client_t*, ssize_t, _Msg*);
+
+template<typename _Msg, typename _Cb = _admin_cb<_Msg>>
+static inline void admin_read(fus::admin_client_t* client, _Cb cb)
+{
+    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
+}
+
+template<typename _Msg>
+static void admin_trans(fus::admin_client_t* client, ssize_t nread, _Msg* reply)
 {
     if (nread < 0) {
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return;
     }
 
-    fus::trans_map_t& trans = ((fus::client_t*)client)->m_trans;
-    auto it = trans.find(reply->get_transId());
-    if (it != trans.end()) {
-        it->second.m_cb(it->second.m_cb, (fus::client_t*)client, fus::net_error::e_success, nread, reply);
-        trans.erase(it);
-    }
-
+    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), nread, reply);
     fus::admin_client_read(client);
 }
+
+// =================================================================================
 
 static void admin_wallBCast(fus::admin_client_t* client, ssize_t nread, fus::protocol::admin_wallBCast* bcast)
 {
@@ -145,7 +140,7 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
 
     switch (header->get_type()) {
     case fus::protocol::admin2client::e_pingReply:
-        admin_read<fus::protocol::admin_pingReply>(client, admin_pingpong);
+        admin_read<fus::protocol::admin_pingReply>(client, admin_trans);
         break;
     case fus::protocol::admin2client::e_wallBCast:
         admin_read<fus::protocol::admin_wallBCast>(client, admin_wallBCast);

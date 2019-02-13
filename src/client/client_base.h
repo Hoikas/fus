@@ -61,6 +61,7 @@ namespace fus
 
     uint32_t client_next_transId(client_t*);
     uint32_t client_gen_trans(client_t*, client_trans_cb, void*);
+    void client_fire_trans(client_t*, uint32_t, ssize_t, const void*);
     void client_kill_trans(client_t*, net_error, ssize_t);
 };
 
