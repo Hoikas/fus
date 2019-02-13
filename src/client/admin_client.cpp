@@ -87,11 +87,11 @@ void fus::admin_client_wall_handler(fus::admin_client_t* client, fus::admin_clie
 
 // =================================================================================
 
-void fus::admin_client_ping(fus::admin_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb)
+void fus::admin_client_ping(fus::admin_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb, void* param)
 {
     protocol::admin_msg<protocol::admin_pingRequest> msg;
     msg.m_header.set_type(protocol::client2admin::e_pingRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, cb));
+    msg.m_contents.set_transId(client_gen_trans((client_t*)client, cb, param));
     msg.m_contents.set_pingTime(pingTimeMs);
     tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
 }
@@ -116,7 +116,7 @@ static void admin_pingpong(fus::admin_client_t* client, ssize_t nread, fus::prot
     fus::trans_map_t& trans = ((fus::client_t*)client)->m_trans;
     auto it = trans.find(reply->get_transId());
     if (it != trans.end()) {
-        it->second.m_cb((fus::client_t*)client, fus::net_error::e_success, nread, reply);
+        it->second.m_cb(it->second.m_cb, (fus::client_t*)client, fus::net_error::e_success, nread, reply);
         trans.erase(it);
     }
 

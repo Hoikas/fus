@@ -199,17 +199,17 @@ uint32_t fus::client_next_transId(fus::client_t* client)
     return client->m_transId++;
 }
 
-uint32_t fus::client_gen_trans(fus::client_t* client, fus::client_trans_cb cb)
+uint32_t fus::client_gen_trans(fus::client_t* client, fus::client_trans_cb cb, void* param)
 {
     uint32_t transId = client->m_transId++;
     if (cb)
-        client->m_trans[transId] = { transId, cb };
+        client->m_trans[transId] = { param, transId, cb };
     return transId;
 }
 
 void fus::client_kill_trans(fus::client_t* client, net_error result, ssize_t nread)
 {
     for (auto& it : client->m_trans)
-        it.second.m_cb(client, result, nread, nullptr);
+        it.second.m_cb(it.second.m_param, client, result, nread, nullptr);
     client->m_trans.clear();
 }

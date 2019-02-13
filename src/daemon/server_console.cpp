@@ -92,7 +92,7 @@ bool fus::server::admin_check(console& console) const
     return true;
 }
 
-static void admin_pong(fus::admin_client_t* client, fus::net_error result, ssize_t nread, const fus::protocol::admin_pingReply* pong)
+static void admin_pong(void*, fus::admin_client_t* client, fus::net_error result, ssize_t nread, const fus::protocol::admin_pingReply* pong)
 {
     if (result != fus::net_error::e_success) {
         fus::console::get() << fus::console::foreground_red << fus::console::weight_bold << "Error: Ping failed" << fus::console::endl;

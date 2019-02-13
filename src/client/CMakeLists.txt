@@ -19,11 +19,13 @@ include_directories("../")
 
 set(FUS_CLIENT_HEADERS
     admin_client.h
+    db_client.h
     client_base.h
 )
 
 set(FUS_CLIENT_SOURCES
     admin_client.cpp
+    db_client.cpp
     client_base.cpp
 )
 

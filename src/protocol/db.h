@@ -51,6 +51,8 @@ namespace fus
             {
                 e_pingRequest,
 
+                e_acctCreateRequest,
+
                 e_numMsgs
             };
         };
@@ -60,6 +62,8 @@ namespace fus
             enum
             {
                 e_pingReply,
+
+                e_acctCreateReply,
 
                 e_numMsgs
             };

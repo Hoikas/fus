@@ -28,11 +28,12 @@ namespace fus
     struct client_t;
     typedef void (*client_connect_cb)(client_t*, ssize_t status);
     typedef void (*client_pump_proc)(client_t*);
-    typedef void (*client_trans_cb)(client_t*, net_error, ssize_t, const void*);
+    typedef void (*client_trans_cb)(void*, client_t*, net_error, ssize_t, const void*);
     typedef std::map<uint32_t, struct transaction_t> trans_map_t;
 
     struct transaction_t
     {
+        void* m_param;
         uint32_t m_transId;
         client_trans_cb m_cb;
     };
@@ -59,7 +60,7 @@ namespace fus
     void client_reconnect(client_t*, uint64_t reconnectTimeMs=30000);
 
     uint32_t client_next_transId(client_t*);
-    uint32_t client_gen_trans(client_t*, client_trans_cb);
+    uint32_t client_gen_trans(client_t*, client_trans_cb, void*);
     void client_kill_trans(client_t*, net_error, ssize_t);
 };
 

@@ -17,6 +17,7 @@
 #include "db_private.h"
 #include "core/errors.h"
 #include "daemon/daemon_base.h"
+#include "io/net_error.h"
 #include <new>
 #include "protocol/db.h"
 
@@ -64,6 +65,22 @@ static void db_pingpong(fus::db_server_t* client, ssize_t nread, fus::protocol::
     fus::db_server_read(client);
 }
 
+static void db_acct_create(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctCreateRequest* msg)
+{
+    if (!db_check_read(client, nread))
+        return;
+
+    // Temporarily fail until the actual backend is implemented...
+    fus::protocol::db_msg<fus::protocol::db_acctCreateReply> reply;
+    reply.m_header.set_type(fus::protocol::db2client::e_acctCreateReply);
+    reply.m_contents.set_transId(msg->get_transId());
+    reply.m_contents.set_result((uint32_t)fus::net_error::e_notSupported);
+    fus::tcp_stream_write((fus::tcp_stream_t*)client, &reply, sizeof(reply));
+
+    // Continue reading
+    fus::db_server_read(client);
+}
+
 // =================================================================================
 
 static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::msg_std_header* msg)
@@ -74,6 +91,9 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
     switch (msg->get_type()) {
     case fus::protocol::client2db::e_pingRequest:
         db_read<fus::protocol::db_pingRequest>(client, db_pingpong);
+        break;
+    case fus::protocol::client2db::e_acctCreateRequest:
+        db_read<fus::protocol::db_acctCreateRequest>(client, db_acct_create);
         break;
     default:
         s_dbDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());

@@ -73,6 +73,7 @@ namespace fus
                    "Port to connect all " type " clients to")
 
         FUS_CONFIG_CLIENT("admin")
+        FUS_CONFIG_CLIENT("db")
 
 #undef FUS_CONFIG_CLIENT
 
