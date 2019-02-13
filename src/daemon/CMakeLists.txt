@@ -19,17 +19,17 @@ include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../")
 
 set(FUS_ADMIN_DAEMON
-    admin.h
-    admin_daemon.cpp
-    admin_server.cpp
-    admin_private.h
+    adminsrv/admin.h
+    adminsrv/admin_daemon.cpp
+    adminsrv/admin_server.cpp
+    adminsrv/admin_private.h
 )
 
 set(FUS_AUTH_DAEMON
-    auth.h
-    auth_daemon.cpp
-    auth_server.cpp
-    auth_private.h
+    authsrv/auth.h
+    authsrv/auth_daemon.cpp
+    authsrv/auth_server.cpp
+    authsrv/auth_private.h
 )
 
 set(FUS_DAEMON_HEADERS

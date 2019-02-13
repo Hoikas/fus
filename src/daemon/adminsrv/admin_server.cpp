@@ -16,7 +16,7 @@
 
 #include "admin_private.h"
 #include "core/errors.h"
-#include "daemon_base.h"
+#include "daemon/daemon_base.h"
 #include <new>
 #include "protocol/admin.h"
 

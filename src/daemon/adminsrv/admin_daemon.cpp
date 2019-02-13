@@ -15,10 +15,11 @@
  */
 
 #include "admin_private.h"
+#include "daemon/daemon_base.h"
+#include "daemon/server.h"
 #include "core/errors.h"
 #include <new>
 #include "protocol/common.h"
-#include "server.h"
 
 // =================================================================================
 

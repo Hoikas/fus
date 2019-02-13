@@ -16,8 +16,8 @@
 
 #include <iostream>
 
-#include "admin.h"
-#include "auth.h"
+#include "adminsrv/admin.h"
+#include "authsrv/auth.h"
 #include "client/admin_client.h"
 #include "core/errors.h"
 #include "daemon_config.h"

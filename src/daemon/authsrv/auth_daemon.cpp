@@ -16,9 +16,9 @@
 
 #include "auth_private.h"
 #include "core/errors.h"
+#include "daemon/server.h"
 #include <new>
 #include "protocol/common.h"
-#include "server.h"
 
 // =================================================================================
 

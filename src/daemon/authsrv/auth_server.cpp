@@ -16,7 +16,7 @@
 
 #include "auth_private.h"
 #include "core/errors.h"
-#include "daemon_base.h"
+#include "daemon/daemon_base.h"
 #include <new>
 #include <openssl/rand.h>
 #include "protocol/auth.h"
