@@ -15,8 +15,8 @@
  */
 
 FUS_NET_STRUCT_BEGIN(db_pingRequest)
-FUS_NET_FIELD_UINT32(transId)
-FUS_NET_FIELD_UINT32(pingTime)
+    FUS_NET_FIELD_UINT32(transId)
+    FUS_NET_FIELD_UINT32(pingTime)
 FUS_NET_STRUCT_END(db_pingRequest)
 
 FUS_NET_STRUCT_BEGIN(db_acctCreateRequest)
@@ -29,8 +29,8 @@ FUS_NET_STRUCT_END(db_acctCreateRequest)
 // =================================================================================
 
 FUS_NET_STRUCT_BEGIN(db_pingReply)
-FUS_NET_FIELD_UINT32(transId)
-FUS_NET_FIELD_UINT32(pingTime)
+    FUS_NET_FIELD_UINT32(transId)
+    FUS_NET_FIELD_UINT32(pingTime)
 FUS_NET_STRUCT_END(db_pingReply)
 
 FUS_NET_STRUCT_BEGIN(db_acctCreateReply)
