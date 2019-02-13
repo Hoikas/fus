@@ -21,6 +21,7 @@
 #include "client/admin_client.h"
 #include "core/errors.h"
 #include "daemon_config.h"
+#include "dbsrv/db.h"
 #include <gflags/gflags.h>
 #include "io/console.h"
 #include "io/io.h"
@@ -33,6 +34,7 @@
 
 DEFINE_bool(run_admin, true, "Launch the admin daemon");
 DEFINE_bool(run_auth, true, "Launch the auth daemon");
+DEFINE_bool(run_db, true, "Launch the database daemon");
 
 // =================================================================================
 
@@ -100,6 +102,10 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
     case fus::protocol::e_protocolCli2Auth:
         log.write_debug("[{}] Incoming auth connection", fus::tcp_stream_peeraddr(client));
         fus::auth_daemon_accept((fus::auth_server_t*)client, msg);
+        break;
+    case fus::protocol::e_protocolSrv2Database:
+        log.write_debug("[{}] Incoming db connection", fus::tcp_stream_peeraddr(client));
+        fus::db_daemon_accept((fus::db_server_t*)client, msg);
         break;
     default:
         log.write_error("[{}] Invalid connection type '{2X}'", fus::tcp_stream_peeraddr(client), header->get_connType());
@@ -185,6 +191,8 @@ void fus::server::init_daemons()
         admin_daemon_init();
     if (FLAGS_run_auth)
         auth_daemon_init();
+    if (FLAGS_run_db)
+        db_daemon_init();
 }
 
 void fus::server::free_daemons()
@@ -193,6 +201,8 @@ void fus::server::free_daemons()
         admin_daemon_free();
     if (auth_daemon_running())
         auth_daemon_free();
+    if (db_daemon_running())
+        db_daemon_free();
 }
 
 void fus::server::shutdown()

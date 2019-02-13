@@ -32,6 +32,13 @@ set(FUS_AUTH_DAEMON
     authsrv/auth_private.h
 )
 
+set(FUS_DB_DAEMON
+    dbsrv/db.h
+    dbsrv/db_daemon.cpp
+    dbsrv/db_server.cpp
+    dbsrv/db_private.h
+)
+
 set(FUS_DAEMON_HEADERS
     daemon_base.h
     daemon_config.h
@@ -45,7 +52,8 @@ set(FUS_DAEMON_SOURCES
     server_console.cpp
 )
 
-add_executable(fus_daemon ${FUS_ADMIN_DAEMON} ${FUS_AUTH_DAEMON} ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
+add_executable(fus_daemon ${FUS_ADMIN_DAEMON} ${FUS_AUTH_DAEMON} ${FUS_DB_DAEMON}
+                          ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
 target_link_libraries(fus_daemon ${GFLAGS_LIBRARIES})
 target_link_libraries(fus_daemon ${LIBUV_LIBRARIES})
 target_link_libraries(fus_daemon ${STRING_THEORY_LIBRARIES})
@@ -56,5 +64,6 @@ target_link_libraries(fus_daemon fus_protocol)
 
 source_group("Admin Daemon" FILES ${FUS_ADMIN_DAEMON})
 source_group("Auth Daemon" FILES ${FUS_AUTH_DAEMON})
+source_group("DB Daemon" FILES ${FUS_DB_DAEMON})
 source_group("Header Files" FILES ${FUS_DAEMON_HEADERS})
 source_group("Source Files" FILES ${FUS_DAEMON_SOURCES})

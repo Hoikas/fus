@@ -20,6 +20,7 @@ set(FUS_PROTOCOL_HEADERS
     admin.h
     auth.h
     common.h
+    db.h
     utils.h
 )
 
@@ -38,6 +39,7 @@ set(FUS_PROTOCOL_PROTOCOLS
     admin.inl
     auth.inl
     common.inl
+    db.inl
 )
 
 set(FUS_PROTOCOL_SOURCES

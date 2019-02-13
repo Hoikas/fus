@@ -14,19 +14,14 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Include all protocol headers here
-#include "admin.h"
-#include "auth.h"
-#include "common.h"
-#include "db.h"
+FUS_NET_STRUCT_BEGIN(db_pingRequest)
+FUS_NET_FIELD_UINT32(transId)
+FUS_NET_FIELD_UINT32(pingTime)
+FUS_NET_STRUCT_END(db_pingRequest)
 
-// Protocol utilities will help with compile-time verifications
-#include "utils.h"
+// =================================================================================
 
-// Reinclude all of the protocol inlines to define objects
-#include "protocol_objects_begin.inl"
-#include "admin.inl"
-#include "auth.inl"
-#include "common.inl"
-#include "db.inl"
-#include "protocol_objects_end.inl"
+FUS_NET_STRUCT_BEGIN(db_pingReply)
+FUS_NET_FIELD_UINT32(transId)
+FUS_NET_FIELD_UINT32(pingTime)
+FUS_NET_STRUCT_END(db_pingReply)

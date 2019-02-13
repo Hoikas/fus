@@ -14,19 +14,33 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Include all protocol headers here
-#include "admin.h"
-#include "auth.h"
-#include "common.h"
-#include "db.h"
+#ifndef __FUS_DB_DAEMON_H
+#define __FUS_DB_DAEMON_H
 
-// Protocol utilities will help with compile-time verifications
-#include "utils.h"
+#include "core/list.h"
+#include "io/crypt_stream.h"
 
-// Reinclude all of the protocol inlines to define objects
-#include "protocol_objects_begin.inl"
-#include "admin.inl"
-#include "auth.inl"
-#include "common.inl"
-#include "db.inl"
-#include "protocol_objects_end.inl"
+namespace fus
+{
+    struct db_server_t;
+
+    struct db_server_t
+    {
+        crypt_stream_t m_stream;
+        FUS_LIST_LINK(db_server_t) m_link;
+    };
+
+    void db_server_init(db_server_t*);
+    void db_server_free(db_server_t*);
+
+    void db_server_read(db_server_t*);
+
+    void db_daemon_init();
+    bool db_daemon_running();
+    void db_daemon_free();
+    void db_daemon_shutdown();
+
+    void db_daemon_accept(db_server_t*, const void*);
+};
+
+#endif

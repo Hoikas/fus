@@ -88,6 +88,7 @@ namespace fus
 
         FUS_CONFIG_CRYPT("admin", 19)
         FUS_CONFIG_CRYPT("auth", 41)
+        FUS_CONFIG_CRYPT("db", 19)
         FUS_CONFIG_CRYPT("game", 73)
         FUS_CONFIG_CRYPT("gate", 4)
 

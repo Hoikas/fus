@@ -201,6 +201,7 @@ void fus::server::generate_daemon_keys()
 {
     generate_daemon_keys(ST_LITERAL("admin"));
     generate_daemon_keys(ST_LITERAL("auth"));
+    generate_daemon_keys(ST_LITERAL("db"));
     generate_daemon_keys(ST_LITERAL("game"));
     generate_daemon_keys(ST_LITERAL("gate"));
 }
