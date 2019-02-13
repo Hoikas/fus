@@ -40,9 +40,9 @@ void fus::db_server_free(fus::db_server_t* client)
 static inline bool db_check_read(fus::db_server_t* client, ssize_t nread)
 {
     if (nread < 0) {
-        s_dbDaemon->m_log.write_debug("[{}]: Read failed: {}",
-                                        fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
-                                        uv_strerror(nread));
+        fus::db_daemon_log().write_debug("[{}]: Read failed: {}",
+                                         fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
+                                         uv_strerror(nread));
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return false;
     }
@@ -96,7 +96,7 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
         db_read<fus::protocol::db_acctCreateRequest>(client, db_acct_create);
         break;
     default:
-        s_dbDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
+        fus::db_daemon_log().write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
     }
 }

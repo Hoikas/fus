@@ -39,9 +39,9 @@ void fus::admin_server_free(fus::admin_server_t* client)
 static inline bool admin_check_read(fus::admin_server_t* client, ssize_t nread)
 {
     if (nread < 0) {
-        s_adminDaemon->m_log.write_debug("[{}]: Read failed: {}",
-                                        fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
-                                        uv_strerror(nread));
+        fus::admin_daemon_log().write_debug("[{}]: Read failed: {}",
+                                            fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
+                                            uv_strerror(nread));
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
         return false;
     }
@@ -70,7 +70,7 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
         return;
 
     ST::string senderaddr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client);
-    s_adminDaemon->m_log.write("[{}] wall: {}", senderaddr, msg->get_text());
+    fus::admin_daemon_log().write("[{}] wall: {}", senderaddr, msg->get_text());
 
     fus::protocol::admin_msg<fus::protocol::admin_wallBCast> bcast;
     bcast.m_header.set_type(fus::protocol::admin2client::e_wallBCast);
@@ -102,7 +102,7 @@ static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::prot
         admin_read<fus::protocol::admin_wallRequest>(client, admin_wall);
         break;
     default:
-        s_adminDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
+        fus::admin_daemon_log().write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
     }
 }

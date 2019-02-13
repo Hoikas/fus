@@ -18,24 +18,31 @@
 #define __FUS_AUTH_DAEMON_PRIVATE_H
 
 #include "auth.h"
-#include "client/db_client.h"
 #include "daemon/daemon_base.h"
-#include "io/log_file.h"
 
 namespace fus
 {
     struct auth_daemon_t
     {
-        secure_daemon_t m_secure;
-        log_file m_log;
-        uint32_t m_flags;
-        db_client_t* m_db;
-
+        db_trans_daemon_t m_daemon;
         FUS_LIST_DECL(auth_server_t, m_link) m_clients;
     };
 };
 
 extern fus::auth_daemon_t* s_authDaemon;
+
+namespace fus
+{
+    inline uint32_t& auth_daemon_flags()
+    {
+        return ((daemon_t*)s_authDaemon)->m_flags;
+    }
+
+    inline log_file& auth_daemon_log()
+    {
+        return ((daemon_t*)s_authDaemon)->m_log;
+    }
+};
 
 // =================================================================================
 
@@ -53,12 +60,6 @@ static inline void auth_read(fus::auth_server_t* client, _Cb cb)
 enum
 {
     e_clientRegistered = (1<<0),
-};
-
-enum
-{
-    e_shuttingDown = (1<<0),
-    e_dbConnected = (1<<1),
 };
 
 #endif

@@ -19,21 +19,30 @@
 
 #include "db.h"
 #include "daemon/daemon_base.h"
-#include "io/log_file.h"
 
 namespace fus
 {
     struct db_daemon_t
     {
         secure_daemon_t m_secure;
-        log_file m_log;
-        uint32_t m_flags;
-
         FUS_LIST_DECL(db_server_t, m_link) m_clients;
     };
 };
 
 extern fus::db_daemon_t* s_dbDaemon;
+
+namespace fus
+{
+    inline uint32_t& db_daemon_flags()
+    {
+        return ((daemon_t*)s_dbDaemon)->m_flags;
+    }
+
+    inline log_file& db_daemon_log()
+    {
+        return ((daemon_t*)s_dbDaemon)->m_log;
+    }
+};
 
 // =================================================================================
 
@@ -45,12 +54,5 @@ static inline void db_read(fus::db_server_t* client, _Cb cb)
 {
     fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
 }
-
-// =================================================================================
-
-enum
-{
-    e_shuttingDown = (1<<0),
-};
 
 #endif

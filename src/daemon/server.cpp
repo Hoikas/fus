@@ -220,6 +220,8 @@ void fus::server::shutdown()
         admin_daemon_shutdown();
     if (auth_daemon_running())
         auth_daemon_shutdown();
+    if (db_daemon_running())
+        db_daemon_shutdown();
     uv_close((uv_handle_t*)&m_lobby, nullptr);
 
     // The "nice" shutdown may take a few loop iterations, so we'll wait nicely for a bit.

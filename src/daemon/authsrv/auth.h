@@ -23,6 +23,7 @@
 namespace fus
 {
     struct auth_server_t;
+    class log_file;
 
     struct auth_server_t
     {
