@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "db/database.h"
 #include "db_private.h"
 #include "daemon/daemon_base.h"
 #include "daemon/server.h"
@@ -33,6 +34,7 @@ void fus::db_daemon_init()
 
     s_dbDaemon = (db_daemon_t*)malloc(sizeof(db_daemon_t));
     secure_daemon_init((secure_daemon_t*)s_dbDaemon, ST_LITERAL("db"));
+    s_dbDaemon->m_db = database::init(server::get()->config(), db_daemon_log());
     new(&s_dbDaemon->m_clients) FUS_LIST_DECL(db_server_t, m_link);
 }
 
@@ -46,6 +48,7 @@ void fus::db_daemon_free()
     FUS_ASSERTD(s_dbDaemon);
 
     s_dbDaemon->m_clients.~list_declare();
+    delete s_dbDaemon->m_db;
     secure_daemon_free((secure_daemon_t*)s_dbDaemon);
     free(s_dbDaemon);
     s_dbDaemon = nullptr;

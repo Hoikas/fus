@@ -17,4 +17,6 @@
 #ifndef __FUS_CONFIG_H
 #define __FUS_CONFIG_H
 
+#cmakedefine FUS_HAVE_SQLITE
+
 #endif

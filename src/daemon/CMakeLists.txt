@@ -59,6 +59,7 @@ target_link_libraries(fus_daemon ${LIBUV_LIBRARIES})
 target_link_libraries(fus_daemon ${STRING_THEORY_LIBRARIES})
 target_link_libraries(fus_daemon fus_client)
 target_link_libraries(fus_daemon fus_core)
+target_link_libraries(fus_daemon fus_db)
 target_link_libraries(fus_daemon fus_io)
 target_link_libraries(fus_daemon fus_protocol)
 

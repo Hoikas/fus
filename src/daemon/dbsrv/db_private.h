@@ -22,9 +22,12 @@
 
 namespace fus
 {
+    class database;
+
     struct db_daemon_t
     {
         secure_daemon_t m_secure;
+        database* m_db;
         FUS_LIST_DECL(db_server_t, m_link) m_clients;
     };
 };

@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "db/database.h"
 #include "db_private.h"
 #include "core/errors.h"
 #include "daemon/daemon_base.h"
@@ -65,17 +66,36 @@ static void db_pingpong(fus::db_server_t* client, ssize_t nread, fus::protocol::
     fus::db_server_read(client);
 }
 
-static void db_acct_create(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctCreateRequest* msg)
+// =================================================================================
+
+static void db_acctCreated(fus::db_server_t* client, uint32_t transId, fus::net_error result, const fus::uuid& uuid)
+{
+    fus::protocol::db_msg<fus::protocol::db_acctCreateReply> msg;
+    msg.m_header.set_type(fus::protocol::db2client::e_acctCreateReply);
+    msg.m_contents.set_transId(transId);
+    msg.m_contents.set_result((uint32_t)result);
+    *msg.m_contents.get_uuid() = uuid;
+    fus::tcp_stream_write((fus::tcp_stream_t*)client, &msg, sizeof(msg));
+}
+
+static void db_acctCreate(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctCreateRequest* msg)
 {
     if (!db_check_read(client, nread))
         return;
 
-    // Temporarily fail until the actual backend is implemented...
-    fus::protocol::db_msg<fus::protocol::db_acctCreateReply> reply;
-    reply.m_header.set_type(fus::protocol::db2client::e_acctCreateReply);
-    reply.m_contents.set_transId(msg->get_transId());
-    reply.m_contents.set_result((uint32_t)fus::net_error::e_notSupported);
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, &reply, sizeof(reply));
+    // Since this is the first database request implementing, I'm dumping my thoughts here.
+    // It's my baby, so if you don't like it, write your own damn URU server and kiss my ass.
+    // Anyway, there's going to be lots of seemingly pointless boilerplate code whose sole responsibility
+    // is to copy data from the stream's read buffer into the proper database call. At the time of
+    // this writing, we know this database is SQLite3. That's grand, except with SQLite3 we're not
+    // trying to deal with the database blocking execution of the event loop. Gulp. In the future,
+    // we will add another database backend, chosen at runtime. Therefore, we will need this copy-
+    // pasta code to handle that runtime dispatching. Goal: sqlite database for quick local servers
+    // and a real RDBMS backend for serious shards. Supplemental apps like a theoretical dirtsand
+    // database converter can use the same API we do for migrations...
+    // So, yeah, TL;DR: https://www.youtube.com/watch?v=NUexv1tuWZA
+    s_dbDaemon->m_db->create_account(msg->get_name(), msg->get_hash(), msg->get_hashsz(), msg->get_flags(),
+                                     (fus::database_acct_create_cb)db_acctCreated, client, msg->get_transId());
 
     // Continue reading
     fus::db_server_read(client);
@@ -93,7 +113,7 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
         db_read<fus::protocol::db_pingRequest>(client, db_pingpong);
         break;
     case fus::protocol::client2db::e_acctCreateRequest:
-        db_read<fus::protocol::db_acctCreateRequest>(client, db_acct_create);
+        db_read<fus::protocol::db_acctCreateRequest>(client, db_acctCreate);
         break;
     default:
         fus::db_daemon_log().write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());

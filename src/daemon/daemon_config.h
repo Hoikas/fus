@@ -64,6 +64,16 @@ namespace fus
                        "    - default: Default verification, any client can connect to file or gatekeeper but all others must match the expected values\n"
                        "    - strict: Strict verification, like default but the product uuid is verified for file and gatekeeper connections")
 
+        FUS_CONFIG_STR("db", "engine", "sqlite",
+                       "Database Engine\n"
+                       "This sets the engine to use for the database engine.\n"
+                       "Possible Values:\n"
+                       "    - sqlite: A liteweight database solution completely self contained in fus for small shards")
+
+        FUS_CONFIG_STR("sqlite", "path", "db/fus.db",
+                       "SQLite Database Path\n"
+                       "Path to the database file used by the SQLite engine.")
+
 #define FUS_CONFIG_CLIENT(type) \
     FUS_CONFIG_STR(type, "addr", "", \
                    "Server Address\n" \

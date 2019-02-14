@@ -19,9 +19,6 @@ project(fus)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${fus_BINARY_DIR}/bin)
 
-configure_file("${PROJECT_SOURCE_DIR}/src/fus_config.h.in" "${PROJECT_BINARY_DIR}/include/fus_config.h")
-include_directories("${PROJECT_BINARY_DIR}/include")
-
 # Required third party libraries
 find_package(gflags REQUIRED)
 find_package(libuv REQUIRED)
@@ -30,6 +27,19 @@ if (NOT WIN32)
 endif()
 include(OpenSSL) # some extra logic in there
 find_package(string_theory REQUIRED)
+
+# Optional Stuff
+option(FUS_DB_SQLITE3 "Use SQLite3 Database Engine" ON)
+if(FUS_DB_SQLITE3)
+    find_package(SQLite3 REQUIRED)
+    set(FUS_HAVE_SQLITE 1)
+else()
+    find_package(SQLite3 QUIET)
+    set(FUS_HAVE_SQLITE 0)
+endif()
+
+include_directories("${PROJECT_BINARY_DIR}/include")
+configure_file("${PROJECT_SOURCE_DIR}/src/fus_config.h.in" "${PROJECT_BINARY_DIR}/include/fus_config.h")
 
 # Might as well request C++17 so the mice can play.
 set(CMAKE_CXX_STANDARD 17)
