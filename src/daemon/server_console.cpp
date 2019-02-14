@@ -92,7 +92,33 @@ bool fus::server::admin_check(console& console) const
     return true;
 }
 
-static void admin_pong(void*, fus::admin_client_t* client, fus::net_error result, ssize_t nread, const fus::protocol::admin_pingReply* pong)
+static void admin_acctCreated(void*, fus::admin_client_t*, uint32_t, fus::net_error result, ssize_t, const void*)
+{
+    fus::console& c = fus::console::get();
+    if (result == fus::net_error::e_success) {
+        c << fus::console::foreground_green << fus::console::weight_bold << "Account created!" << fus::console::endl;
+    } else {
+        c << fus::console::foreground_red << fus::console::weight_bold << "Error creating account: "
+          << fus::net_error_string(result) << fus::console::endl;
+    }
+}
+
+bool fus::server::admin_acctCreate(console& console, const ST::string& line)
+{
+    if (!admin_check(console))
+        return true;
+
+    std::vector<ST::string> args = line.split(' ');
+    if (args.size() < 2)
+        return false;
+
+    /// FIXME: acct flags...
+    admin_client_create_account(m_admin, args[0], args[1], 0, (client_trans_cb)admin_acctCreated);
+    return true;
+}
+
+
+static void admin_pong(void*, fus::admin_client_t* client, uint32_t, fus::net_error result, ssize_t nread, const fus::protocol::admin_pingReply* pong)
 {
     if (result != fus::net_error::e_success) {
         fus::console::get() << fus::console::foreground_red << fus::console::weight_bold << "Error: Ping failed" << fus::console::endl;
@@ -178,6 +204,8 @@ void fus::server::start_console()
     fus::console& console = console::get();
 
     // Add all console commands.
+    console.add_command("addacct", "addacct [name] [password] [flags]", "Creates a new account for logging into the game",
+                        std::bind(&fus::server::admin_acctCreate, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("config", "config [server|client] [output]", "Generates fus or plClient configuration",
                         std::bind(&fus::server::save_config, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("keygen", "keygen [server(s)]", "Generates encryption keys for the requested servers",

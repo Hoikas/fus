@@ -49,6 +49,7 @@ namespace fus
         static void admin_disconnected(fus::admin_client_t*);
         void admin_init();
         bool admin_check(console&) const;
+        bool admin_acctCreate(console&, const ST::string&);
         bool admin_ping(console&, const ST::string&);
         bool admin_wall(console&, const ST::string&);
 

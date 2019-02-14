@@ -33,6 +33,7 @@ set(FUS_IO_SOURCES
     crypt_stream.cpp
     io.cpp
     log_file.cpp
+    net_error.cpp
     net_struct.cpp
     tcp_stream.cpp
 )

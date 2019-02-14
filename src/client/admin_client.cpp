@@ -76,11 +76,12 @@ void fus::admin_client_wall_handler(fus::admin_client_t* client, fus::admin_clie
 
 // =================================================================================
 
-void fus::admin_client_ping(fus::admin_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb, void* param)
+void fus::admin_client_ping(fus::admin_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb,
+                            void* instance, uint32_t transId)
 {
     protocol::admin_msg<protocol::admin_pingRequest> msg;
     msg.m_header.set_type(protocol::client2admin::e_pingRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, cb, param));
+    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
     msg.m_contents.set_pingTime(pingTimeMs);
     tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
 }
@@ -90,6 +91,19 @@ void fus::admin_client_wall(fus::admin_client_t* client, const ST::string& text)
     protocol::admin_msg<protocol::admin_wallRequest> msg;
     msg.m_header.set_type(protocol::client2admin::e_wallRequest);
     msg.m_contents.set_text(text);
+    tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
+}
+
+void fus::admin_client_create_account(fus::admin_client_t* client, const ST::string& name,
+                                      const ST::string& pass, uint32_t flags, client_trans_cb cb,
+                                      void* instance, uint32_t transId)
+{
+    protocol::admin_msg<protocol::admin_acctCreateRequest> msg;
+    msg.m_header.set_type(protocol::client2admin::e_acctCreateRequest);
+    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.m_contents.set_name(name);
+    msg.m_contents.set_pass(pass);
+    msg.m_contents.set_flags(flags);
     tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
 }
 
@@ -112,7 +126,20 @@ static void admin_trans(fus::admin_client_t* client, ssize_t nread, _Msg* reply)
         return;
     }
 
-    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), nread, reply);
+    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(),
+                           (fus::net_error)reply->get_result(), nread, reply);
+    fus::admin_client_read(client);
+}
+
+template<typename _Msg>
+static void admin_trans_noresult(fus::admin_client_t* client, ssize_t nread, _Msg* reply)
+{
+    if (nread < 0) {
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        return;
+    }
+
+    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), fus::net_error::e_success, nread, reply);
     fus::admin_client_read(client);
 }
 
@@ -140,10 +167,13 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
 
     switch (header->get_type()) {
     case fus::protocol::admin2client::e_pingReply:
-        admin_read<fus::protocol::admin_pingReply>(client, admin_trans);
+        admin_read<fus::protocol::admin_pingReply>(client, admin_trans_noresult);
         break;
     case fus::protocol::admin2client::e_wallBCast:
         admin_read<fus::protocol::admin_wallBCast>(client, admin_wallBCast);
+        break;
+    case fus::protocol::admin2client::e_acctCreateReply:
+        admin_read<fus::protocol::admin_acctCreateReply>(client, admin_trans);
         break;
     default:
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);

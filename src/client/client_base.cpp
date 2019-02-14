@@ -187,8 +187,15 @@ static void reconnect_client(uv_timer_t* timer)
 void fus::client_reconnect(fus::client_t* client, uint64_t reconnectTimeMs)
 {
     FUS_ASSERTD(client);
-    FUS_ASSERTD(client->m_connectReq);
     FUS_ASSERTD(!(((fus::tcp_stream_t*)client)->m_flags & tcp_stream_t::e_connected));
+
+    // The high level code will probably take over the close callback. Unless we're shutting down,
+    // a reconnect is most likely, so we need to cancel any transactions pending on the previous
+    // connection. If we're in shut down, this client will be freed very soon, which also cancels
+    // the pending transactions.
+    client_kill_trans(client, fus::net_error::e_disconnected, UV_ECONNRESET);
+
+    FUS_ASSERTD(client->m_connectReq);
     uv_timer_start(&client->m_reconnect, reconnect_client, reconnectTimeMs, 0);
 }
 
@@ -199,26 +206,43 @@ uint32_t fus::client_next_transId(fus::client_t* client)
     return client->m_transId++;
 }
 
-uint32_t fus::client_gen_trans(fus::client_t* client, fus::client_trans_cb cb, void* param)
+uint32_t fus::client_gen_trans(fus::client_t* client, void* instance, uint32_t wrapTransId, fus::client_trans_cb cb)
 {
     uint32_t transId = client->m_transId++;
     if (cb)
-        client->m_trans[transId] = { param, transId, cb };
+        client->m_trans[transId] = { instance, wrapTransId, cb, };
     return transId;
 }
 
-void fus::client_fire_trans(fus::client_t* client, uint32_t transId, ssize_t nread, const void* msg)
+void fus::client_fire_trans(fus::client_t* client, uint32_t transId, net_error result, ssize_t nread, const void* msg)
 {
     auto it = client->m_trans.find(transId);
     if (it != client->m_trans.end()) {
-        it->second.m_cb(it->second.m_param, (fus::client_t*)client, fus::net_error::e_success, nread, msg);
+        it->second.m_cb(it->second.m_instance, (fus::client_t*)client, it->second.m_transId,
+                        result, nread, msg);
         client->m_trans.erase(it);
     }
 }
 
-void fus::client_kill_trans(fus::client_t* client, net_error result, ssize_t nread)
+void fus::client_kill_trans(fus::client_t* client, net_error result, ssize_t nread, bool quiet)
 {
-    for (auto& it : client->m_trans)
-        it.second.m_cb(it.second.m_param, client, result, nread, nullptr);
+    if (!quiet) {
+        for (auto& it : client->m_trans)
+            it.second.m_cb(it.second.m_instance, client, it.second.m_transId, result, nread, nullptr);
+    }
     client->m_trans.clear();
+    client->m_transId = 0;
+}
+
+void fus::client_kill_trans(fus::client_t* client, void* instance, net_error result, ssize_t nread, bool quiet)
+{
+    for (auto it = client->m_trans.cbegin(); it != client->m_trans.cend();) {
+        if (it->second.m_instance == instance) {
+            if (!quiet)
+                it->second.m_cb(instance, client, it->second.m_transId, result, nread, nullptr);
+            client->m_trans.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }

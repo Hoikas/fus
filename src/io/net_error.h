@@ -18,6 +18,7 @@
 #define __FUS_NET_ERROR_H
 
 #include <cstdint>
+#include <string_theory/string>
 
 namespace fus
 {
@@ -77,6 +78,8 @@ namespace fus
 
         e_numErrors
     };
+
+    const ST::string& net_error_string(net_error e);
 };
 
 #endif

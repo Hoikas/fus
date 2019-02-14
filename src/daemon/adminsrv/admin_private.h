@@ -19,12 +19,14 @@
 
 #include "admin.h"
 #include "daemon/daemon_base.h"
+#include <openssl/ossl_typ.h>
 
 namespace fus
 {
     struct admin_daemon_t
     {
         db_trans_daemon_t m_secure;
+        EVP_MD_CTX* m_hashCtx;
         FUS_LIST_DECL(admin_server_t, m_link) m_clients;
     };
 };
@@ -33,6 +35,11 @@ extern fus::admin_daemon_t* s_adminDaemon;
 
 namespace fus
 {
+    inline db_client_t* admin_daemon_db()
+    {
+        return ((db_trans_daemon_t*)s_adminDaemon)->m_db;
+    }
+
     inline uint32_t& admin_daemon_flags()
     {
         return ((daemon_t*)s_adminDaemon)->m_flags;

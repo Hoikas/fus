@@ -15,6 +15,7 @@
  */
 
 #include "auth_private.h"
+#include "client/db_client.h"
 #include "core/errors.h"
 #include "daemon/daemon_base.h"
 #include <new>
@@ -34,6 +35,7 @@ void fus::auth_server_init(fus::auth_server_t* client)
 
 void fus::auth_server_free(fus::auth_server_t* client)
 {
+    client_kill_trans((client_t*)auth_daemon_db(), client, net_error::e_disconnected, UV_ECONNRESET, true);
     client->m_link.~list_link();
 }
 

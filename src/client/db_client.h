@@ -38,8 +38,8 @@ namespace fus
     size_t db_client_header_size();
 
 
-    void db_client_ping(db_client_t*, uint32_t, client_trans_cb cb=nullptr, void* param=nullptr);
-    void db_client_create_account(db_client_t*, const ST::string&, const void*, size_t, uint32_t, client_trans_cb cb=nullptr, void* param=nullptr);
+    void db_client_ping(db_client_t*, uint32_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
+    void db_client_create_account(db_client_t*, const ST::string&, const void*, size_t, uint32_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
 
     void db_client_read(db_client_t*);
 };

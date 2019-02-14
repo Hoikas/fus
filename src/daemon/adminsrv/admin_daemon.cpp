@@ -19,6 +19,7 @@
 #include "daemon/server.h"
 #include "core/errors.h"
 #include <new>
+#include <openssl/evp.h>
 #include "protocol/common.h"
 
 // =================================================================================
@@ -33,6 +34,7 @@ void fus::admin_daemon_init()
 
     s_adminDaemon = (admin_daemon_t*)malloc(sizeof(admin_daemon_t));
     db_trans_daemon_init((db_trans_daemon_t*)s_adminDaemon, ST_LITERAL("admin"));
+    s_adminDaemon->m_hashCtx = EVP_MD_CTX_new();
     new(&s_adminDaemon->m_clients) FUS_LIST_DECL(admin_server_t, m_link);
 }
 
@@ -46,6 +48,7 @@ void fus::admin_daemon_free()
     FUS_ASSERTD(s_adminDaemon);
 
     s_adminDaemon->m_clients.~list_declare();
+    EVP_MD_CTX_free(s_adminDaemon->m_hashCtx);
     secure_daemon_free((secure_daemon_t*)s_adminDaemon);
     free(s_adminDaemon);
     s_adminDaemon = nullptr;

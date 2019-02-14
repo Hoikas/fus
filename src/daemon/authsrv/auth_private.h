@@ -33,6 +33,11 @@ extern fus::auth_daemon_t* s_authDaemon;
 
 namespace fus
 {
+    inline db_client_t* auth_daemon_db()
+    {
+        return ((db_trans_daemon_t*)s_authDaemon)->m_db;
+    }
+
     inline uint32_t& auth_daemon_flags()
     {
         return ((daemon_t*)s_authDaemon)->m_flags;

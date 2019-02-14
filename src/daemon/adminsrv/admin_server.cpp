@@ -15,10 +15,13 @@
  */
 
 #include "admin_private.h"
+#include "client/db_client.h"
 #include "core/errors.h"
 #include "daemon/daemon_base.h"
 #include <new>
+#include <openssl/evp.h>
 #include "protocol/admin.h"
+#include "protocol/db.h"
 
 // =================================================================================
 
@@ -31,6 +34,7 @@ void fus::admin_server_init(fus::admin_server_t* client)
 
 void fus::admin_server_free(fus::admin_server_t* client)
 {
+    client_kill_trans((client_t*)admin_daemon_db(), client, net_error::e_disconnected, UV_ECONNRESET, true);
     client->m_link.~list_link();
 }
 
@@ -87,6 +91,53 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
     fus::admin_server_read(client);
 }
 
+static void admin_acctCreated(fus::admin_server_t* client, fus::db_client_t* db, uint32_t transId,
+                              fus::net_error result, ssize_t nread, const fus::protocol::db_acctCreateReply* reply)
+{
+    fus::protocol::admin_msg<fus::protocol::admin_acctCreateReply> msg;
+    msg.m_header.set_type(fus::protocol::admin2client::e_acctCreateReply);
+    msg.m_contents.set_transId(transId);
+    msg.m_contents.set_result((uint32_t)result);
+    if (reply)
+        *msg.m_contents.get_uuid() = reply->get_uuid();
+    fus::tcp_stream_write((fus::tcp_stream_t*)client, &msg, sizeof(msg));
+}
+
+static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::protocol::admin_acctCreateRequest* msg)
+{
+    if (!admin_check_read(client, nread))
+        return;
+
+    // Database client must be available for this to work. Otherwise, just phail.
+    if (fus::admin_daemon_flags() & fus::daemon_t::e_dbConnected) {
+        /// TODO: support for a SHA-2 hash, removing the hacked domain thingy from the client.
+        ST::string password = msg->get_pass();
+        EVP_DigestInit_ex(s_adminDaemon->m_hashCtx, EVP_sha1(), nullptr);
+        EVP_DigestUpdate(s_adminDaemon->m_hashCtx, password.c_str(), password.size());
+
+        size_t hashBufsz = EVP_MD_CTX_size(s_adminDaemon->m_hashCtx);
+        void* hashBuf = alloca(hashBufsz);
+        unsigned int nWrite;
+        EVP_DigestFinal_ex(s_adminDaemon->m_hashCtx, (unsigned char*)hashBuf, &nWrite);
+        FUS_ASSERTD(hashBufsz == nWrite);
+
+        // As the Cyan programmers were fond of saying: Whoosh... off it goes
+        fus::db_client_create_account(fus::admin_daemon_db(), msg->get_name(), hashBuf, hashBufsz, msg->get_flags(),
+                                      (fus::client_trans_cb)admin_acctCreated, client, msg->get_transId());
+    } else {
+        fus::admin_daemon_log().write_error("[{}] Tried to create an account '{}', but the DBSrv is unavailable",
+                                            fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_name());
+        fus::protocol::admin_msg<fus::protocol::admin_acctCreateReply> reply;
+        reply.m_header.set_type(fus::protocol::admin2client::e_acctCreateReply);
+        reply.m_contents.set_transId(msg->get_transId());
+        reply.m_contents.set_result((uint32_t)fus::net_error::e_internalError);
+        fus::tcp_stream_write((fus::tcp_stream_t*)client, &reply, sizeof(reply));
+    }
+
+    // Continue reading
+    fus::admin_server_read(client);
+}
+
 // =================================================================================
 
 static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::protocol::msg_std_header* msg)
@@ -100,6 +151,9 @@ static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::prot
         break;
     case fus::protocol::client2admin::e_wallRequest:
         admin_read<fus::protocol::admin_wallRequest>(client, admin_wall);
+        break;
+    case fus::protocol::client2admin::e_acctCreateRequest:
+        admin_read<fus::protocol::admin_acctCreateRequest>(client, admin_acctCreate);
         break;
     default:
         fus::admin_daemon_log().write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());

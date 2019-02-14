@@ -68,21 +68,23 @@ size_t fus::db_client_header_size()
 
 // =================================================================================
 
-void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb, void* param)
+void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb,
+                         void* instance, uint32_t transId)
 {
     protocol::db_msg<protocol::db_pingRequest> msg;
     msg.m_header.set_type(protocol::client2db::e_pingRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, cb, param));
+    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
     msg.m_contents.set_pingTime(pingTimeMs);
     tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
 }
 
 void fus::db_client_create_account(fus::db_client_t* client, const ST::string& name, const void* hashBuf,
-                                   size_t hashBufsz, uint32_t flags, fus::client_trans_cb cb, void* param)
+                                   size_t hashBufsz, uint32_t flags, fus::client_trans_cb cb,
+                                   void* instance, uint32_t transId)
 {
     protocol::db_msg<protocol::db_acctCreateRequest> msg;
     msg.m_header.set_type(protocol::client2db::e_acctCreateRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, cb, param));
+    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
     msg.m_contents.set_name(name);
     msg.m_contents.set_flags(flags);
     msg.m_contents.set_hashsz(hashBufsz);
@@ -109,7 +111,20 @@ static void db_trans(fus::db_client_t* client, ssize_t nread, _Msg* reply)
         return;
     }
 
-    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), nread, reply);
+    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(),
+                           (fus::net_error)reply->get_result(), nread, reply);
+    fus::db_client_read(client);
+}
+
+template<typename _Msg>
+static void db_trans_noresult(fus::db_client_t* client, ssize_t nread, _Msg* reply)
+{
+    if (nread < 0) {
+        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        return;
+    }
+
+    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), fus::net_error::e_success, nread, reply);
     fus::db_client_read(client);
 }
 
@@ -124,7 +139,7 @@ static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protoco
 
     switch (header->get_type()) {
     case fus::protocol::db2client::e_pingReply:
-        db_read<fus::protocol::db_pingReply>(client, db_trans);
+        db_read<fus::protocol::db_pingReply>(client, db_trans_noresult);
         break;
     case fus::protocol::db2client::e_acctCreateReply:
         db_read<fus::protocol::db_acctCreateReply>(client, db_trans);

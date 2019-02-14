@@ -52,6 +52,8 @@ namespace fus
                 e_pingRequest,
                 e_wallRequest,
 
+                e_acctCreateRequest,
+
                 e_numMsgs
             };
         };
@@ -62,6 +64,8 @@ namespace fus
             {
                 e_pingReply,
                 e_wallBCast,
+
+                e_acctCreateReply,
 
                 e_numMsgs
             };
