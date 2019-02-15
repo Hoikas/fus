@@ -26,19 +26,29 @@ fus::auth_daemon_t* s_authDaemon = nullptr;
 
 // =================================================================================
 
-void fus::auth_daemon_init()
+bool fus::auth_daemon_init()
 {
     FUS_ASSERTD(s_authDaemon == nullptr);
 
     s_authDaemon = (auth_daemon_t*)malloc(sizeof(auth_daemon_t));
     db_trans_daemon_init((db_trans_daemon_t*)s_authDaemon, ST_LITERAL("auth"));
     new(&s_authDaemon->m_clients) FUS_LIST_DECL(auth_server_t, m_link);
+
+    return true;
 }
 
 bool fus::auth_daemon_running()
 {
     return s_authDaemon != nullptr;
 }
+
+bool fus::auth_daemon_shutting_down()
+{
+    if (s_authDaemon)
+        return auth_daemon_flags() & daemon_t::e_shuttingDown;
+    return false;
+}
+
 
 void fus::auth_daemon_free()
 {

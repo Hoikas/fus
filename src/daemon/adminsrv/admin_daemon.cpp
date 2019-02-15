@@ -28,7 +28,7 @@ fus::admin_daemon_t* s_adminDaemon = nullptr;
 
 // =================================================================================
 
-void fus::admin_daemon_init()
+bool fus::admin_daemon_init()
 {
     FUS_ASSERTD(s_adminDaemon == nullptr);
 
@@ -36,11 +36,20 @@ void fus::admin_daemon_init()
     db_trans_daemon_init((db_trans_daemon_t*)s_adminDaemon, ST_LITERAL("admin"));
     s_adminDaemon->m_hashCtx = EVP_MD_CTX_new();
     new(&s_adminDaemon->m_clients) FUS_LIST_DECL(admin_server_t, m_link);
+
+    return true;
 }
 
 bool fus::admin_daemon_running()
 {
     return s_adminDaemon != nullptr;
+}
+
+bool fus::admin_daemon_shutting_down()
+{
+    if (s_adminDaemon)
+        return admin_daemon_flags() & daemon_t::e_shuttingDown;
+    return false;
 }
 
 void fus::admin_daemon_free()

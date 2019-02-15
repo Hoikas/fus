@@ -28,7 +28,7 @@ fus::db_daemon_t* s_dbDaemon = nullptr;
 
 // =================================================================================
 
-void fus::db_daemon_init()
+bool fus::db_daemon_init()
 {
     FUS_ASSERTD(s_dbDaemon == nullptr);
 
@@ -36,12 +36,22 @@ void fus::db_daemon_init()
     secure_daemon_init((secure_daemon_t*)s_dbDaemon, ST_LITERAL("db"));
     s_dbDaemon->m_db = database::init(server::get()->config(), db_daemon_log());
     new(&s_dbDaemon->m_clients) FUS_LIST_DECL(db_server_t, m_link);
+
+    return s_dbDaemon->m_db != nullptr;
 }
 
 bool fus::db_daemon_running()
 {
     return s_dbDaemon != nullptr;
 }
+
+bool fus::db_daemon_shutting_down()
+{
+    if (s_dbDaemon)
+        return db_daemon_flags() & daemon_t::e_shuttingDown;
+    return false;
+}
+
 
 void fus::db_daemon_free()
 {

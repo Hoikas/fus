@@ -581,3 +581,10 @@ void fus::console::set_prompt(const ST::string& value)
     m_prompt = value;
     m_promptSize = count_characters(value.c_str(), value.size());
 }
+
+std::tuple<int, int> fus::console::size()
+{
+    int width, height;
+    uv_tty_get_winsize(&m_stdout, &width, &height);
+    return std::make_tuple(width, height);
+}

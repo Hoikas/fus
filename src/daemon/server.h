@@ -18,6 +18,8 @@
 #define __FUS_SERVER_H
 
 #include <filesystem>
+#include <map>
+#include <string_theory/string>
 #include <uv.h>
 
 #include "core/config_parser.h"
@@ -26,6 +28,23 @@
 namespace fus
 {
     class console;
+
+    typedef void (*daemon_ctl_noresult_f)();
+    typedef bool (*daemon_ctl_result_f)();
+    struct daemon_ctl_t
+    {
+        daemon_ctl_result_f init;
+        daemon_ctl_noresult_f shutdown;
+        daemon_ctl_noresult_f free;
+        daemon_ctl_result_f running;
+        daemon_ctl_result_f shutting_down;
+        bool m_enabled;
+
+        daemon_ctl_t(daemon_ctl_result_f i, daemon_ctl_noresult_f sdi, daemon_ctl_noresult_f f,
+                     daemon_ctl_result_f r, daemon_ctl_result_f sdq, bool e)
+            : init(i), shutdown(sdi), free(f), running(r), shutting_down(sdq), m_enabled(e)
+        { }
+    };
 
     class server
     {
@@ -44,6 +63,7 @@ namespace fus
         uint32_t m_flags;
 
         struct admin_client_t* m_admin;
+        std::map<ST::string, daemon_ctl_t> m_daemonCtl;
 
     protected:
         static void admin_disconnected(fus::admin_client_t*);
@@ -76,6 +96,16 @@ namespace fus
         void free_daemons();
         void shutdown();
         static void force_shutdown(uv_timer_t*);
+
+    protected:
+        template<size_t _ActionSz, size_t _SuccessSz>
+        void daemon_ctl_noresult(const char(&action)[_ActionSz], const ST::string& daemon,
+                                 daemon_ctl_noresult_f proc, const char(&success)[_SuccessSz]);
+
+        template<size_t _ActionSz, size_t _SuccessSz, size_t _FailSz>
+        bool daemon_ctl_result(const char(&action)[_ActionSz], const ST::string& daemon,
+                                 daemon_ctl_result_f proc, const char(&success)[_SuccessSz],
+                                 const char(&fail)[_FailSz]);
 
     public:
         bool config2addr(const ST::string&, sockaddr_storage*);

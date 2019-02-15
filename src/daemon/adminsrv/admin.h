@@ -35,8 +35,9 @@ namespace fus
 
     void admin_server_read(admin_server_t*);
 
-    void admin_daemon_init();
+    bool admin_daemon_init();
     bool admin_daemon_running();
+    bool admin_daemon_shutting_down();
     void admin_daemon_free();
     void admin_daemon_shutdown();
 

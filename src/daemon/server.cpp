@@ -72,6 +72,19 @@ fus::server::server(const std::filesystem::path& config_path)
 
     log_file::set_directory(m_config.get<const ST::string&>("log", "directory"));
     m_log.set_level(m_config.get<const ST::string&>("log", "level"));
+
+#define ADD_DAEMON(name) \
+    m_daemonCtl.emplace(std::piecewise_construct, std::forward_as_tuple(ST_LITERAL(#name)), \
+                        std::forward_as_tuple(##name##_daemon_init, ##name##_daemon_shutdown, ##name##_daemon_free, \
+                                              ##name##_daemon_running, ##name##_daemon_shutting_down, \
+                                              FLAGS_run_##name));
+
+    // All daemons must be entered into the map in the order that they should be inited
+    ADD_DAEMON(admin);
+    ADD_DAEMON(auth);
+    ADD_DAEMON(db);
+
+#undef ADD_DAEMON
 }
 
 fus::server::~server()
@@ -187,22 +200,19 @@ void fus::server::run_once()
 
 void fus::server::init_daemons()
 {
-    if (FLAGS_run_admin)
-        admin_daemon_init();
-    if (FLAGS_run_auth)
-        auth_daemon_init();
-    if (FLAGS_run_db)
-        db_daemon_init();
+    for (auto it = m_daemonCtl.cbegin(); it != m_daemonCtl.cend(); ++it) {
+        if (it->second.m_enabled)
+            daemon_ctl_result("Starting", it->first, it->second.init, "[  OK  ]", "[FAILED]");
+    }
 }
 
 void fus::server::free_daemons()
 {
-    if (admin_daemon_running())
-        admin_daemon_free();
-    if (auth_daemon_running())
-        auth_daemon_free();
-    if (db_daemon_running())
-        db_daemon_free();
+    for (auto it = m_daemonCtl.crbegin(); it != m_daemonCtl.crend(); ++it) {
+        // We're at the point where console output is irrelevant
+        if (it->second.running())
+            it->second.free();
+    }
 }
 
 void fus::server::shutdown()
@@ -216,15 +226,15 @@ void fus::server::shutdown()
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)m_admin);
     }
 
-    if (admin_daemon_running())
-        admin_daemon_shutdown();
-    if (auth_daemon_running())
-        auth_daemon_shutdown();
-    if (db_daemon_running())
-        db_daemon_shutdown();
+    for (auto it = m_daemonCtl.crbegin(); it != m_daemonCtl.crend(); ++it) {
+        if (it->second.running())
+            daemon_ctl_noresult("Shutting down", it->first, it->second.shutdown, "[  OK  ]");
+    }
     uv_close((uv_handle_t*)&m_lobby, nullptr);
 
     // The "nice" shutdown may take a few loop iterations, so we'll wait nicely for a bit.
+    console::get() << console::weight_bold << console::foreground_yellow
+                   << "Waiting for shutdown to complete..." << console::endl;
     m_flags |= e_hasShutdownTimer;
     uv_timer_init(uv_default_loop(), &m_shutdown);
     uv_handle_set_data((uv_handle_t*)&m_shutdown, this);
@@ -245,6 +255,48 @@ void fus::server::force_shutdown(uv_timer_t* timer)
     uv_walk(uv_default_loop(), (uv_walk_cb)uv_close, nullptr);
     server->m_flags &= ~fus::server::e_hasShutdownTimer;
     uv_stop(uv_default_loop());
+}
+
+// =================================================================================
+
+static inline void output_result(bool result, const ST::string& success, const ST::string& fail)
+{
+    fus::console& c = fus::console::get();
+    unsigned int resultsz = std::max(success.size(), fail.size());
+    unsigned int column = std::min(70U, std::get<0>(c.size()) - resultsz);
+
+    // And you thought the ansi was limited to console.cpp? For shame...
+    c << "\x1B[" << column << "G" << fus::console::weight_bold;
+    if (result)
+        c << fus::console::foreground_green << success << fus::console::endl;
+    else
+        c << fus::console::foreground_red << fail << fus::console::endl;
+}
+
+template<size_t _ActionSz, size_t _SuccessSz>
+void fus::server::daemon_ctl_noresult(const char(&action)[_ActionSz], const ST::string& daemon,
+                                 daemon_ctl_noresult_f proc, const char(&success)[_SuccessSz])
+{
+    FUS_ASSERTD(proc);
+
+    console::get() << fus::console::weight_bold << ST::string::from_literal(action, _ActionSz-1)
+                   << " fus::" << daemon << console::flush;
+    proc();
+    output_result(true, ST::string::from_literal(success, _SuccessSz-1), ST::null);
+}
+
+template<size_t _ActionSz, size_t _SuccessSz, size_t _FailSz>
+bool fus::server::daemon_ctl_result(const char(&action)[_ActionSz], const ST::string& daemon,
+                                 daemon_ctl_result_f proc, const char(&success)[_SuccessSz],
+                                 const char(&fail)[_FailSz])
+{
+    FUS_ASSERTD(proc);
+
+    console::get() << fus::console::weight_bold << ST::string::from_literal(action, _ActionSz-1)
+                   << " fus::" << daemon << console::flush;
+    bool result = proc();
+    output_result(result, success, fail);
+    return result;
 }
 
 // =================================================================================

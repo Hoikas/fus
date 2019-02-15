@@ -35,8 +35,9 @@ namespace fus
 
     void db_server_read(db_server_t*);
 
-    void db_daemon_init();
+    bool db_daemon_init();
     bool db_daemon_running();
+    bool db_daemon_shutting_down();
     void db_daemon_free();
     void db_daemon_shutdown();
 

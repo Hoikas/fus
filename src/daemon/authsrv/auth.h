@@ -39,8 +39,9 @@ namespace fus
 
     void auth_server_read(auth_server_t*);
 
-    void auth_daemon_init();
+    bool auth_daemon_init();
     bool auth_daemon_running();
+    bool auth_daemon_shutting_down();
     void auth_daemon_free();
     void auth_daemon_shutdown();
 

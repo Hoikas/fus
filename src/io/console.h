@@ -21,6 +21,7 @@
 #include <functional>
 #include <map>
 #include <string_theory/st_stringstream.h>
+#include <tuple>
 #include <uv.h>
 
 namespace fus
@@ -146,6 +147,7 @@ namespace fus
         void end();
 
         void set_prompt(const ST::string&);
+        std::tuple<int, int> size();
 
         // Output stuff, emulates the std::ostream API
     protected:
