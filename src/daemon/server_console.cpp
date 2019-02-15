@@ -231,6 +231,10 @@ bool fus::server::save_config(fus::console& console, const ST::string& args)
 
 void fus::server::start_console()
 {
+    // If the server is shutting down here, that means the startup failed and we should just bail.
+    if (m_flags & e_shuttingDown)
+        return;
+
     console& console = console::get();
 
     // Add all console commands.

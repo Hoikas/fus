@@ -37,7 +37,11 @@ bool fus::db_daemon_init()
     s_dbDaemon->m_db = database::init(server::get()->config(), db_daemon_log());
     new(&s_dbDaemon->m_clients) FUS_LIST_DECL(db_server_t, m_link);
 
-    return s_dbDaemon->m_db != nullptr;
+    if (!s_dbDaemon->m_db) {
+        db_daemon_free();
+        return false;
+    }
+    return true;
 }
 
 bool fus::db_daemon_running()

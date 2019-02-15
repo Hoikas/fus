@@ -95,7 +95,7 @@ namespace fus
         void run_once();
 
     protected:
-        void init_daemons();
+        bool init_daemons();
         void free_daemons();
         void shutdown();
         static void force_shutdown(uv_timer_t*);

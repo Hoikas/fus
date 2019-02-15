@@ -53,8 +53,13 @@ int main(int argc, char* argv[])
             server.config().write(FLAGS_config_path);
 
         // Start the lobby so anyone who wants to connect to the server can go ahead and enqueue that
-        if (FLAGS_run_lobby)
-            server.start_lobby();
+        if (FLAGS_run_lobby) {
+            if (!server.start_lobby()) {
+                console << "\n" << fus::console::weight_bold << fus::console::foreground_red
+                        << "Fatal error in server initialization--check logs for details\n"
+                        << fus::console::endl;
+            }
+        }
 
         if (FLAGS_use_console)
             server.start_console();

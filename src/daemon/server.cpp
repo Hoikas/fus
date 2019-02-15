@@ -166,7 +166,10 @@ bool fus::server::start_lobby()
     }
     m_flags |= e_lobbyReady;
 
-    init_daemons();
+    if (!init_daemons()) {
+        shutdown();
+        return false;
+    }
     return true;
 }
 
@@ -192,12 +195,14 @@ void fus::server::run_once()
 
 // =================================================================================
 
-void fus::server::init_daemons()
+bool fus::server::init_daemons()
 {
     for (auto it = m_daemonCtl.cbegin(); it != m_daemonCtl.cend(); ++it) {
         if (it->second.m_enabled)
-            daemon_ctl_result("Starting", it->first, it->second.init, "[  OK  ]", "[FAILED]");
+            if (!daemon_ctl_result("Starting", it->first, it->second.init, "[  OK  ]", "[FAILED]"))
+                return false;
     }
+    return true;
 }
 
 void fus::server::free_daemons()
