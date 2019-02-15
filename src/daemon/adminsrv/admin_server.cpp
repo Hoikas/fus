@@ -34,7 +34,8 @@ void fus::admin_server_init(fus::admin_server_t* client)
 
 void fus::admin_server_free(fus::admin_server_t* client)
 {
-    client_kill_trans((client_t*)admin_daemon_db(), client, net_error::e_disconnected, UV_ECONNRESET, true);
+    if (admin_daemon_db())
+        client_kill_trans((client_t*)admin_daemon_db(), client, net_error::e_disconnected, UV_ECONNRESET, true);
     client->m_link.~list_link();
 }
 
