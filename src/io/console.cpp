@@ -146,8 +146,10 @@ void fus::console::history_up(unsigned int value)
     unsigned int seek = std::min(range, value);
     if (seek != value)
         ring_bell();
-    m_historyIt -= seek;
-    set_input_line(*m_historyIt);
+    if (seek != 0) {
+        m_historyIt -= seek;
+        set_input_line(*m_historyIt);
+    }
 }
 
 void fus::console::history_down(unsigned int value)
