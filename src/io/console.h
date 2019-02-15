@@ -173,6 +173,7 @@ namespace fus
         {
             c.m_outputBuf << '\n';
             flush(c);
+            c.m_outputBuf.truncate();
             return c;
         }
 
@@ -185,6 +186,7 @@ namespace fus
         c.m_flags |= e_outputAnsiDirty; \
         return c; \
     }
+        COLOR_METHOD(foreground, m_outForeColor, default)
         COLOR_METHOD(foreground, m_outForeColor, black)
         COLOR_METHOD(foreground, m_outForeColor, red)
         COLOR_METHOD(foreground, m_outForeColor, green)
@@ -194,6 +196,7 @@ namespace fus
         COLOR_METHOD(foreground, m_outForeColor, cyan)
         COLOR_METHOD(foreground, m_outForeColor, white)
 
+        COLOR_METHOD(background, m_outBackColor, default)
         COLOR_METHOD(background, m_outBackColor, black)
         COLOR_METHOD(background, m_outBackColor, red)
         COLOR_METHOD(background, m_outBackColor, green)

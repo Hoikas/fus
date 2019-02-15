@@ -201,7 +201,7 @@ bool fus::server::save_config(fus::console& console, const ST::string& args)
 
 void fus::server::start_console()
 {
-    fus::console& console = console::get();
+    console& console = console::get();
 
     // Add all console commands.
     console.add_command("addacct", "addacct [name] [password] [flags]", "Creates a new account for logging into the game",
@@ -221,6 +221,7 @@ void fus::server::start_console()
     admin_init();
 
     console.begin();
+    console << console::endl;
 }
 
 // =================================================================================

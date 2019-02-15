@@ -117,11 +117,11 @@ bool fus::console::print_help(console& console, const ST::string& args)
 {
     auto cmdIt = console.m_commands.find(args);
     if (cmdIt == console.m_commands.end()) {
-        console << weight_bold << foreground_yellow << "Fus Console Help:\n" << weight_normal << foreground_white;
+        console << weight_bold << foreground_yellow << "Fus Console Help:\n" << weight_normal << foreground_default;
         for (auto cmd : console.m_commands) {
             console << "    " << cmd.first << " - " << cmd.second.m_desc << "\n";
         }
-        console << flush;
+        console << endl;
     } else {
         console << "Usage: " << cmdIt->second.m_usage << endl;
     }
@@ -544,7 +544,6 @@ fus::console& fus::console::flush(fus::console& c)
 
     // Flush the output
     c.write(c.m_outputBuf.raw_buffer(), c.m_outputBuf.size());
-    c.m_outputBuf.truncate();
 
     // Write the working line back out.
     if (!(c.m_flags & e_execCommand))

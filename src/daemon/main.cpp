@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
     gflags::ParseCommandLineFlags(&argc, &argv, false);
 
     fus::console& console = fus::console::init(uv_default_loop());
-    console << fus::console::foreground_yellow << fus::console::weight_bold << fus::ro::dah() << "\n\n" << fus::console::flush;
+    console << fus::console::foreground_yellow << fus::console::weight_bold << fus::ro::dah() << fus::console::endl;
 
     fus::io_init();
     {
