@@ -40,12 +40,6 @@ DEFINE_bool(run_db, true, "Launch the database daemon");
 
 fus::server* fus::server::m_instance = nullptr;
 
-enum
-{
-    e_lobbyReady = (1<<0),
-    e_running = (1<<1),
-};
-
 // =================================================================================
 
 template<typename... _Args>

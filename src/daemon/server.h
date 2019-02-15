@@ -52,8 +52,10 @@ namespace fus
 
         enum
         {
-            e_shuttingDown = (1<<0),
-            e_hasShutdownTimer = (1<<1),
+            e_lobbyReady = (1<<0),
+            e_running = (1<<1),
+            e_shuttingDown = (1<<2),
+            e_hasShutdownTimer = (1<<3),
         };
 
         uv_tcp_t m_lobby;
