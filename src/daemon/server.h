@@ -63,7 +63,7 @@ namespace fus
         uint32_t m_flags;
 
         struct admin_client_t* m_admin;
-        std::map<ST::string, daemon_ctl_t> m_daemonCtl;
+        std::map<ST::string, daemon_ctl_t, ST::less_i> m_daemonCtl;
 
     protected:
         static void admin_disconnected(fus::admin_client_t*);
@@ -74,6 +74,7 @@ namespace fus
         bool admin_wall(console&, const ST::string&);
 
     protected:
+        bool daemon_ctl(console&, const ST::string&);
         bool generate_keys(console&, const ST::string&);
         bool quit(console&, const ST::string&);
         bool save_config(console&, const ST::string&);
@@ -98,14 +99,29 @@ namespace fus
         static void force_shutdown(uv_timer_t*);
 
     protected:
+        void daemon_ctl_noresult(const ST::string& action, const ST::string& daemon,
+                                 daemon_ctl_noresult_f proc, const ST::string& success);
+        bool daemon_ctl_result(const ST::string& action, const ST::string& daemon,
+                                 daemon_ctl_result_f proc, const ST::string& success,
+                                 const ST::string& fail);
+
         template<size_t _ActionSz, size_t _SuccessSz>
         void daemon_ctl_noresult(const char(&action)[_ActionSz], const ST::string& daemon,
-                                 daemon_ctl_noresult_f proc, const char(&success)[_SuccessSz]);
+                                 daemon_ctl_noresult_f proc, const char(&success)[_SuccessSz])
+        {
+            daemon_ctl_noresult(ST::string::from_literal(action, _ActionSz-1), daemon, proc,
+                                ST::string::from_literal(success, _SuccessSz-1));
+        }
 
         template<size_t _ActionSz, size_t _SuccessSz, size_t _FailSz>
         bool daemon_ctl_result(const char(&action)[_ActionSz], const ST::string& daemon,
                                  daemon_ctl_result_f proc, const char(&success)[_SuccessSz],
-                                 const char(&fail)[_FailSz]);
+                                 const char(&fail)[_FailSz])
+        {
+            return daemon_ctl_result(ST::string::from_literal(action, _ActionSz-1), daemon, proc,
+                                     ST::string::from_literal(success, _SuccessSz-1),
+                                     ST::string::from_literal(fail, _FailSz-1));
+        }
 
     public:
         bool config2addr(const ST::string&, sockaddr_storage*);

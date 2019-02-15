@@ -273,27 +273,23 @@ static inline void output_result(bool result, const ST::string& success, const S
         c << fus::console::foreground_red << fail << fus::console::endl;
 }
 
-template<size_t _ActionSz, size_t _SuccessSz>
-void fus::server::daemon_ctl_noresult(const char(&action)[_ActionSz], const ST::string& daemon,
-                                 daemon_ctl_noresult_f proc, const char(&success)[_SuccessSz])
+void fus::server::daemon_ctl_noresult(const ST::string& action, const ST::string& daemon,
+                                      daemon_ctl_noresult_f proc, const ST::string& success)
 {
     FUS_ASSERTD(proc);
 
-    console::get() << fus::console::weight_bold << ST::string::from_literal(action, _ActionSz-1)
-                   << " fus::" << daemon << console::flush;
+    console::get() << fus::console::weight_bold << action << " fus::" << daemon << console::flush;
     proc();
-    output_result(true, ST::string::from_literal(success, _SuccessSz-1), ST::null);
+    output_result(true, success, ST::null);
 }
 
-template<size_t _ActionSz, size_t _SuccessSz, size_t _FailSz>
-bool fus::server::daemon_ctl_result(const char(&action)[_ActionSz], const ST::string& daemon,
-                                 daemon_ctl_result_f proc, const char(&success)[_SuccessSz],
-                                 const char(&fail)[_FailSz])
+bool fus::server::daemon_ctl_result(const ST::string& action, const ST::string& daemon,
+                                    daemon_ctl_result_f proc, const ST::string& success,
+                                    const ST::string& fail)
 {
     FUS_ASSERTD(proc);
 
-    console::get() << fus::console::weight_bold << ST::string::from_literal(action, _ActionSz-1)
-                   << " fus::" << daemon << console::flush;
+    console::get() << fus::console::weight_bold << action << " fus::" << daemon << console::flush;
     bool result = proc();
     output_result(result, success, fail);
     return result;

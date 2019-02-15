@@ -153,6 +153,36 @@ bool fus::server::admin_wall(console& console, const ST::string& msg)
 
 // =================================================================================
 
+bool fus::server::daemon_ctl(fus::console& console, const ST::string& line)
+{
+    std::vector args = line.split(' ');
+    if (args.size() != 2)
+        return false;
+
+    auto it = m_daemonCtl.find(args[1]);
+    if (it == m_daemonCtl.end()) {
+        console << console::weight_bold << console::foreground_red << "Error: Unknown server type '"
+                << args[1] << "'" << console::endl;
+        return true;
+    }
+
+    ST::string action = args[0].to_lower();
+    if (action == ST_LITERAL("start")) {
+        if (it->second.running()) {
+            console << console::weight_bold << console::foreground_yellow << "fus::" << it->first
+                    << " already running!" << console::endl;
+        } else {
+            daemon_ctl_result("Starting", it->first, it->second.init, "[  OK  ]", "[FAILED]");
+        }
+    } else if (action == ST_LITERAL("status")) {
+        daemon_ctl_result("Status of", it->first, it->second.running, "[RUNNING]", "[STOPPED]");
+    } else {
+        console << console::weight_bold << console::foreground_red << "Unknown option '"
+                << action << "'" << console::endl;
+    }
+    return true;
+}
+
 bool fus::server::generate_keys(fus::console& console, const ST::string& args)
 {
     if (args.empty()) {
@@ -208,6 +238,8 @@ void fus::server::start_console()
                         std::bind(&fus::server::admin_acctCreate, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("config", "config [server|client] [output]", "Generates fus or plClient configuration",
                         std::bind(&fus::server::save_config, this, std::placeholders::_1, std::placeholders::_2));
+    console.add_command("daemonctl", "daemonctl [start|status] [server]", "Observe or manipulate the status of fus daemons",
+                        std::bind(&fus::server::daemon_ctl, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("keygen", "keygen [server(s)]", "Generates encryption keys for the requested servers",
                         std::bind(&fus::server::generate_keys, this, std::placeholders::_1, std::placeholders::_2));
     console.add_command("ping", "ping", "Pings the admin daemon",
