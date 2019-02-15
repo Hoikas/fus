@@ -36,6 +36,10 @@ namespace fus
         void* m_instance;
         uint32_t m_transId;
         client_trans_cb m_cb;
+
+        transaction_t(void* instance, uint32_t transId, client_trans_cb cb)
+            : m_instance(instance), m_transId(transId), m_cb(cb)
+        { }
     };
 
     struct client_t

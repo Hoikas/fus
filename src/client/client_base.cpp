@@ -209,8 +209,10 @@ uint32_t fus::client_next_transId(fus::client_t* client)
 uint32_t fus::client_gen_trans(fus::client_t* client, void* instance, uint32_t wrapTransId, fus::client_trans_cb cb)
 {
     uint32_t transId = client->m_transId++;
-    if (cb)
-        client->m_trans[transId] = { instance, wrapTransId, cb, };
+    if (cb) {
+        client->m_trans.emplace(std::piecewise_construct, std::forward_as_tuple(transId),
+                                std::forward_as_tuple(instance, wrapTransId, cb));
+    }
     return transId;
 }
 
