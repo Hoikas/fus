@@ -75,8 +75,8 @@ fus::server::server(const std::filesystem::path& config_path)
 
 #define ADD_DAEMON(name) \
     m_daemonCtl.emplace(std::piecewise_construct, std::forward_as_tuple(ST_LITERAL(#name)), \
-                        std::forward_as_tuple(##name##_daemon_init, ##name##_daemon_shutdown, ##name##_daemon_free, \
-                                              ##name##_daemon_running, ##name##_daemon_shutting_down, \
+                        std::forward_as_tuple(name##_daemon_init, name##_daemon_shutdown, name##_daemon_free, \
+                                              name##_daemon_running, name##_daemon_shutting_down, \
                                               FLAGS_run_##name));
 
     // All daemons must be entered into the map in the order that they should be inited
