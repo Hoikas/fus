@@ -230,7 +230,7 @@ void fus::console::fire_command(const ST::string& cmd, const ST::string& args)
         *this << weight_bold << foreground_red << "Error: Unknown command '" << cmd << "'" << endl;
     } else {
         if (!cmdIt->second.m_handler(*this, args))
-            *this << " Usage: " << cmdIt->second.m_usage;
+            *this << "Usage: " << cmdIt->second.m_usage << endl;
     }
 }
 
