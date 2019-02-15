@@ -17,6 +17,7 @@
 #include <openssl/bn.h>
 #include <string_theory/st_codecs.h>
 #include <string_theory/st_format.h>
+#include <tuple>
 
 #include "client/db_client.h"
 #include "core/errors.h"
@@ -80,12 +81,18 @@ bool fus::daemon_verify_connection(const daemon_t* daemon, const void* msgbuf, b
 
 // =================================================================================
 
-static void _load_key(const ST::string& srv, const ST::string& key, BIGNUM* bn)
+static std::tuple<ST::string, ST::string> fetch_keys(const ST::string& srv)
 {
     const fus::config_parser& config = fus::server::get()->config();
-    const ST::string& key_base64 = config.get<const ST::string&>(ST_LITERAL("crypt"), ST::format("{}_{}", srv, key));
+    const ST::string& k_key = config.get<const ST::string&>(ST_LITERAL("crypt"), ST::format("{}_k", srv));
+    const ST::string& n_key = config.get<const ST::string&>(ST_LITERAL("crypt"), ST::format("{}_n", srv));
+    return std::make_tuple(k_key, n_key);
+}
+
+static void load_key(const ST::string& srv, const ST::string& key, BIGNUM* bn)
+{
     uint8_t key_data[64];
-    FUS_ASSERTD(ST::base64_decode(key_base64, key_data, sizeof(key_data)) == sizeof(key_data));
+    FUS_ASSERTD(ST::base64_decode(key, key_data, sizeof(key_data)) == sizeof(key_data));
     BN_bin2bn(key_data, sizeof(key_data), bn);
 }
 
@@ -96,9 +103,17 @@ void fus::secure_daemon_init(fus::secure_daemon_t* daemon, const ST::string& srv
     daemon->m_bnK = BN_new();
     daemon->m_bnN = BN_new();
 
-    _load_key(srv, ST_LITERAL("k"), daemon->m_bnK);
-    _load_key(srv, ST_LITERAL("n"), daemon->m_bnN);
-    FUS_ASSERTD(!BN_is_zero(daemon->m_bnN));
+    // Due to the number of intraserver encrypted connections that we make, we've GOT to have
+    // encryption keys right at the onset.
+    auto keys = fetch_keys(srv);
+    if (std::get<0>(keys).empty() || std::get<1>(keys).empty()) {
+        ((daemon_t*)daemon)->m_log.write_error("No encryption keys found in config file. Generating...");
+        server::get()->generate_daemon_keys(srv, true);
+        keys = fetch_keys(srv);
+    }
+
+    load_key(srv, std::get<0>(keys), daemon->m_bnK);
+    load_key(srv, std::get<1>(keys), daemon->m_bnN);
 }
 
 void fus::secure_daemon_free(fus::secure_daemon_t* daemon)

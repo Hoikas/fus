@@ -18,8 +18,8 @@
 #define __FUS_SERVER_H
 
 #include <filesystem>
-#include <map>
 #include <string_theory/string>
+#include <unordered_map>
 #include <uv.h>
 
 #include "core/config_parser.h"
@@ -45,6 +45,7 @@ namespace fus
             : init(i), shutdown(sdi), free(f), running(r), shutting_down(sdq), m_enabled(e)
         { }
     };
+    typedef std::unordered_map<ST::string, daemon_ctl_t, ST::hash_i, ST::equal_i> daemon_ctl_map_t;
 
     class server
     {
@@ -65,7 +66,8 @@ namespace fus
         uint32_t m_flags;
 
         struct admin_client_t* m_admin;
-        std::map<ST::string, daemon_ctl_t, ST::less_i> m_daemonCtl;
+        daemon_ctl_map_t m_daemonCtl;
+        std::vector<daemon_ctl_map_t::iterator> m_daemonIts;
 
     protected:
         static void admin_disconnected(fus::admin_client_t*);
@@ -135,8 +137,8 @@ namespace fus
 
     public:
         void generate_client_ini(const std::filesystem::path& path) const;
-        void generate_daemon_keys();
-        void generate_daemon_keys(const ST::string&);
+        void generate_daemon_keys(bool quiet=false);
+        void generate_daemon_keys(const ST::string&, bool quiet=false);
     };
 };
 

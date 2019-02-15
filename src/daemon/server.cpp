@@ -68,15 +68,20 @@ fus::server::server(const std::filesystem::path& config_path)
     m_log.set_level(m_config.get<const ST::string&>("log", "level"));
 
 #define ADD_DAEMON(name) \
-    m_daemonCtl.emplace(std::piecewise_construct, std::forward_as_tuple(ST_LITERAL(#name)), \
-                        std::forward_as_tuple(name##_daemon_init, name##_daemon_shutdown, name##_daemon_free, \
-                                              name##_daemon_running, name##_daemon_shutting_down, \
-                                              FLAGS_run_##name));
+    { \
+    auto pair = m_daemonCtl.emplace(std::piecewise_construct, std::forward_as_tuple(ST_LITERAL(#name)), \
+                                    std::forward_as_tuple(name##_daemon_init, name##_daemon_shutdown, \
+                                                          name##_daemon_free, name##_daemon_running, \
+                                                          name##_daemon_shutting_down, FLAGS_run_##name)); \
+    m_daemonIts.push_back(pair.first); \
+    }
 
     // All daemons must be entered into the map in the order that they should be inited
+    // Hint: if another server connects to it, init it first... May GAWD help you if you're trying
+    //       something crazy, like circular connections.
+    ADD_DAEMON(db);
     ADD_DAEMON(admin);
     ADD_DAEMON(auth);
-    ADD_DAEMON(db);
 
 #undef ADD_DAEMON
 }
@@ -197,9 +202,9 @@ void fus::server::run_once()
 
 bool fus::server::init_daemons()
 {
-    for (auto it = m_daemonCtl.cbegin(); it != m_daemonCtl.cend(); ++it) {
-        if (it->second.m_enabled)
-            if (!daemon_ctl_result("Starting", it->first, it->second.init, "[  OK  ]", "[FAILED]"))
+    for (auto it = m_daemonIts.begin(); it != m_daemonIts.end(); ++it) {
+        if ((*it)->second.m_enabled)
+            if (!daemon_ctl_result("Starting", (*it)->first, (*it)->second.init, "[  OK  ]", "[FAILED]"))
                 return false;
     }
     return true;
@@ -207,10 +212,10 @@ bool fus::server::init_daemons()
 
 void fus::server::free_daemons()
 {
-    for (auto it = m_daemonCtl.crbegin(); it != m_daemonCtl.crend(); ++it) {
+    for (auto it = m_daemonIts.rbegin(); it != m_daemonIts.rend(); ++it) {
         // We're at the point where console output is irrelevant
-        if (it->second.running())
-            it->second.free();
+        if ((*it)->second.running())
+            (*it)->second.free();
     }
 }
 
@@ -225,9 +230,9 @@ void fus::server::shutdown()
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)m_admin);
     }
 
-    for (auto it = m_daemonCtl.crbegin(); it != m_daemonCtl.crend(); ++it) {
-        if (it->second.running())
-            daemon_ctl_noresult("Shutting down", it->first, it->second.shutdown, "[  OK  ]");
+    for (auto it = m_daemonIts.rbegin(); it != m_daemonIts.rend(); ++it) {
+        if ((*it)->second.running())
+            daemon_ctl_noresult("Shutting down", (*it)->first, (*it)->second.shutdown, "[  OK  ]");
     }
     uv_close((uv_handle_t*)&m_lobby, nullptr);
 

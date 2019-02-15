@@ -262,24 +262,28 @@ void fus::server::start_console()
 
 // =================================================================================
 
-void fus::server::generate_daemon_keys()
+void fus::server::generate_daemon_keys(bool quiet)
 {
     for (auto& it : m_daemonCtl)
-        generate_daemon_keys(it.first);
+        generate_daemon_keys(it.first, quiet);
 }
 
-void fus::server::generate_daemon_keys(const ST::string& srv)
+void fus::server::generate_daemon_keys(const ST::string& srv, bool quiet)
 {
     console& c = console::get();
     auto it = m_daemonCtl.find(srv);
     if (it == m_daemonCtl.end()) {
-        c << console::weight_bold << console::foreground_red << "Error: Unknown server type '"
-          << srv << "'" << console::endl;
+        if (!quiet) {
+            c << console::weight_bold << console::foreground_red << "Error: Unknown server type '"
+              << srv << "'" << console::endl;
+        }
         return;
     }
 
-    c << console::weight_bold << console::foreground_yellow << "Generating keys for fus::"
-      << srv << console::endl;
+    if (!quiet) {
+        c << console::weight_bold << console::foreground_yellow << "Generating keys for fus::"
+          << srv << console::endl;
+    }
 
     ST::string section = ST_LITERAL("crypt");
     unsigned int g_value = m_config.get<unsigned int>(section, ST::format("{}_g", srv));
