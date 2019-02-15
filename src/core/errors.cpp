@@ -19,13 +19,15 @@
 #ifdef _MSC_VER
 #   include <crtdbg.h>
 #endif
+#include <iostream>
 #include <string_theory/st_stringstream.h>
 
 // =================================================================================
 
 static void _default_assert_handler(const char* cond, const char* file, int line, const char* msg)
 {
-#if defined(_MSC_VER) && defined(_DEBUG)
+#ifdef _MSC_VER
+#ifndef NDEBUG
     ST::string_stream ss;
     ss << "Condition: " << cond;
     if (msg)
@@ -34,11 +36,20 @@ static void _default_assert_handler(const char* cond, const char* file, int line
     /// FIXME: Should probably use _CrtDbgReportW
     int dbg = _CrtDbgReport(_CRT_ASSERT, file, line, nullptr, ss.to_string().c_str());
     if (dbg == 1)
+#endif // NDEBUG
         __debugbreak();
 #else
-    /// FIXME: this sucks
-    abort();
-#endif
+#ifndef NDEBUG
+    std::cerr << std::endl;
+    std::cerr << "Assertion Failed" << std::endl;
+    std::cerr << "Condition: " << cond << std::endl;
+    std::cerr << "File: " << file << std::endl;
+    std::cerr << "Line: " << line << std::endl;
+    if (msg)
+        std::cerr << "Message: " << msg << std::endl;
+#endif // NDEBUG
+    __builtin_trap();
+#endif // _MSC_VER
 }
 
 // =================================================================================
