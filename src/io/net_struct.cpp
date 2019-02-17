@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/endian.h"
 #include "core/errors.h"
 #include "core/uuid.h"
 #include "net_struct.h"
@@ -84,19 +85,18 @@ void fus::net_msg_print(const net_struct_t* msg, const void* data, std::ostream&
         case net_field_t::data_type::e_integer:
             {
                 stream << "        - DATA: ";
-                /// fixme big endian
                 switch (msg->m_fields[i].m_datasz) {
                 case 1:
                     stream << (int)(*datap);
                     break;
                 case 2:
-                    stream << *(uint16_t*)datap;
+                    stream << FUS_LE16(*(uint16_t*)datap);
                     break;
                 case 4:
-                    stream << *(uint32_t*)datap;
+                    stream << FUS_LE32(*(uint32_t*)datap);
                     break;
                 case 8:
-                    stream << *(uint64_t*)datap;
+                    stream << FUS_LE64(*(uint64_t*)datap);
                     break;
                 default:
                     FUS_ASSERTD(0);

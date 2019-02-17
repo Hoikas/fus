@@ -21,6 +21,7 @@ endif()
 set(FUS_CORE_HEADERS
     build_info.h
     config_parser.h
+    endian.h
     errors.h
     list.h
     uuid.h

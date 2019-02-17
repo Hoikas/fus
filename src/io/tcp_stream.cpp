@@ -17,6 +17,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "core/endian.h"
 #include "core/errors.h"
 #include "crypt_stream.h" // https://www.youtube.com/watch?v=IvzFt8PPXvE
 #include "net_struct.h"
@@ -244,7 +245,7 @@ static inline uint32_t _determine_bufsz(const fus::net_struct_t* ns, size_t idx,
 {
     // The last thing we read in was a 32-bit integer for the buffer size
     size_t szpos = fus::net_struct_calcsz(ns) - sizeof(uint32_t);
-    uint32_t bufsz = *(const uint32_t*)(readbuf + szpos); /// fixme big endian
+    uint32_t bufsz = FUS_LE32(*(const uint32_t*)(readbuf + szpos));
 
     // If the buffer is "redundant", that means it includes its size field in its size...
     if (_is_redundant_buffer(ns, idx))

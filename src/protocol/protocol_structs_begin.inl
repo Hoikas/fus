@@ -32,8 +32,8 @@
     uint32_t m_##name##sz; \
     uint8_t m_##name[]; \
     \
-    uint32_t get_##name##sz() const { return m_##name##sz; } \
-    void set_##name##sz(uint32_t value) { m_##name##sz = value; } \
+    uint32_t get_##name##sz() const { return FUS_LE32(m_##name##sz); } \
+    void set_##name##sz(uint32_t value) { m_##name##sz = FUS_LE32(value); } \
     const uint8_t* get_##name() const { return m_##name; } \
     uint8_t* get_##name() { return m_##name; }
 
@@ -44,8 +44,8 @@
     uint32_t m_##name##sz; \
     uint8_t m_##name[]; \
     \
-    uint32_t get_##name##sz() const { return m_##name##sz - sizeof(uint32_t); } \
-    void set_##name##sz(uint32_t value) { m_##name##sz = value + sizeof(uint32_t); } \
+    uint32_t get_##name##sz() const { return FUS_LE32(m_##name##sz - sizeof(uint32_t)); } \
+    void set_##name##sz(uint32_t value) { m_##name##sz = FUS_LE32(value + sizeof(uint32_t)); } \
     const uint8_t* get_##name() const { return m_##name; } \
     uint8_t* get_##name() { return m_##name; }
 
@@ -61,14 +61,14 @@
 #define FUS_NET_FIELD_UINT16(name) \
     uint16_t m_##name; \
     \
-    uint16_t get_##name() const { return m_##name; } \
-    void set_##name(uint16_t value) { m_##name = value; }
+    uint16_t get_##name() const { return FUS_LE16(m_##name); } \
+    void set_##name(uint16_t value) { m_##name = FUS_LE16(value); }
 
 #define FUS_NET_FIELD_UINT32(name) \
     uint32_t m_##name; \
     \
-    uint32_t get_##name() const { return m_##name; } \
-    void set_##name(uint32_t value) { m_##name = value; }
+    uint32_t get_##name() const { return FUS_LE32(m_##name); } \
+    void set_##name(uint32_t value) { m_##name = FUS_LE32(value); }
 
 #define FUS_NET_FIELD_STRING(name, sz) \
     char16_t m_##name[sz]; \

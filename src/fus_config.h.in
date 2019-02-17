@@ -19,5 +19,6 @@
 
 #cmakedefine FUS_HAVE_SQLITE
 #cmakedefine FUS_ALLOW_DECRYPTED_CLIENTS
+#cmakedefine FUS_BIG_ENDIAN
 
 #endif

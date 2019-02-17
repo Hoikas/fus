@@ -37,7 +37,11 @@ else()
     find_package(SQLite3 QUIET)
     set(FUS_HAVE_SQLITE 0)
 endif()
+
+# Compile time config
 option(FUS_ALLOW_DECRYPTED_CLIENTS OFF)
+include(TestBigEndian)
+TEST_BIG_ENDIAN(FUS_BIG_ENDIAN)
 
 include_directories("${PROJECT_BINARY_DIR}/include")
 configure_file("${PROJECT_SOURCE_DIR}/src/fus_config.h.in" "${PROJECT_BINARY_DIR}/include/fus_config.h")
