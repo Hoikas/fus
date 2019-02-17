@@ -22,6 +22,7 @@
 
 #include "core/errors.h"
 #include "crypt_stream.h"
+#include "fus_config.h"
 #include "io.h"
 #include "net_struct.h"
 
@@ -68,6 +69,9 @@ static inline void* _realloc_buffer(size_t bufsz)
 void fus::crypt_stream_init(fus::crypt_stream_t* stream)
 {
     stream->m_encryptcb = nullptr;
+#ifndef FUS_ALLOW_DECRYPTED_CLIENTS
+    ((tcp_stream_t*)stream)->m_flags |= tcp_stream_t::e_mustEncrypt;
+#endif
 }
 
 void fus::crypt_stream_free(fus::crypt_stream_t* stream)
@@ -144,6 +148,16 @@ void fus::crypt_stream_set_keys_server(fus::crypt_stream_t* stream, BIGNUM* k, B
 
     stream->m_crypt.k = k;
     stream->m_crypt.n = n;
+}
+
+// =================================================================================
+
+void fus::crypt_stream_must_encrypt(fus::crypt_stream_t* stream, bool value)
+{
+    if (value)
+        ((tcp_stream_t*)stream)->m_flags |= tcp_stream_t::e_mustEncrypt;
+    else
+        ((tcp_stream_t*)stream)->m_flags &= ~tcp_stream_t::e_mustEncrypt;
 }
 
 // =================================================================================
@@ -240,8 +254,10 @@ static void _handshake_header_read_srv(fus::crypt_stream_t* stream, ssize_t nrea
     // A client will send no Y data if encryption is not desired.
     uint8_t ybufsz = msgsz - 2;
     if (ybufsz == 0) {
-        /// TODO: allow this to be disabled in cmake
-        _init_encryption(stream, nullptr, nullptr, 0);
+        if (((fus::tcp_stream_t*)stream)->m_flags & fus::tcp_stream_t::e_mustEncrypt)
+            fus::tcp_stream_shutdown((fus::tcp_stream_t*)stream);
+        else
+            _init_encryption(stream, nullptr, nullptr, 0);
     } else {
         // Read in the Y-Data from the client
         fus::tcp_stream_read((fus::tcp_stream_t*)stream, ybufsz, (fus::tcp_read_cb)_handshake_ydata_read);

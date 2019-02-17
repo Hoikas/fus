@@ -18,5 +18,6 @@
 #define __FUS_CONFIG_H
 
 #cmakedefine FUS_HAVE_SQLITE
+#cmakedefine FUS_ALLOW_DECRYPTED_CLIENTS
 
 #endif

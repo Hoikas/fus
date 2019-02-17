@@ -47,6 +47,7 @@ namespace fus
             e_hasSrvKeys = (1<<10),
             e_hasCliKeys = (1<<11),
             e_ownSrvKeysMask = e_ownKeys | e_hasSrvKeys,
+            e_mustEncrypt = (1<<12),
         };
 
         uv_tcp_t m_tcp;

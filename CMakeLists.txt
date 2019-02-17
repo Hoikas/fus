@@ -37,6 +37,7 @@ else()
     find_package(SQLite3 QUIET)
     set(FUS_HAVE_SQLITE 0)
 endif()
+option(FUS_ALLOW_DECRYPTED_CLIENTS OFF)
 
 include_directories("${PROJECT_BINARY_DIR}/include")
 configure_file("${PROJECT_SOURCE_DIR}/src/fus_config.h.in" "${PROJECT_BINARY_DIR}/include/fus_config.h")

@@ -28,6 +28,7 @@ void fus::db_server_init(fus::db_server_t* client)
 {
     tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)db_server_free);
     crypt_stream_init((crypt_stream_t*)client);
+    crypt_stream_must_encrypt((crypt_stream_t*)client);
     new(&client->m_link) FUS_LIST_LINK(db_server_t);
 }
 

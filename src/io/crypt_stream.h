@@ -57,6 +57,8 @@ namespace fus
     void crypt_stream_set_keys_client(crypt_stream_t*, uint32_t, const ST::string&, const ST::string&);
     void crypt_stream_set_keys_server(crypt_stream_t*, BIGNUM*, BIGNUM*);
 
+    void crypt_stream_must_encrypt(crypt_stream_t*, bool value=true);
+
     void crypt_stream_establish_server(crypt_stream_t*, crypt_established_cb cb=nullptr);
     void crypt_stream_establish_client(crypt_stream_t*, crypt_established_cb cb=nullptr);
 

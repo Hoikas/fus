@@ -29,6 +29,7 @@ void fus::admin_server_init(fus::admin_server_t* client)
 {
     tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)admin_server_free);
     crypt_stream_init((crypt_stream_t*)client);
+    crypt_stream_must_encrypt((crypt_stream_t*)client);
     new(&client->m_link) FUS_LIST_LINK(admin_server_t);
 }
 
