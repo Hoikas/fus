@@ -21,10 +21,12 @@
 
 #include <iostream>
 
-size_t fus::net_struct_calcsz(const net_struct_t* msg)
+// =================================================================================
+
+size_t fus::net_struct_calcsz(const net_struct_t* msg, size_t idx)
 {
     size_t size = 0;
-    for (size_t i = 0; i < msg->m_size; ++i)
+    for (size_t i = 0; i < msg->m_size && i < idx; ++i)
         size += msg->m_fields[i].m_datasz;
     return size;
 }

@@ -35,7 +35,7 @@ namespace fus
             /** A fixed size buffer. */
             e_blob,
 
-            /** A fixed size string buffer */
+            /** A maximum sized string buffer */
             e_string,
 
             /** An arbitrarily sized buffer of medium length */
@@ -69,7 +69,7 @@ namespace fus
         const net_field_t* m_fields;
     };
 
-    size_t net_struct_calcsz(const net_struct_t*);
+    size_t net_struct_calcsz(const net_struct_t*, size_t idx=-1);
     void net_struct_print(const net_struct_t*, std::ostream&);
     void net_msg_print(const net_struct_t*, const void*, std::ostream&);
 };

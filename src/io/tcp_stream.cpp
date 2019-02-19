@@ -45,13 +45,10 @@ static inline bool _alloc_buffer(T*& buf, size_t& bufsz, size_t alloc)
         T* temp = (T*)realloc(buf, bufsz);
 
         // Yikes... Might happen on something like an rpi though
-        if (!temp) {
-            free(buf);
-            buf = nullptr;
-            bufsz = 0;
+        if (temp)
+            buf = temp;
+        else
             return false;
-        }
-        buf = temp;
     }
     return true;
 }
@@ -211,7 +208,8 @@ static inline bool _is_any_buffer(const fus::net_struct_t* ns, size_t idx)
            field.m_type == fus::net_field_t::data_type::e_buffer_huge ||
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant ||
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant_tiny ||
-           field.m_type == fus::net_field_t::data_type::e_buffer_redundant_huge;
+           field.m_type == fus::net_field_t::data_type::e_buffer_redundant_huge ||
+           field.m_type == fus::net_field_t::data_type::e_string;
 }
 
 static inline bool _is_redundant_buffer(const fus::net_struct_t* ns, size_t idx)
@@ -220,6 +218,12 @@ static inline bool _is_redundant_buffer(const fus::net_struct_t* ns, size_t idx)
     return field.m_type == fus::net_field_t::data_type::e_buffer_redundant ||
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant_tiny ||
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant_huge;
+}
+
+static inline bool _is_string(const fus::net_struct_t* ns, size_t idx)
+{
+    const fus::net_field_t& field = ns->m_fields[idx];
+    return field.m_type == fus::net_field_t::data_type::e_string;
 }
 
 static inline bool _is_bufsz_legal(const fus::net_struct_t* ns, size_t idx, uint32_t bufsz)
@@ -231,6 +235,7 @@ static inline bool _is_bufsz_legal(const fus::net_struct_t* ns, size_t idx, uint
         return bufsz <= k_normBufsz;
     case fus::net_field_t::data_type::e_buffer_tiny:
     case fus::net_field_t::data_type::e_buffer_redundant_tiny:
+    case fus::net_field_t::data_type::e_string:
         return bufsz <= k_tinyBufsz;
     case fus::net_field_t::data_type::e_buffer_huge:
     case fus::net_field_t::data_type::e_buffer_redundant_huge:
@@ -243,63 +248,90 @@ static inline bool _is_bufsz_legal(const fus::net_struct_t* ns, size_t idx, uint
 
 static inline uint32_t _determine_bufsz(const fus::net_struct_t* ns, size_t idx, const char* readbuf)
 {
-    // The last thing we read in was a 32-bit integer for the buffer size
-    size_t szpos = fus::net_struct_calcsz(ns) - sizeof(uint32_t);
-    uint32_t bufsz = FUS_LE32(*(const uint32_t*)(readbuf + szpos));
+    FUS_ASSERTD(idx > 0);
+
+    const char* szbuf = readbuf - ns->m_fields[idx-1].m_datasz;
+    size_t bufsz;
+    switch (ns->m_fields[idx-1].m_datasz) {
+        case sizeof(uint8_t):
+            bufsz = *(uint8_t*)szbuf;
+            break;
+        case sizeof(uint16_t):
+            bufsz = FUS_LE16(*(uint16_t*)szbuf);
+            break;
+        case sizeof(uint32_t):
+            bufsz = FUS_LE32(*(uint32_t*)szbuf);
+            break;
+        case sizeof(uint64_t):
+            bufsz = FUS_LE64(*(uint64_t*)szbuf);
+            break;
+        default:
+            FUS_ASSERTR(0);
+            break;
+    }
+
+    // Cyan's wire format stores sizes as multiples of the data type. This is generally bytes,
+    // but in some cases... no. NOTE that in fus we use byte counts.
+    if (ns->m_fields[idx].m_type == fus::net_field_t::data_type::e_string)
+        bufsz *= sizeof(char16_t);
 
     // If the buffer is "redundant", that means it includes its size field in its size...
     if (_is_redundant_buffer(ns, idx))
-        bufsz -= sizeof(uint32_t);
+        bufsz -= ns->m_fields[idx-1].m_datasz;
     return bufsz;
 }
 
 static void _read_alloc(fus::tcp_stream_t* stream, size_t suggestion, uv_buf_t* buf)
 {
-    // libuv pretty much always suggests 64KiB, according to its own "documentation"
-    // So, let's examine the netstruct and see what we need to allocate.
+    // libuv suggests 64KiB pretty much always according to both science and its own
+    // so called "documentation". Previously, we tried to scan the entire netstruct and
+    // allocate enough buffer space for the whole stupid thing. However, this was before
+    // I remembered/realized strings are variable length and can appear anywhere. Therefore,
+    // when we read, we will read and allocate one field at at time.
+    size_t bufsz = 0;
     size_t alloc = 0;
+    size_t offset = 0;
 
     if (stream->m_readStruct) {
-        alloc = fus::net_struct_calcsz(stream->m_readStruct);
+        // Where did we leave off in our read?
+        offset = fus::net_struct_calcsz(stream->m_readStruct, stream->m_readField);
 
-        // When a read is executed, the size of any variable length field only accounts for the size portion.
-        // Meaning that, in a best case scenario, we read once for the main body of the message and the
-        // size of the buffer. Then, we have to read again for the buffer itself. Let's see if that's us.
+        // If we have a buffer field, the field immediately preceeding us is the buffer size.
+        // In the case of binary data buffers, we know they always exist at the end of the
+        // message, so we only allocate enough space for them. However, if the buffer is a string,
+        // it can occur anywhere in the message. We'll need to allocate its internal size but only
+        // report the size to read in to libuv...
         if (_is_any_buffer(stream->m_readStruct, stream->m_readField)) {
-            uint32_t bufsz = _determine_bufsz(stream->m_readStruct, stream->m_readField, stream->m_readBuf);
-
-            // Verify the client supplied buffer size is within acceptable bounds
-            if (_is_bufsz_legal(stream->m_readStruct, stream->m_readField, bufsz))
-                alloc += bufsz;
-            else
+            bufsz = _determine_bufsz(stream->m_readStruct, stream->m_readField, stream->m_readBuf + offset);
+            if (_is_string(stream->m_readStruct, stream->m_readField)) {
+                alloc = stream->m_readStruct->m_fields[stream->m_readField].m_datasz;
+                if (bufsz > alloc)
+                    stream->m_flags |= fus::tcp_stream_t::e_readAllocFailed;
+            } else {
+                alloc = bufsz;
+            }
+            if (!_is_bufsz_legal(stream->m_readStruct, stream->m_readField, bufsz)) {
                 stream->m_flags |= fus::tcp_stream_t::e_readAllocFailed;
+            }
         } else {
-            // Worst case... `m_readField == m_readStruct->m_size` when reading a buffer.
-            FUS_ASSERTD((stream->m_readField < stream->m_readStruct->m_size));
+            bufsz = stream->m_readStruct->m_fields[stream->m_readField].m_datasz;
+            alloc = stream->m_readStruct->m_fields[stream->m_readField].m_datasz;
         }
     } else {
+        bufsz = stream->m_readField;
         alloc = stream->m_readField;
     }
 
-    // If the client tries to send us something too big, we just won't allocate enough memory.
-    if (!_alloc_buffer(stream->m_readBuf, stream->m_readBufsz, alloc))
-        stream->m_flags |= fus::tcp_stream_t::e_readAllocFailed;
-
-    // Providing a null buffer on allocation fail causes libuv to return UV_ENOBUFS
-    if (stream->m_flags & fus::tcp_stream_t::e_readAllocFailed)
-        *buf = uv_buf_init(nullptr, 0);
-
-    // We could have stopped reading in the middle of the message. Need to offset into the buffer.
-    size_t offset = 0;
-    if (stream->m_readStruct) {
-        for (size_t i = stream->m_readField; i > 0;) {
-            i--;
-            offset += stream->m_readStruct->m_fields[i].m_datasz;
-        }
+    if (!(stream->m_flags & fus::tcp_stream_t::e_readAllocFailed)) {
+        if (!_alloc_buffer(stream->m_readBuf, stream->m_readBufsz, offset + alloc))
+            stream->m_flags |= fus::tcp_stream_t::e_readAllocFailed;
     }
 
-    FUS_ASSERTD(alloc >= offset);
-    *buf = uv_buf_init((stream->m_readBuf + offset), (alloc - offset));
+    if (stream->m_flags & fus::tcp_stream_t::e_readAllocFailed) {
+        *buf = uv_buf_init(nullptr, 0);
+    } else {
+        *buf = uv_buf_init(stream->m_readBuf + offset, bufsz);
+    }
 }
 
 static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* buf)
@@ -340,42 +372,50 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
     }
 
     // Determine how many fields we read in
+    size_t structsz;
     if (stream->m_readStruct) {
-        // How many fields did we read in?
-        for (ssize_t count = nread; count > 0; stream->m_readField++) {
-            // This implies a buffer can be anywhere in the struct. Don't lie to yourself--that should
-            // never, never, never ever happen. EVER. The End.
-            if (_is_any_buffer(stream->m_readStruct, stream->m_readField))
-                count -= _determine_bufsz(stream->m_readStruct, stream->m_readField, stream->m_readBuf);
-            else
-                count -= stream->m_readStruct->m_fields[stream->m_readField].m_datasz;
-            FUS_ASSERTD(count > -1);
-            FUS_ASSERTD(stream->m_readField < stream->m_readStruct->m_size);
-        }
+        // Previously this was complicated code to count the number of fields we read in.
+        stream->m_readField++;
 
-
-        // If we're not at the end of the struct and the next field is a buffer, we could be in the
-        // situation of having a zero length buffer. In that case, we need to dispatch this message.
-        // If we don't, the allocator will refuse to allocate more buffer space for this message, and
-        // the read will fail with UV_ENOBUFS...
+        // If we're not at the end of the struct and the next field is a buffer or a string, that
+        // field could be zero length. In that case, we need to advance past that field. This could
+        // result in us reaching the end of the message, resulting in a dispatch, or require us
+        // to keep going, in the case of strings...  If we don't handle this, the allocator will
+        // refuse to allocate more buffer space for this message, and the read will fail with
+        // UV_ENOBUFS...
         if (stream->m_readField < stream->m_readStruct->m_size) {
-            size_t nextField = stream->m_readField;
-            if (!(_is_any_buffer(stream->m_readStruct, nextField) &&
-                  _determine_bufsz(stream->m_readStruct, nextField, stream->m_readBuf) == 0))
+            size_t offset = fus::net_struct_calcsz(stream->m_readStruct, stream->m_readField);
+            if (_is_any_buffer(stream->m_readStruct, stream->m_readField)) {
+                size_t bufsz = _determine_bufsz(stream->m_readStruct, stream->m_readField,
+                                                stream->m_readBuf + offset);
+                if (bufsz == 0) {
+                    stream->m_readField++;
+                    if (stream->m_readField < stream->m_readStruct->m_size) {
+                        // We're still in the middle of the struct...
+                        return;
+                    } else {
+                        // Going to callback with the message size
+                        structsz = offset + bufsz;
+                    }
+                } else {
+                    // Need to read the buffer contents...
+                    return;
+                }
+            } else {
+                // Not a buffer, still need to read...
                 return;
-        }
-    }
-
-    // Some code does actually care about the read size, I know...
-    ssize_t bufsz = 0;
-    if (stream->m_readStruct) {
-        bufsz = fus::net_struct_calcsz(stream->m_readStruct);
-        for (size_t i = 0; i < stream->m_readStruct->m_size; ++i) {
-            if (_is_any_buffer(stream->m_readStruct, i))
-                bufsz += _determine_bufsz(stream->m_readStruct, i, stream->m_readBuf);
+            }
+        } else {
+            // Done reading, need to ensure we have the total struct size.
+            structsz = fus::net_struct_calcsz(stream->m_readStruct);
+            if (_is_any_buffer(stream->m_readStruct, stream->m_readField - 1)) {
+                structsz += _determine_bufsz(stream->m_readStruct, stream->m_readField - 1,
+                                             stream->m_readBuf + structsz);
+            }
         }
     } else {
-        bufsz = stream->m_readField;
+        // We just read in some data off the wire.
+        structsz = stream->m_readField;
     }
 
 #ifdef FUS_IO_DEBUG_READS
@@ -391,7 +431,7 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
     stream->m_flags |= fus::tcp_stream_t::e_readCallback;
     fus::tcp_read_cb cb = nullptr;
     std::swap(cb, stream->m_readcb);
-    cb(stream, bufsz, stream->m_readBuf);
+    cb(stream, structsz, stream->m_readBuf);
     stream->m_flags &= ~fus::tcp_stream_t::e_readCallback;
 
     // If a read was not queued by the callback, stop this read.
