@@ -350,32 +350,47 @@ void fus::crypt_stream_establish_client(fus::crypt_stream_t* stream, crypt_estab
 
 // =================================================================================
 
-static inline void _cipher(EVP_CIPHER_CTX* ctx, void* msg, size_t msgsz)
+void fus::crypt_stream_decipher(fus::crypt_stream_t* stream, void* msg, size_t msgsz)
 {
+    FUS_ASSERTD(stream);
+    FUS_ASSERTD(msgsz);
+    FUS_ASSERTD((stream->m_stream.m_flags & fus::tcp_stream_t::e_encrypted));
+
     unsigned char* outbuf;
     if (msgsz <= 4096)
         outbuf = (unsigned char*)alloca(msgsz);
     else
         outbuf = (unsigned char*)_realloc_buffer(msgsz);
     int encsize;
-    EVP_CipherUpdate(ctx, outbuf, &encsize, (unsigned char*)msg, msgsz);
+    EVP_CipherUpdate(stream->m_crypt.decrypt, outbuf, &encsize, (unsigned char*)msg, msgsz);
     FUS_ASSERTD(msgsz == encsize);
     memcpy(msg, outbuf, msgsz);
 }
 
-void fus::crypt_stream_decipher(fus::crypt_stream_t* stream, void* msg, size_t msgsz)
+void fus::crypt_stream_encipher(fus::crypt_stream_t* stream, const void* inbuf, void* outbuf, size_t bufsz)
 {
     FUS_ASSERTD(stream);
-    FUS_ASSERTD(msgsz);
+    FUS_ASSERTD(inbuf);
+    FUS_ASSERTD(outbuf);
+    FUS_ASSERTD(bufsz);
     FUS_ASSERTD((stream->m_stream.m_flags & fus::tcp_stream_t::e_encrypted));
-    _cipher(stream->m_crypt.decrypt, msg, msgsz);
+
+    int encsize;
+    EVP_CipherUpdate(stream->m_crypt.encrypt, (unsigned char*)outbuf, &encsize,
+                     (const unsigned char*)inbuf, bufsz);
+    FUS_ASSERTD(encsize == bufsz);
 }
 
-void fus::crypt_stream_encipher(fus::crypt_stream_t* stream, void* msg, size_t msgsz)
+void* fus::crypt_stream_encipher(fus::crypt_stream_t* stream, const void* msg, size_t msgsz)
 {
     FUS_ASSERTD(stream);
     FUS_ASSERTD(msg);
     FUS_ASSERTD(msgsz);
     FUS_ASSERTD((stream->m_stream.m_flags & fus::tcp_stream_t::e_encrypted));
-    _cipher(stream->m_crypt.encrypt, msg, msgsz);
+
+    unsigned char* outbuf = (unsigned char*)_realloc_buffer(msgsz);
+    int encsize;
+    EVP_CipherUpdate(stream->m_crypt.encrypt, outbuf, &encsize, (unsigned char*)msg, msgsz);
+    FUS_ASSERTD(msgsz == encsize);
+    return outbuf;
 }

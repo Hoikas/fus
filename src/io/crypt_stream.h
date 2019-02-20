@@ -63,7 +63,8 @@ namespace fus
     void crypt_stream_establish_client(crypt_stream_t*, crypt_established_cb cb=nullptr);
 
     void crypt_stream_decipher(crypt_stream_t*, void*, size_t);
-    void crypt_stream_encipher(crypt_stream_t*, void*, size_t);
+    void crypt_stream_encipher(crypt_stream_t*, const void*, void*, size_t);
+    void* crypt_stream_encipher(crypt_stream_t*, const void*, size_t);
 };
 
 #endif

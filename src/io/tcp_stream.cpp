@@ -491,39 +491,65 @@ void fus::tcp_stream_read_struct(fus::tcp_stream_t* stream, const fus::net_struc
 struct write_buf_t
 {
     uv_write_t m_req;
-    fus::tcp_write_cb m_cb;
     size_t m_bufsz;
-    uint8_t m_buf[]; // chicanery
+    char m_buf[]; // chicanery
 };
-
-static inline write_buf_t* _get_write_req(const void* buf, size_t bufsz)
-{
-    /// FIXME: allocations
-    write_buf_t* req = (write_buf_t*)malloc(sizeof(write_buf_t) + bufsz);
-    req->m_bufsz = bufsz;
-    memcpy(req->m_buf, buf, bufsz);
-    return req;
-}
 
 static void _write_complete(write_buf_t* req, int status)
 {
-    if (req->m_cb)
-        req->m_cb((fus::tcp_stream_t*)req->m_req.handle, status < 0 ? status : req->m_bufsz);
     free(req);
 }
 
-void fus::tcp_stream_write(fus::tcp_stream_t* stream, const void* buf, size_t bufsz, tcp_write_cb write_cb)
+void fus::tcp_stream_write(fus::tcp_stream_t* stream, const void* buf, size_t bufsz)
 {
     FUS_ASSERTD(stream);
     FUS_ASSERTD(buf);
     FUS_ASSERTD(bufsz);
 
     if (!(stream->m_flags & tcp_stream_t::e_closing)) {
-        write_buf_t* req = _get_write_req(buf, bufsz);
+        write_buf_t* req = (write_buf_t*)malloc(sizeof(write_buf_t) + bufsz);
+        req->m_bufsz = bufsz;
         if (stream->m_flags & fus::tcp_stream_t::e_encrypted)
-            crypt_stream_encipher((crypt_stream_t*)stream, req->m_buf, req->m_bufsz);
-        req->m_cb = write_cb;
+            crypt_stream_encipher((crypt_stream_t*)stream, buf, req->m_buf, bufsz);
+        else
+            memcpy(req->m_buf, buf, bufsz);
         uv_buf_t uvbuf = uv_buf_init((char*)req->m_buf, req->m_bufsz);
         uv_write((uv_write_t*)req, (uv_stream_t*)stream, &uvbuf, 1, (uv_write_cb)_write_complete);
+    }
+}
+
+void fus::tcp_stream_write_struct(fus::tcp_stream_t* stream, const fus::net_struct_t* ns,
+                                  const void* buf, size_t bufsz)
+{
+    FUS_ASSERTD(stream);
+    FUS_ASSERTD(ns);
+    FUS_ASSERTD(buf);
+
+    if (!(stream->m_flags & tcp_stream_t::e_closing)) {
+        auto req = (write_buf_t*)malloc(sizeof(write_buf_t) + bufsz);
+        req->m_bufsz = 0;
+        uv_buf_t* sendbufs = (uv_buf_t*)alloca(sizeof(uv_buf_t) * ns->m_size);
+        const char* srcPtr = (const char*)buf;
+        char* dstPtr = req->m_buf;
+
+        for (size_t i = 0; i < ns->m_size; ++i) {
+            sendbufs[i].base = dstPtr;
+            if (_is_any_buffer(ns, i))
+                sendbufs[i].len = _determine_bufsz(ns, i, srcPtr);
+            else
+                sendbufs[i].len = ns->m_fields[i].m_datasz;
+            req->m_bufsz += sendbufs[i].len;
+
+            if (stream->m_flags & fus::tcp_stream_t::e_encrypted)
+                crypt_stream_encipher((crypt_stream_t*)stream, srcPtr, dstPtr, sendbufs[i].len);
+            else
+                memcpy(dstPtr, srcPtr, sendbufs[i].len);
+
+            dstPtr += sendbufs[i].len;
+            srcPtr += ns->m_fields[i].m_datasz;
+        }
+
+        uv_write((uv_write_t*)req, (uv_stream_t*)stream, sendbufs, ns->m_size,
+                 (uv_write_cb)_write_complete);
     }
 }

@@ -70,17 +70,17 @@
     uint32_t get_##name() const { return FUS_LE32(m_##name); } \
     void set_##name(uint32_t value) { m_##name = FUS_LE32(value); }
 
-#define FUS_NET_FIELD_STRING(name, sz) \
-    char16_t m_##name[sz]; \
+#define FUS_NET_FIELD_STRING(name, szval) \
+    uint16_t m_##name##sz; \
+    char16_t m_##name[szval]; \
     \
-    ST::string get_##name() const { return ST::string(m_##name); } \
+    ST::string get_##name() const { return ST::string(m_##name, m_##name##sz); } \
     void set_##name(const ST::string& value) \
     { \
         ST::buffer<char16_t> buf = value.to_utf16(); \
-        memset(m_##name, 0, sz * sizeof(char16_t)); \
-        size_t elmcopy = std::min((size_t)sz, buf.size()); \
-        memcpy(m_##name, buf.data(), elmcopy * sizeof(char16_t)); \
-        m_##name[sz - 1] = 0; \
+        memset(m_##name, 0, szval * sizeof(char16_t)); \
+        m_##name##sz = (uint16_t)std::min((size_t)szval, buf.size()); \
+        memcpy(m_##name, buf.data(), m_##name##sz * sizeof(char16_t)); \
     }
 
 #define FUS_NET_FIELD_UUID(name) \

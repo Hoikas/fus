@@ -55,6 +55,7 @@
     { fus::net_field_t::data_type::e_integer, #name, sizeof(uint32_t) },
 
 #define FUS_NET_FIELD_STRING(name, size) \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint16_t) }, \
     { fus::net_field_t::data_type::e_string, #name, size * sizeof(char16_t) },
 
 #define FUS_NET_FIELD_UUID(name) \

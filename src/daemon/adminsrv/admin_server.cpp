@@ -85,7 +85,7 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
 
     auto it = s_adminDaemon->m_clients.front();
     while (it) {
-        fus::tcp_stream_write((fus::tcp_stream_t*)it, bcast, sizeof(bcast));
+        fus::tcp_stream_write_msg((fus::tcp_stream_t*)it, bcast);
         it = s_adminDaemon->m_clients.next(it);
     }
 
@@ -102,7 +102,7 @@ static void admin_acctCreated(fus::admin_server_t* client, fus::db_client_t* db,
     msg.m_contents.set_result((uint32_t)result);
     if (reply)
         *msg.m_contents.get_uuid() = reply->get_uuid();
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, &msg, sizeof(msg));
+    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
 }
 
 static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::protocol::admin_acctCreateRequest* msg)
@@ -133,7 +133,7 @@ static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::pr
         reply.m_header.set_type(fus::protocol::admin2client::e_acctCreateReply);
         reply.m_contents.set_transId(msg->get_transId());
         reply.m_contents.set_result((uint32_t)fus::net_error::e_internalError);
-        fus::tcp_stream_write((fus::tcp_stream_t*)client, &reply, sizeof(reply));
+        fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, reply);
     }
 
     // Continue reading

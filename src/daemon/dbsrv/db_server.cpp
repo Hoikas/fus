@@ -76,7 +76,7 @@ static void db_acctCreated(fus::db_server_t* client, uint32_t transId, fus::net_
     msg.m_contents.set_transId(transId);
     msg.m_contents.set_result((uint32_t)result);
     *msg.m_contents.get_uuid() = uuid;
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, &msg, sizeof(msg));
+    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
 }
 
 static void db_acctCreate(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctCreateRequest* msg)

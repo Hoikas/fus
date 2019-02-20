@@ -75,7 +75,7 @@ void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::cli
     msg.m_header.set_type(protocol::client2db::e_pingRequest);
     msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
     msg.m_contents.set_pingTime(pingTimeMs);
-    tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
+    tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
 void fus::db_client_create_account(fus::db_client_t* client, const ST::string& name, const void* hashBuf,
@@ -88,7 +88,7 @@ void fus::db_client_create_account(fus::db_client_t* client, const ST::string& n
     msg.m_contents.set_name(name);
     msg.m_contents.set_flags(flags);
     msg.m_contents.set_hashsz(hashBufsz);
-    tcp_stream_write((tcp_stream_t*)client, &msg, sizeof(msg));
+    tcp_stream_write_msg((tcp_stream_t*)client, msg);
     tcp_stream_write((tcp_stream_t*)client, hashBuf, hashBufsz);
 }
 

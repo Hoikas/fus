@@ -25,7 +25,6 @@ namespace fus
     struct tcp_stream_t;
     typedef void (*tcp_free_cb)(tcp_stream_t*);
     typedef void (*tcp_read_cb)(tcp_stream_t*, ssize_t, void*);
-    typedef void (*tcp_write_cb)(tcp_stream_t*, ssize_t);
 
     struct tcp_stream_t
     {
@@ -90,7 +89,16 @@ namespace fus
         tcp_stream_read_struct(s, T::net_struct, read_cb);
     }
 
-    void tcp_stream_write(tcp_stream_t*, const void*, size_t, tcp_write_cb write_cb=nullptr);
+    void tcp_stream_write(tcp_stream_t*, const void*, size_t);
+    void tcp_stream_write_struct(tcp_stream_t*, const struct net_struct_t*, const void*, size_t);
+
+    template<typename T>
+    inline void tcp_stream_write_msg(tcp_stream_t* s, const T& msg)
+    {
+        /// FIXME: unify writes
+        tcp_stream_write(s, &msg.m_header, sizeof(msg.m_header));
+        tcp_stream_write_struct(s, msg.m_contents.net_struct, &msg.m_contents, sizeof(msg.m_contents));
+    }
 };
 
 #endif
