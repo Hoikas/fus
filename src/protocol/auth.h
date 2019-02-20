@@ -34,17 +34,6 @@ namespace fus
 {
     namespace protocol
     {
-#pragma pack(push,1)
-        template<typename _Msg>
-        struct auth_msg
-        {
-            msg_std_header m_header;
-            _Msg m_contents;
-
-            operator void*() { return (void*)(&m_header); }
-        };
-#pragma pack(pop)
-
         namespace client2auth
         {
             enum

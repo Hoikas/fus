@@ -425,7 +425,8 @@ static void _read_complete(fus::tcp_stream_t* stream, ssize_t nread, uv_buf_t* b
 
     // Reset the read struct and read field anyway. Trying to use those might cause a buffer overrun.
     stream->m_readStruct = nullptr;
-    stream->m_readField = 0;
+    if (!(stream->m_flags & fus::tcp_stream_t::e_readPeek))
+        stream->m_readField = 0;
 
     // Don't null the callback after calling it. The callback might reset the callback!
     stream->m_flags |= fus::tcp_stream_t::e_readCallback;
@@ -455,6 +456,7 @@ void fus::tcp_stream_read(fus::tcp_stream_t* stream, size_t bufsz, fus::tcp_read
     stream->m_readcb = read_cb;
 
     // Reissuing uv_read_start results in UV_EFAULT going to the provided read_cb
+    stream->m_flags &= ~tcp_stream_t::e_readPeek;
     if (stream->m_flags & tcp_stream_t::e_reading) {
         FUS_ASSERTD((stream->m_flags & tcp_stream_t::e_readCallback));
         stream->m_flags |= tcp_stream_t::e_readQueued;
@@ -473,10 +475,40 @@ void fus::tcp_stream_read_struct(fus::tcp_stream_t* stream, const fus::net_struc
     FUS_ASSERTD(read_cb);
 
     stream->m_readStruct = ns;
-    stream->m_readField = 0;
+    if (!(stream->m_flags & tcp_stream_t::e_readPeek))
+        stream->m_readField = 0;
+    else
+        FUS_ASSERTD(stream->m_readField < ns->m_size);
     stream->m_readcb = read_cb;
 
     // Reissuing uv_read_start results in UV_EFAULT going to the provided read_cb
+    stream->m_flags &= ~tcp_stream_t::e_readPeek;
+    if (stream->m_flags & tcp_stream_t::e_reading) {
+        FUS_ASSERTD((stream->m_flags & tcp_stream_t::e_readCallback));
+        stream->m_flags |= tcp_stream_t::e_readQueued;
+    } else {
+        stream->m_flags |= tcp_stream_t::e_reading;
+        uv_read_start((uv_stream_t*)stream, (uv_alloc_cb)_read_alloc, (uv_read_cb)_read_complete);
+    }
+}
+
+void fus::tcp_stream_peek_struct(fus::tcp_stream_t* stream, const fus::net_struct_t* ns, fus::tcp_read_cb read_cb)
+{
+    FUS_ASSERTD(stream);
+    FUS_ASSERTD(!(stream->m_flags & tcp_stream_t::e_readQueued));
+    FUS_ASSERTD(ns);
+    FUS_ASSERTD(ns->m_size);
+    FUS_ASSERTD(read_cb);
+
+    stream->m_readStruct = ns;
+    if (!(stream->m_flags & tcp_stream_t::e_readPeek))
+        stream->m_readField = 0;
+    else
+        FUS_ASSERTD(stream->m_readField < ns->m_size);
+    stream->m_readcb = read_cb;
+
+    // Reissuing uv_read_start results in UV_EFAULT going to the provided read_cb
+    stream->m_flags |= tcp_stream_t::e_readPeek;
     if (stream->m_flags & tcp_stream_t::e_reading) {
         FUS_ASSERTD((stream->m_flags & tcp_stream_t::e_readCallback));
         stream->m_flags |= tcp_stream_t::e_readQueued;

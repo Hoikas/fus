@@ -59,10 +59,6 @@ static void auth_pingpong(fus::auth_server_t* client, ssize_t nread, fus::protoc
     if (!auth_check_read(client, nread))
         return;
 
-    fus::protocol::msg_std_header header;
-    header.set_type(fus::protocol::auth2client::e_pingReply);
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, &header, sizeof(header));
-
     // Message reply is a bitwise copy, so we'll just throw the request back.
     fus::tcp_stream_write((fus::tcp_stream_t*)client, msg, nread);
 
@@ -82,10 +78,10 @@ static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::
     RAND_bytes((unsigned char*)(&client->m_loginSalt), sizeof(client->m_loginSalt));
     client->m_flags |= e_clientRegistered;
 
-    fus::protocol::auth_msg<fus::protocol::auth_clientRegisterReply> reply;
-    reply.m_header.set_type(fus::protocol::auth2client::e_clientRegisterReply);
-    reply.m_contents.set_loginSalt(client->m_loginSalt);
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, reply, sizeof(reply));
+    fus::protocol::auth_clientRegisterReply reply;
+    reply.set_type(fus::protocol::auth2client::e_clientRegisterReply);
+    reply.set_loginSalt(client->m_loginSalt);
+    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, reply);
 
     // Continue reading
     fus::auth_server_read(client);
@@ -114,5 +110,5 @@ static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protoc
 
 void fus::auth_server_read(fus::auth_server_t* client)
 {
-    auth_read<protocol::msg_std_header>(client, auth_msg_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)auth_msg_pump);
 }

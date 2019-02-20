@@ -79,18 +79,18 @@ void fus::admin_client_wall_handler(fus::admin_client_t* client, fus::admin_clie
 void fus::admin_client_ping(fus::admin_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb,
                             void* instance, uint32_t transId)
 {
-    protocol::admin_msg<protocol::admin_pingRequest> msg;
-    msg.m_header.set_type(protocol::client2admin::e_pingRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
-    msg.m_contents.set_pingTime(pingTimeMs);
+    protocol::admin_pingRequest msg;
+    msg.set_type(protocol::client2admin::e_pingRequest);
+    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_pingTime(pingTimeMs);
     tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
 void fus::admin_client_wall(fus::admin_client_t* client, const ST::string& text)
 {
-    protocol::admin_msg<protocol::admin_wallRequest> msg;
-    msg.m_header.set_type(protocol::client2admin::e_wallRequest);
-    msg.m_contents.set_text(text);
+    protocol::admin_wallRequest msg;
+    msg.set_type(protocol::client2admin::e_wallRequest);
+    msg.set_text(text);
     tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
@@ -98,12 +98,12 @@ void fus::admin_client_create_account(fus::admin_client_t* client, const ST::str
                                       const ST::string& pass, uint32_t flags, client_trans_cb cb,
                                       void* instance, uint32_t transId)
 {
-    protocol::admin_msg<protocol::admin_acctCreateRequest> msg;
-    msg.m_header.set_type(protocol::client2admin::e_acctCreateRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
-    msg.m_contents.set_name(name);
-    msg.m_contents.set_pass(pass);
-    msg.m_contents.set_flags(flags);
+    protocol::admin_acctCreateRequest msg;
+    msg.set_type(protocol::client2admin::e_acctCreateRequest);
+    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_name(name);
+    msg.set_pass(pass);
+    msg.set_flags(flags);
     tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
@@ -183,5 +183,5 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
 
 void fus::admin_client_read(fus::admin_client_t* client)
 {
-    admin_read<protocol::msg_std_header>(client, admin_client_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)admin_client_pump);
 }

@@ -59,10 +59,6 @@ static void admin_pingpong(fus::admin_server_t* client, ssize_t nread, fus::prot
     if (!admin_check_read(client, nread))
         return;
 
-    fus::protocol::msg_std_header header;
-    header.set_type(fus::protocol::admin2client::e_pingReply);
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, &header, sizeof(header));
-
     // Message reply is a bitwise copy, so we'll just throw the request back.
     fus::tcp_stream_write((fus::tcp_stream_t*)client, msg, nread);
 
@@ -78,10 +74,10 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
     ST::string senderaddr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client);
     fus::admin_daemon_log().write("[{}] wall: {}", senderaddr, msg->get_text());
 
-    fus::protocol::admin_msg<fus::protocol::admin_wallBCast> bcast;
-    bcast.m_header.set_type(fus::protocol::admin2client::e_wallBCast);
-    bcast.m_contents.set_sender(senderaddr);
-    bcast.m_contents.set_text(msg->get_text());
+    fus::protocol::admin_wallBCast bcast;
+    bcast.set_type(fus::protocol::admin2client::e_wallBCast);
+    bcast.set_sender(senderaddr);
+    bcast.set_text(msg->get_text());
 
     auto it = s_adminDaemon->m_clients.front();
     while (it) {
@@ -96,12 +92,12 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
 static void admin_acctCreated(fus::admin_server_t* client, fus::db_client_t* db, uint32_t transId,
                               fus::net_error result, ssize_t nread, const fus::protocol::db_acctCreateReply* reply)
 {
-    fus::protocol::admin_msg<fus::protocol::admin_acctCreateReply> msg;
-    msg.m_header.set_type(fus::protocol::admin2client::e_acctCreateReply);
-    msg.m_contents.set_transId(transId);
-    msg.m_contents.set_result((uint32_t)result);
+    fus::protocol::admin_acctCreateReply msg;
+    msg.set_type(fus::protocol::admin2client::e_acctCreateReply);
+    msg.set_transId(transId);
+    msg.set_result((uint32_t)result);
     if (reply)
-        *msg.m_contents.get_uuid() = reply->get_uuid();
+        *msg.get_uuid() = reply->get_uuid();
     fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
 }
 
@@ -129,10 +125,10 @@ static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::pr
     } else {
         fus::admin_daemon_log().write_error("[{}] Tried to create an account '{}', but the DBSrv is unavailable",
                                             fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_name());
-        fus::protocol::admin_msg<fus::protocol::admin_acctCreateReply> reply;
-        reply.m_header.set_type(fus::protocol::admin2client::e_acctCreateReply);
-        reply.m_contents.set_transId(msg->get_transId());
-        reply.m_contents.set_result((uint32_t)fus::net_error::e_internalError);
+        fus::protocol::admin_acctCreateReply reply;
+        reply.set_type(fus::protocol::admin2client::e_acctCreateReply);
+        reply.set_transId(msg->get_transId());
+        reply.set_result((uint32_t)fus::net_error::e_internalError);
         fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, reply);
     }
 
@@ -165,5 +161,5 @@ static void admin_msg_pump(fus::admin_server_t* client, ssize_t nread, fus::prot
 
 void fus::admin_server_read(fus::admin_server_t* client)
 {
-    admin_read<protocol::msg_std_header>(client, admin_msg_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)admin_msg_pump);
 }

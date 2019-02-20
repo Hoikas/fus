@@ -71,10 +71,10 @@ size_t fus::db_client_header_size()
 void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb,
                          void* instance, uint32_t transId)
 {
-    protocol::db_msg<protocol::db_pingRequest> msg;
-    msg.m_header.set_type(protocol::client2db::e_pingRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
-    msg.m_contents.set_pingTime(pingTimeMs);
+    protocol::db_pingRequest msg;
+    msg.set_type(protocol::client2db::e_pingRequest);
+    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_pingTime(pingTimeMs);
     tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
@@ -82,12 +82,12 @@ void fus::db_client_create_account(fus::db_client_t* client, const ST::string& n
                                    size_t hashBufsz, uint32_t flags, fus::client_trans_cb cb,
                                    void* instance, uint32_t transId)
 {
-    protocol::db_msg<protocol::db_acctCreateRequest> msg;
-    msg.m_header.set_type(protocol::client2db::e_acctCreateRequest);
-    msg.m_contents.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
-    msg.m_contents.set_name(name);
-    msg.m_contents.set_flags(flags);
-    msg.m_contents.set_hashsz(hashBufsz);
+    protocol::db_acctCreateRequest msg;
+    msg.set_type(protocol::client2db::e_acctCreateRequest);
+    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_name(name);
+    msg.set_flags(flags);
+    msg.set_hashsz(hashBufsz);
     tcp_stream_write_msg((tcp_stream_t*)client, msg);
     tcp_stream_write((tcp_stream_t*)client, hashBuf, hashBufsz);
 }
@@ -152,5 +152,5 @@ static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protoco
 
 void fus::db_client_read(fus::db_client_t* client)
 {
-    db_read<protocol::msg_std_header>(client, db_client_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)db_client_pump);
 }

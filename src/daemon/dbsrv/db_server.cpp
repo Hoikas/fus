@@ -56,10 +56,6 @@ static void db_pingpong(fus::db_server_t* client, ssize_t nread, fus::protocol::
     if (!db_check_read(client, nread))
         return;
 
-    fus::protocol::msg_std_header header;
-    header.set_type(fus::protocol::db2client::e_pingReply);
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, &header, sizeof(header));
-
     // Message reply is a bitwise copy, so we'll just throw the request back.
     fus::tcp_stream_write((fus::tcp_stream_t*)client, msg, nread);
 
@@ -71,11 +67,11 @@ static void db_pingpong(fus::db_server_t* client, ssize_t nread, fus::protocol::
 
 static void db_acctCreated(fus::db_server_t* client, uint32_t transId, fus::net_error result, const fus::uuid& uuid)
 {
-    fus::protocol::db_msg<fus::protocol::db_acctCreateReply> msg;
-    msg.m_header.set_type(fus::protocol::db2client::e_acctCreateReply);
-    msg.m_contents.set_transId(transId);
-    msg.m_contents.set_result((uint32_t)result);
-    *msg.m_contents.get_uuid() = uuid;
+    fus::protocol::db_acctCreateReply msg;
+    msg.set_type(fus::protocol::db2client::e_acctCreateReply);
+    msg.set_transId(transId);
+    msg.set_result((uint32_t)result);
+    *msg.get_uuid() = uuid;
     fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
 }
 
@@ -124,5 +120,5 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
 
 void fus::db_server_read(fus::db_server_t* client)
 {
-    db_read<protocol::msg_std_header>(client, db_msg_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)db_msg_pump);
 }

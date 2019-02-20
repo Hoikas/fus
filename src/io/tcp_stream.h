@@ -38,15 +38,16 @@ namespace fus
             e_closing = (1<<4),
             e_freeOnClose = (1<<5),
             e_connected = (1<<6),
+            e_readPeek = (1<<7),
 
             // Crypt Stream Flags
-            e_encrypted = (1<<7),
-            e_ownSeed = (1<<8),
-            e_ownKeys = (1<<9),
-            e_hasSrvKeys = (1<<10),
-            e_hasCliKeys = (1<<11),
+            e_encrypted = (1<<8),
+            e_ownSeed = (1<<9),
+            e_ownKeys = (1<<10),
+            e_hasSrvKeys = (1<<11),
+            e_hasCliKeys = (1<<12),
             e_ownSrvKeysMask = e_ownKeys | e_hasSrvKeys,
-            e_mustEncrypt = (1<<12),
+            e_mustEncrypt = (1<<13),
         };
 
         uv_tcp_t m_tcp;
@@ -89,15 +90,21 @@ namespace fus
         tcp_stream_read_struct(s, T::net_struct, read_cb);
     }
 
+    void tcp_stream_peek_struct(tcp_stream_t*, const struct net_struct_t*, tcp_read_cb);
+
+    template<typename T>
+    inline void tcp_stream_peek_msg(tcp_stream_t* s, tcp_read_cb read_cb)
+    {
+        tcp_stream_peek_struct(s, T::net_struct, read_cb);
+    }
+
     void tcp_stream_write(tcp_stream_t*, const void*, size_t);
     void tcp_stream_write_struct(tcp_stream_t*, const struct net_struct_t*, const void*, size_t);
 
     template<typename T>
     inline void tcp_stream_write_msg(tcp_stream_t* s, const T& msg)
     {
-        /// FIXME: unify writes
-        tcp_stream_write(s, &msg.m_header, sizeof(msg.m_header));
-        tcp_stream_write_struct(s, msg.m_contents.net_struct, &msg.m_contents, sizeof(msg.m_contents));
+        tcp_stream_write_struct(s, T::net_struct, &msg, sizeof(msg));
     }
 };
 
