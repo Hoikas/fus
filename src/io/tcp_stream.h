@@ -99,12 +99,14 @@ namespace fus
     }
 
     void tcp_stream_write(tcp_stream_t*, const void*, size_t);
-    void tcp_stream_write_struct(tcp_stream_t*, const struct net_struct_t*, const void*, size_t);
+    void tcp_stream_write_struct(tcp_stream_t*, const struct net_struct_t*, const void*, size_t,
+                                 const void* appendBuf=nullptr, size_t appendBufsz=0);
 
     template<typename T>
-    inline void tcp_stream_write_msg(tcp_stream_t* s, const T& msg)
+    inline void tcp_stream_write_msg(tcp_stream_t* s, const T& msg,
+                                     const void* appendBuf=nullptr, size_t appendBufsz=0)
     {
-        tcp_stream_write_struct(s, T::net_struct, &msg, sizeof(msg));
+        tcp_stream_write_struct(s, T::net_struct, &msg, sizeof(msg), appendBuf, appendBufsz);
     }
 };
 

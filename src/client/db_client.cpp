@@ -88,8 +88,7 @@ void fus::db_client_create_account(fus::db_client_t* client, const ST::string& n
     msg.set_name(name);
     msg.set_flags(flags);
     msg.set_hashsz(hashBufsz);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg);
-    tcp_stream_write((tcp_stream_t*)client, hashBuf, hashBufsz);
+    tcp_stream_write_msg((tcp_stream_t*)client, msg, hashBuf, hashBufsz);
 }
 
 // =================================================================================

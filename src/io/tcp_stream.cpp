@@ -551,20 +551,23 @@ void fus::tcp_stream_write(fus::tcp_stream_t* stream, const void* buf, size_t bu
 }
 
 void fus::tcp_stream_write_struct(fus::tcp_stream_t* stream, const fus::net_struct_t* ns,
-                                  const void* buf, size_t bufsz)
+                                  const void* buf, size_t bufsz,
+                                  const void* appendBuf, size_t appendBufsz)
 {
     FUS_ASSERTD(stream);
     FUS_ASSERTD(ns);
     FUS_ASSERTD(buf);
 
     if (!(stream->m_flags & tcp_stream_t::e_closing)) {
+        /// FIXME: this allocation can be larger than needed.
         auto req = (write_buf_t*)malloc(sizeof(write_buf_t) + bufsz);
         req->m_bufsz = 0;
         uv_buf_t* sendbufs = (uv_buf_t*)alloca(sizeof(uv_buf_t) * ns->m_size);
         const char* srcPtr = (const char*)buf;
         char* dstPtr = req->m_buf;
 
-        for (size_t i = 0; i < ns->m_size; ++i) {
+        size_t i;
+        for (i = 0; i < ns->m_size; ++i) {
             sendbufs[i].base = dstPtr;
             if (_is_any_buffer(ns, i))
                 sendbufs[i].len = _determine_bufsz(ns, i, srcPtr);
@@ -572,16 +575,38 @@ void fus::tcp_stream_write_struct(fus::tcp_stream_t* stream, const fus::net_stru
                 sendbufs[i].len = ns->m_fields[i].m_datasz;
             req->m_bufsz += sendbufs[i].len;
 
-            if (stream->m_flags & fus::tcp_stream_t::e_encrypted)
-                crypt_stream_encipher((crypt_stream_t*)stream, srcPtr, dstPtr, sendbufs[i].len);
-            else
-                memcpy(dstPtr, srcPtr, sendbufs[i].len);
+            // If this field is a variable length buffer, it is possible that the buffer we've
+            // been provided does not contain this field. Therefore, we should make sure that
+            // we actually have that data before charging forward.
+            do {
+                if (_is_any_buffer(ns, i) && !_is_string(ns, i) && (i + 1) == ns->m_size) {
+                    size_t offset = (size_t)srcPtr - (size_t)buf;
+                    if (offset == bufsz) {
+                        // No data in the main buffer. Dang. Is the appendbuf acceptable?
+                        // If no appendbuf provided, bail on this final buffer.
+                        if (appendBuf) {
+                            FUS_ASSERTD(appendBufsz == sendbufs[i].len);
+                            srcPtr = (const char*)appendBuf;
+                        } else {
+                            i -= 1;
+                            break;
+                        }
+                    } else {
+                        // Data is present in the main buffer. Perhaps...
+                        FUS_ASSERTD((bufsz - offset) == sendbufs[i].len);
+                    }
+                }
+
+                if (stream->m_flags & fus::tcp_stream_t::e_encrypted)
+                    crypt_stream_encipher((crypt_stream_t*)stream, srcPtr, dstPtr, sendbufs[i].len);
+                else
+                    memcpy(dstPtr, srcPtr, sendbufs[i].len);
+            } while(0);
 
             dstPtr += sendbufs[i].len;
             srcPtr += ns->m_fields[i].m_datasz;
         }
 
-        uv_write((uv_write_t*)req, (uv_stream_t*)stream, sendbufs, ns->m_size,
-                 (uv_write_cb)_write_complete);
+        uv_write((uv_write_t*)req, (uv_stream_t*)stream, sendbufs, i, (uv_write_cb)_write_complete);
     }
 }
