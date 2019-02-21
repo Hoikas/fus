@@ -35,8 +35,11 @@ namespace fus
             /** A fixed size buffer. */
             e_blob,
 
-            /** A maximum sized string buffer */
-            e_string,
+            /** A maximum sized utf-8 string buffer */
+            e_string_utf8,
+
+            /** A maximum sized utf-16 string buffer */
+            e_string_utf16,
 
             /** An arbitrarily sized buffer of medium length */
             e_buffer,

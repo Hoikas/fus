@@ -70,17 +70,49 @@
     uint32_t get_##name() const { return FUS_LE32(m_##name); } \
     void set_##name(uint32_t value) { m_##name = FUS_LE32(value); }
 
-#define FUS_NET_FIELD_STRING(name, szval) \
+#define FUS_NET_FIELD_STRING_UTF8(name, szval) \
+    uint16_t m_##name##sz; \
+    char m_##name[szval]; \
+    \
+    ST::string get_##name() const { return ST::string(m_##name, m_##name##sz); } \
+    std::string_view get_##name##_view() const { return std::string_view(m_##name, m_##name##sz); } \
+    void set_##name(const ST::string& value) \
+    { \
+        m_##name##sz = (uint16_t)std::min((size_t)szval, value.size()); \
+        memcpy(m_##name, value.c_str(), m_##name##sz); \
+    } \
+    void set_##name(const std::string_view& value) \
+    { \
+        m_##name##sz = (uint16_t)std::min((size_t)szval, value.size()); \
+        memcpy(m_##name, value.data(), m_##name##sz); \
+    } \
+    void set_##name(const std::u16string_view& value) \
+    { \
+        ST::string temp = ST::string(value); \
+        set_##name(temp); \
+    }
+
+#define FUS_NET_FIELD_STRING_UTF16(name, szval) \
     uint16_t m_##name##sz; \
     char16_t m_##name[szval]; \
     \
     ST::string get_##name() const { return ST::string(m_##name, m_##name##sz); } \
+    std::u16string_view get_##name##_view() const { return std::u16string_view(m_##name, m_##name##sz); } \
     void set_##name(const ST::string& value) \
     { \
         ST::buffer<char16_t> buf = value.to_utf16(); \
-        memset(m_##name, 0, szval * sizeof(char16_t)); \
         m_##name##sz = (uint16_t)std::min((size_t)szval, buf.size()); \
         memcpy(m_##name, buf.data(), m_##name##sz * sizeof(char16_t)); \
+    } \
+    void set_##name(const std::string_view& value) \
+    { \
+        ST::string temp = ST::string(value); \
+        set_##name(temp); \
+    } \
+    void set_##name(const std::u16string_view& value) \
+    { \
+        m_##name##sz = (uint16_t)std::min((size_t)szval, value.size()); \
+        memcpy(m_##name, value.data(), m_##name##sz * sizeof(char16_t)); \
     }
 
 #define FUS_NET_FIELD_UUID(name) \

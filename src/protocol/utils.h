@@ -21,6 +21,7 @@
 #include "core/uuid.h"
 #include "io/net_struct.h"
 #include <string_theory/string>
+#include <string_view>
 
 namespace fus
 {

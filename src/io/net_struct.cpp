@@ -45,7 +45,7 @@ static const char* _get_data_type_str(fus::net_field_t::data_type type)
         return "BUFFER";
     case fus::net_field_t::data_type::e_integer:
         return "INTEGER";
-    case fus::net_field_t::data_type::e_string:
+    case fus::net_field_t::data_type::e_string_utf16:
         return "STRING";
     case fus::net_field_t::data_type::e_uuid:
         return "UUID";
@@ -107,7 +107,7 @@ void fus::net_msg_print(const net_struct_t* msg, const void* data, std::ostream&
             }
             stream << std::endl;
             break;
-        case net_field_t::data_type::e_string:
+        case net_field_t::data_type::e_string_utf16:
             stream << "        - DATA: '" << (char16_t*)datap << "'" << std::endl;
             break;
         case net_field_t::data_type::e_uuid:

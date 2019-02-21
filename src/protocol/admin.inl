@@ -22,14 +22,14 @@ FUS_NET_STRUCT_END(admin_pingRequest)
 
 FUS_NET_STRUCT_BEGIN(admin_wallRequest)
     FUS_NET_FIELD_UINT16(type)
-    FUS_NET_FIELD_STRING(text, 1024)
+    FUS_NET_FIELD_STRING_UTF8(text, 1024)
 FUS_NET_STRUCT_END(admin_wallRequest)
 
 FUS_NET_STRUCT_BEGIN(admin_acctCreateRequest)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_UINT32(transId)
-    FUS_NET_FIELD_STRING(name, 64)
-    FUS_NET_FIELD_STRING(pass, 64)
+    FUS_NET_FIELD_STRING_UTF8(name, 64)
+    FUS_NET_FIELD_STRING_UTF8(pass, 64)
     FUS_NET_FIELD_UINT32(flags)
 FUS_NET_STRUCT_END(admin_acctCreateRequest)
 
@@ -43,8 +43,8 @@ FUS_NET_STRUCT_END(admin_pingReply)
 
 FUS_NET_STRUCT_BEGIN(admin_wallBCast)
     FUS_NET_FIELD_UINT16(type)
-    FUS_NET_FIELD_STRING(sender, 64)
-    FUS_NET_FIELD_STRING(text, 1024)
+    FUS_NET_FIELD_STRING_UTF8(sender, 64)
+    FUS_NET_FIELD_STRING_UTF8(text, 1024)
 FUS_NET_STRUCT_END(admin_wallBCast)
 
 FUS_NET_STRUCT_BEGIN(admin_acctCreateReply)

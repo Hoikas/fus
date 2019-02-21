@@ -54,9 +54,13 @@
 #define FUS_NET_FIELD_UINT32(name) \
     { fus::net_field_t::data_type::e_integer, #name, sizeof(uint32_t) },
 
-#define FUS_NET_FIELD_STRING(name, size) \
+#define FUS_NET_FIELD_STRING_UTF8(name, size) \
     { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint16_t) }, \
-    { fus::net_field_t::data_type::e_string, #name, size * sizeof(char16_t) },
+    { fus::net_field_t::data_type::e_string_utf8, #name, size },
+
+#define FUS_NET_FIELD_STRING_UTF16(name, size) \
+    { fus::net_field_t::data_type::e_integer, #name "sz", sizeof(uint16_t) }, \
+    { fus::net_field_t::data_type::e_string_utf16, #name, size * sizeof(char16_t) },
 
 #define FUS_NET_FIELD_UUID(name) \
     { fus::net_field_t::data_type::e_uuid, #name, 16 },

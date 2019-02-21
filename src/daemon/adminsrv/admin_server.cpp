@@ -72,12 +72,12 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
         return;
 
     ST::string senderaddr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client);
-    fus::admin_daemon_log().write("[{}] wall: {}", senderaddr, msg->get_text());
+    fus::admin_daemon_log().write("[{}] wall: {}", senderaddr, msg->get_text_view());
 
     fus::protocol::admin_wallBCast bcast;
     bcast.set_type(fus::protocol::admin2client::e_wallBCast);
     bcast.set_sender(senderaddr);
-    bcast.set_text(msg->get_text());
+    bcast.set_text(msg->get_text_view());
 
     auto it = s_adminDaemon->m_clients.front();
     while (it) {

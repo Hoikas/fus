@@ -209,7 +209,7 @@ static inline bool _is_any_buffer(const fus::net_struct_t* ns, size_t idx)
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant ||
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant_tiny ||
            field.m_type == fus::net_field_t::data_type::e_buffer_redundant_huge ||
-           field.m_type == fus::net_field_t::data_type::e_string;
+           field.m_type == fus::net_field_t::data_type::e_string_utf16;
 }
 
 static inline bool _is_redundant_buffer(const fus::net_struct_t* ns, size_t idx)
@@ -223,7 +223,8 @@ static inline bool _is_redundant_buffer(const fus::net_struct_t* ns, size_t idx)
 static inline bool _is_string(const fus::net_struct_t* ns, size_t idx)
 {
     const fus::net_field_t& field = ns->m_fields[idx];
-    return field.m_type == fus::net_field_t::data_type::e_string;
+    return field.m_type == fus::net_field_t::data_type::e_string_utf8 ||
+           field.m_type == fus::net_field_t::data_type::e_string_utf16;
 }
 
 static inline bool _is_bufsz_legal(const fus::net_struct_t* ns, size_t idx, uint32_t bufsz)
@@ -235,7 +236,7 @@ static inline bool _is_bufsz_legal(const fus::net_struct_t* ns, size_t idx, uint
         return bufsz <= k_normBufsz;
     case fus::net_field_t::data_type::e_buffer_tiny:
     case fus::net_field_t::data_type::e_buffer_redundant_tiny:
-    case fus::net_field_t::data_type::e_string:
+    case fus::net_field_t::data_type::e_string_utf16:
         return bufsz <= k_tinyBufsz;
     case fus::net_field_t::data_type::e_buffer_huge:
     case fus::net_field_t::data_type::e_buffer_redundant_huge:
@@ -272,7 +273,7 @@ static inline uint32_t _determine_bufsz(const fus::net_struct_t* ns, size_t idx,
 
     // Cyan's wire format stores sizes as multiples of the data type. This is generally bytes,
     // but in some cases... no. NOTE that in fus we use byte counts.
-    if (ns->m_fields[idx].m_type == fus::net_field_t::data_type::e_string)
+    if (ns->m_fields[idx].m_type == fus::net_field_t::data_type::e_string_utf16)
         bufsz *= sizeof(char16_t);
 
     // If the buffer is "redundant", that means it includes its size field in its size...

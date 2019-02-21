@@ -28,6 +28,7 @@
 #define FUS_NET_FIELD_UINT8(name) ;
 #define FUS_NET_FIELD_UINT16(name) ;
 #define FUS_NET_FIELD_UINT32(name) ;
-#define FUS_NET_FIELD_STRING(name, size) ;
+#define FUS_NET_FIELD_STRING_UTF8(name, size) ;
+#define FUS_NET_FIELD_STRING_UTF16(name, size) ;
 #define FUS_NET_FIELD_UUID(name) ;
 #define FUS_NET_STRUCT_END(name) ;
