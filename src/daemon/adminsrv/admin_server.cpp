@@ -18,6 +18,7 @@
 #include "client/db_client.h"
 #include "core/errors.h"
 #include "daemon/daemon_base.h"
+#include "db/constants.h"
 #include <new>
 #include <openssl/evp.h>
 #include "protocol/admin.h"
@@ -108,20 +109,9 @@ static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::pr
 
     // Database client must be available for this to work. Otherwise, just phail.
     if (fus::admin_daemon_flags() & fus::daemon_t::e_dbConnected) {
-        /// TODO: support for a SHA-2 hash, removing the hacked domain thingy from the client.
-        ST::string password = msg->get_pass();
-        EVP_DigestInit_ex(s_adminDaemon->m_hashCtx, EVP_sha1(), nullptr);
-        EVP_DigestUpdate(s_adminDaemon->m_hashCtx, password.c_str(), password.size());
-
-        size_t hashBufsz = EVP_MD_CTX_size(s_adminDaemon->m_hashCtx);
-        void* hashBuf = alloca(hashBufsz);
-        unsigned int nWrite;
-        EVP_DigestFinal_ex(s_adminDaemon->m_hashCtx, (unsigned char*)hashBuf, &nWrite);
-        FUS_ASSERTD(hashBufsz == nWrite);
-
-        // As the Cyan programmers were fond of saying: Whoosh... off it goes
-        fus::db_client_create_account(fus::admin_daemon_db(), msg->get_name(), hashBuf, hashBufsz, msg->get_flags(),
-                                      (fus::client_trans_cb)admin_acctCreated, client, msg->get_transId());
+        fus::db_client_create_account(fus::admin_daemon_db(), msg->get_name(), msg->get_pass(),
+                                      msg->get_flags(), (fus::client_trans_cb)admin_acctCreated,
+                                      client, msg->get_transId());
     } else {
         fus::admin_daemon_log().write_error("[{}] Tried to create an account '{}', but the DBSrv is unavailable",
                                             fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_name());

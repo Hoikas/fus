@@ -17,6 +17,7 @@
 #include "core/errors.h"
 #include "core/uuid.h"
 #include "db_sqlite3.h"
+#include <tuple>
 
 // =================================================================================
 
@@ -32,6 +33,19 @@ void fus::sqlite3_query::bind(int idx, const ST::string& value)
 {
     FUS_ASSERTD(idx > 0);
     FUS_ASSERTD(sqlite3_bind_text(m_stmt, idx, value.c_str(), value.size(), nullptr) == SQLITE_OK);
+}
+
+void fus::sqlite3_query::bind(int idx, const std::string_view& value)
+{
+    FUS_ASSERTD(idx > 0);
+    FUS_ASSERTD(sqlite3_bind_text(m_stmt, idx, value.data(), value.size(), nullptr) == SQLITE_OK);
+}
+
+void fus::sqlite3_query::bind(int idx, const std::u16string_view& value)
+{
+    FUS_ASSERTD(idx > 0);
+    FUS_ASSERTD(sqlite3_bind_text16(m_stmt, idx, value.data(), value.size() * sizeof(char16_t),
+                                    nullptr) == SQLITE_OK);
 }
 
 void fus::sqlite3_query::bind(int idx, int value)
@@ -50,6 +64,57 @@ void fus::sqlite3_query::bind(int idx, const fus::uuid& uuid)
 {
     FUS_ASSERTD(idx > 0);
     FUS_ASSERTD(sqlite3_bind_blob(m_stmt, idx, uuid.data(), sizeof(fus::uuid), nullptr) == SQLITE_OK);
+}
+
+// =================================================================================
+
+template<>
+ST::string fus::sqlite3_query::column<ST::string>(int idx)
+{
+    FUS_ASSERTD(idx < sqlite3_data_count(m_stmt));
+
+    ST::char_buffer buf;
+    buf.allocate(sqlite3_column_bytes(m_stmt, idx));
+    memcpy(buf.data(), sqlite3_column_text(m_stmt, idx), buf.size());
+    return ST::string(buf);
+}
+
+template<>
+std::string_view fus::sqlite3_query::column<std::string_view>(int idx)
+{
+    FUS_ASSERTD(idx < sqlite3_data_count(m_stmt));
+    return std::string_view((const char*)sqlite3_column_text(m_stmt, idx),
+                            sqlite3_column_bytes(m_stmt, idx));
+}
+
+template<>
+std::u16string_view fus::sqlite3_query::column<std::u16string_view>(int idx)
+{
+    FUS_ASSERTD(idx < sqlite3_data_count(m_stmt));
+    return std::u16string_view((const char16_t*)sqlite3_column_text16(m_stmt, idx),
+                               sqlite3_column_bytes16(m_stmt, idx) / sizeof(char16_t));
+}
+
+template<>
+int fus::sqlite3_query::column<int>(int idx)
+{
+    FUS_ASSERTD(idx < sqlite3_data_count(m_stmt));
+    return sqlite3_column_int(m_stmt, idx);
+}
+
+template<>
+std::tuple<const void*, size_t> fus::sqlite3_query::column<std::tuple<const void*, size_t>>(int idx)
+{
+    FUS_ASSERTD(idx < sqlite3_data_count(m_stmt));
+    return std::make_tuple(sqlite3_column_blob(m_stmt, idx), sqlite3_column_bytes(m_stmt, idx));
+}
+
+template<>
+fus::uuid fus::sqlite3_query::column<fus::uuid>(int idx)
+{
+    FUS_ASSERTD(idx < sqlite3_data_count(m_stmt));
+    FUS_ASSERTD(sqlite3_column_bytes(m_stmt, idx) == sizeof(fus::uuid));
+    return fus::uuid(sqlite3_column_blob(m_stmt, idx));
 }
 
 // =================================================================================

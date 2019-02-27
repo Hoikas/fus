@@ -16,6 +16,7 @@
 
 #include "core/errors.h"
 #include <cstring>
+#include "db/constants.h"
 #include "db_client.h"
 #include "protocol/db.h"
 
@@ -78,17 +79,34 @@ void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::cli
     tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
-void fus::db_client_create_account(fus::db_client_t* client, const ST::string& name, const void* hashBuf,
-                                   size_t hashBufsz, uint32_t flags, fus::client_trans_cb cb,
-                                   void* instance, uint32_t transId)
+void fus::db_client_authenticate_account(fus::db_client_t* client, const ST::string& name,
+                                         uint32_t cliChallenge, uint32_t srvChallenge,
+                                         fus::hash_type hashType, const void* hashBuf,
+                                         size_t hashBufsz, fus::client_trans_cb cb,
+                                         void* instance, uint32_t transId)
+{
+    protocol::db_acctAuthRequest msg;
+    msg.set_type(protocol::client2db::e_acctAuthRequest);
+    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_name(name);
+    msg.set_cliChallenge(cliChallenge);
+    msg.set_srvChallenge(srvChallenge);
+    msg.set_hashType((uint8_t)hashType);
+    msg.set_hashsz(hashBufsz);
+    tcp_stream_write_msg((tcp_stream_t*)client, msg, hashBuf, hashBufsz);
+}
+
+void fus::db_client_create_account(fus::db_client_t* client, const ST::string& name,
+                                   const ST::string& pass, uint32_t flags,
+                                   fus::client_trans_cb cb, void* instance, uint32_t transId)
 {
     protocol::db_acctCreateRequest msg;
     msg.set_type(protocol::client2db::e_acctCreateRequest);
     msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
     msg.set_name(name);
+    msg.set_pass(pass);
     msg.set_flags(flags);
-    msg.set_hashsz(hashBufsz);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg, hashBuf, hashBufsz);
+    tcp_stream_write_msg((tcp_stream_t*)client, msg);
 }
 
 // =================================================================================
@@ -142,6 +160,9 @@ static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protoco
         break;
     case fus::protocol::db2client::e_acctCreateReply:
         db_read<fus::protocol::db_acctCreateReply>(client, db_trans);
+        break;
+    case fus::protocol::db2client::e_acctAuthReply:
+        db_read<fus::protocol::db_acctAuthReply>(client, db_trans);
         break;
     default:
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);

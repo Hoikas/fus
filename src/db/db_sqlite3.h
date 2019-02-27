@@ -48,11 +48,13 @@ namespace fus
         ~db_sqlite3();
 
     public:
-        void authenticate_account(const ST::string& name, const void* hashBuf,
-                                  size_t hashBufsz, const void* saltBuf, size_t saltBufsz,
-                                  database_acct_auth_cb cb, void* instance, uint32_t transId) override;
-        void create_account(const ST::string& name, const void* hashBuf, size_t hashBufsz,
-                            uint32_t flags, database_acct_create_cb, void* instance, uint32_t transId) override;
+        void authenticate_account(const std::u16string_view& name, uint32_t cliChallenge,
+                                  uint32_t srvChallenge, hash_type hashType, const void* hashBuf,
+                                  size_t hashBufsz, database_acct_auth_cb cb, void* instance,
+                                  uint32_t transId) override;
+        void create_account(const std::u16string_view& name, const std::string_view& pass,
+                            uint32_t flags, database_acct_create_cb, void* instance,
+                            uint32_t transId) override;
     };
 
     class sqlite3_query
@@ -66,9 +68,14 @@ namespace fus
         ~sqlite3_query();
 
         void bind(int idx, const ST::string& value);
+        void bind(int idx, const std::string_view& value);
+        void bind(int idx, const std::u16string_view& value);
         void bind(int idx, int value);
         void bind(int idx, const void* buf, size_t bufsz);
         void bind(int idx, const uuid& buf);
+
+        template<typename T>
+        T column(int idx);
 
         int step();
     };

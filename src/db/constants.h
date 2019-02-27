@@ -14,38 +14,37 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __FUS_AUTH_DAEMON_H
-#define __FUS_AUTH_DAEMON_H
-
-#include "core/list.h"
-#include "io/crypt_stream.h"
+#ifndef __FUS_DB_CONSTANTS
+#define __FUS_DB_CONSTANTS
 
 namespace fus
 {
-    struct auth_server_t;
-    class log_file;
-
-    struct auth_server_t
+    namespace acct_flags
     {
-        crypt_stream_t m_stream;
-        FUS_LIST_LINK(auth_server_t) m_link;
+        enum
+        {
+            // These roles are defined by Plasma
+            e_roleDisabled = 0<<0,
+            e_roleAdmin = 1<<0,
+            e_roleDeveloper = 1<<1,
+            e_roleBetaTester = 1<<2,
+            e_roleUser = 1<<3,
+            e_roleSpecialEvent = 1<<4,
+            e_roleBanned = 1<<16,
 
-        uint32_t m_flags;
-        uint32_t m_srvChallenge;
+            // internal fus flags
+            e_acctHashSha0 = 1<<17,
+            e_acctHashSha1 = 1<<18,
+            e_acctHashMask = e_acctHashSha0 | e_acctHashSha1,
+        };
     };
 
-    void auth_server_init(auth_server_t*);
-    void auth_server_free(auth_server_t*);
-
-    void auth_server_read(auth_server_t*);
-
-    bool auth_daemon_init();
-    bool auth_daemon_running();
-    bool auth_daemon_shutting_down();
-    void auth_daemon_free();
-    void auth_daemon_shutdown();
-
-    void auth_daemon_accept(auth_server_t*, const void*);
+    enum class hash_type
+    {
+        e_unspecified,
+        e_sha0,
+        e_sha1,
+    };
 };
 
 #endif

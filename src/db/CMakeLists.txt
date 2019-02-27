@@ -21,6 +21,7 @@ include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../")
 
 set(FUS_DB_HEADERS
+    constants.h
     database.h
 )
 
@@ -41,6 +42,7 @@ endif()
 
 add_library(fus_db STATIC ${FUS_DB_HEADERS} ${FUS_DB_SOURCES} ${FUS_DB_SQLITE_SOURCES})
 target_link_libraries(fus_db ${LIBUV_LIBRARIES})
+target_link_openssl_crypto(fus_db)
 if(FUS_HAVE_SQLITE)
     target_link_libraries(fus_db ${SQLITE3_LIBRARIES})
 endif()

@@ -65,6 +65,8 @@ static inline void auth_read(fus::auth_server_t* client, _Cb cb)
 enum
 {
     e_clientRegistered = (1<<0),
+    e_acctLoggedIn = (1<<1),
+    e_acctLoginInProgress = (1<<2),
 };
 
 #endif

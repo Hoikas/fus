@@ -41,6 +41,7 @@ namespace fus
                 e_pingRequest,
 
                 e_acctCreateRequest,
+                e_acctAuthRequest,
 
                 e_numMsgs
             };
@@ -53,6 +54,7 @@ namespace fus
                 e_pingReply,
 
                 e_acctCreateReply,
+                e_acctAuthReply,
 
                 e_numMsgs
             };

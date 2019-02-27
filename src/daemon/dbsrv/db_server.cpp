@@ -91,8 +91,44 @@ static void db_acctCreate(fus::db_server_t* client, ssize_t nread, fus::protocol
     // and a real RDBMS backend for serious shards. Supplemental apps like a theoretical dirtsand
     // database converter can use the same API we do for migrations...
     // So, yeah, TL;DR: https://www.youtube.com/watch?v=NUexv1tuWZA
-    s_dbDaemon->m_db->create_account(msg->get_name(), msg->get_hash(), msg->get_hashsz(), msg->get_flags(),
-                                     (fus::database_acct_create_cb)db_acctCreated, client, msg->get_transId());
+    s_dbDaemon->m_db->create_account(msg->get_name_view(), msg->get_pass_view(), msg->get_flags(),
+                                     (fus::database_acct_create_cb)db_acctCreated,
+                                     client, msg->get_transId());
+
+    // Continue reading
+    fus::db_server_read(client);
+}
+
+// =================================================================================
+
+static void db_acctAuthed(fus::db_server_t* client, uint32_t transId, fus::net_error result,
+                          const std::u16string_view& name, const fus::uuid& uuid, uint32_t flags)
+{
+    fus::protocol::db_acctAuthReply msg;
+    msg.set_type(fus::protocol::db2client::e_acctAuthReply);
+    msg.set_transId(transId);
+    msg.set_result((uint32_t)result);
+    msg.set_name(name);
+
+    // Ensure that no details leak to an externally facing process
+    if (result == fus::net_error::e_success) {
+        *msg.get_uuid() = uuid;
+        msg.set_flags(flags);
+    }
+
+    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
+}
+
+static void db_acctAuth(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctAuthRequest* msg)
+{
+    if (!db_check_read(client, nread))
+        return;
+
+    s_dbDaemon->m_db->authenticate_account(msg->get_name_view(), msg->get_cliChallenge(),
+                                           msg->get_srvChallenge(), (fus::hash_type)msg->get_hashType(),
+                                           msg->get_hash(), msg->get_hashsz(),
+                                           (fus::database_acct_auth_cb)db_acctAuthed, client,
+                                           msg->get_transId());
 
     // Continue reading
     fus::db_server_read(client);
@@ -111,6 +147,9 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
         break;
     case fus::protocol::client2db::e_acctCreateRequest:
         db_read<fus::protocol::db_acctCreateRequest>(client, db_acctCreate);
+        break;
+    case fus::protocol::client2db::e_acctAuthRequest:
+        db_read<fus::protocol::db_acctAuthRequest>(client, db_acctAuth);
         break;
     default:
         fus::db_daemon_log().write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
