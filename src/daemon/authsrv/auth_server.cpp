@@ -209,6 +209,7 @@ static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protoc
         fus::auth_daemon_log().write_error("[{}] Received unimplemented message type 0x{04X} -- kicking client",
                                            fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_type());
         fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        break;
     }
 }
 

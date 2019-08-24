@@ -52,7 +52,6 @@ void fus::daemon_init(fus::daemon_t* daemon, const ST::string& name)
 
 void fus::daemon_free(fus::daemon_t* daemon)
 {
-    FUS_ASSERTD((daemon->m_flags & daemon_t::e_shuttingDown));
     daemon->m_log.close();
 }
 
