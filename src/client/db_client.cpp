@@ -24,19 +24,19 @@
 
 int fus::db_client_init(fus::db_client_t* client, uv_loop_t* loop)
 {
-    int result = client_init((client_t*)client, loop);
+    int result = client_init(client, loop);
     if (result < 0)
         return result;
-    tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)db_client_free);
+    tcp_stream_free_cb(client, (tcp_free_cb)db_client_free);
 
-    ((client_t*)client)->m_proc = (client_pump_proc)db_client_read;
+    client->m_proc = (client_pump_proc)db_client_read;
 
     return 0;
 }
 
 void fus::db_client_free(fus::db_client_t* client)
 {
-    client_free((client_t*)client);
+    client_free(client);
 }
 
 // =================================================================================
@@ -48,7 +48,7 @@ void fus::db_client_connect(fus::db_client_t* client, const sockaddr* addr, void
 
     auto header = (protocol::connection_header*)buf;
     header->set_connType(protocol::e_protocolSrv2Database);
-    fus::client_crypt_connect((client_t*)client, addr, buf, bufsz, cb);
+    fus::client_crypt_connect(client, addr, buf, bufsz, cb);
 }
 
 void fus::db_client_connect(fus::db_client_t* client, const sockaddr* addr, void* buf, size_t bufsz,
@@ -59,7 +59,7 @@ void fus::db_client_connect(fus::db_client_t* client, const sockaddr* addr, void
 
     auto header = (protocol::connection_header*)buf;
     header->set_connType(protocol::e_protocolSrv2Database);
-    fus::client_crypt_connect((client_t*)client, addr, buf, bufsz, g, n, x, cb);
+    fus::client_crypt_connect(client, addr, buf, bufsz, g, n, x, cb);
 }
 
 size_t fus::db_client_header_size()
@@ -74,9 +74,9 @@ void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::cli
 {
     protocol::db_pingRequest msg;
     msg.set_type(protocol::client2db::e_pingRequest);
-    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_transId(client_gen_trans(client, instance, transId, cb));
     msg.set_pingTime(pingTimeMs);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg);
+    tcp_stream_write_msg(client, msg);
 }
 
 void fus::db_client_authenticate_account(fus::db_client_t* client, const ST::string& name,
@@ -87,13 +87,13 @@ void fus::db_client_authenticate_account(fus::db_client_t* client, const ST::str
 {
     protocol::db_acctAuthRequest msg;
     msg.set_type(protocol::client2db::e_acctAuthRequest);
-    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_transId(client_gen_trans(client, instance, transId, cb));
     msg.set_name(name);
     msg.set_cliChallenge(cliChallenge);
     msg.set_srvChallenge(srvChallenge);
     msg.set_hashType((uint8_t)hashType);
     msg.set_hashsz(hashBufsz);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg, hashBuf, hashBufsz);
+    tcp_stream_write_msg(client, msg, hashBuf, hashBufsz);
 }
 
 void fus::db_client_create_account(fus::db_client_t* client, const ST::string& name,
@@ -102,11 +102,11 @@ void fus::db_client_create_account(fus::db_client_t* client, const ST::string& n
 {
     protocol::db_acctCreateRequest msg;
     msg.set_type(protocol::client2db::e_acctCreateRequest);
-    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_transId(client_gen_trans(client, instance, transId, cb));
     msg.set_name(name);
     msg.set_pass(pass);
     msg.set_flags(flags);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg);
+    tcp_stream_write_msg(client, msg);
 }
 
 // =================================================================================
@@ -117,19 +117,18 @@ using _db_cb = void(fus::db_client_t*, ssize_t, _Msg*);
 template<typename _Msg, typename _Cb = _db_cb<_Msg>>
 static inline void db_read(fus::db_client_t* client, _Cb cb)
 {
-    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
+    fus::tcp_stream_read_msg<_Msg>(client, (fus::tcp_read_cb)cb);
 }
 
 template<typename _Msg>
 static void db_trans(fus::db_client_t* client, ssize_t nread, _Msg* reply)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
-    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(),
-                           (fus::net_error)reply->get_result(), nread, reply);
+    fus::client_fire_trans(client, reply->get_transId(), (fus::net_error)reply->get_result(), nread, reply);
     fus::db_client_read(client);
 }
 
@@ -137,11 +136,11 @@ template<typename _Msg>
 static void db_trans_noresult(fus::db_client_t* client, ssize_t nread, _Msg* reply)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
-    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), fus::net_error::e_success, nread, reply);
+    fus::client_fire_trans(client, reply->get_transId(), fus::net_error::e_success, nread, reply);
     fus::db_client_read(client);
 }
 
@@ -150,7 +149,7 @@ static void db_trans_noresult(fus::db_client_t* client, ssize_t nread, _Msg* rep
 static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protocol::msg_std_header* header)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
@@ -165,12 +164,12 @@ static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protoco
         db_read<fus::protocol::db_acctAuthReply>(client, db_trans);
         break;
     default:
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         break;
     }
 }
 
 void fus::db_client_read(fus::db_client_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)db_client_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)db_client_pump);
 }

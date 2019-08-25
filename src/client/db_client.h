@@ -26,9 +26,8 @@ namespace fus
 
     struct db_client_t;
 
-    struct db_client_t
+    struct db_client_t : public client_t
     {
-        client_t m_client;
     };
 
     int db_client_init(db_client_t*, uv_loop_t*);

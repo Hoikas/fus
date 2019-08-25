@@ -31,7 +31,7 @@ bool fus::auth_daemon_init()
     FUS_ASSERTD(s_authDaemon == nullptr);
 
     s_authDaemon = (auth_daemon_t*)malloc(sizeof(auth_daemon_t));
-    db_trans_daemon_init((db_trans_daemon_t*)s_authDaemon, ST_LITERAL("auth"));
+    db_trans_daemon_init(s_authDaemon, ST_LITERAL("auth"));
     new(&s_authDaemon->m_clients) FUS_LIST_DECL(auth_server_t, m_link);
 
     return true;
@@ -45,7 +45,7 @@ bool fus::auth_daemon_running()
 bool fus::auth_daemon_shutting_down()
 {
     if (s_authDaemon)
-        return auth_daemon_flags() & daemon_t::e_shuttingDown;
+        return s_authDaemon->m_flags & daemon_t::e_shuttingDown;
     return false;
 }
 
@@ -55,7 +55,7 @@ void fus::auth_daemon_free()
     FUS_ASSERTD(s_authDaemon);
 
     s_authDaemon->m_clients.~list_declare();
-    db_trans_daemon_free((db_trans_daemon_t*)s_authDaemon);
+    db_trans_daemon_free(s_authDaemon);
     free(s_authDaemon);
     s_authDaemon = nullptr;
 }
@@ -63,12 +63,12 @@ void fus::auth_daemon_free()
 void fus::auth_daemon_shutdown()
 {
     FUS_ASSERTD(s_authDaemon);
-    db_trans_daemon_shutdown((db_trans_daemon_t*)s_authDaemon);
+    db_trans_daemon_shutdown(s_authDaemon);
 
     // Clients will be removed from the list by auth_server_free
     auto it = s_authDaemon->m_clients.front();
     while (it) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)it);
+        fus::tcp_stream_shutdown(it);
         it = s_authDaemon->m_clients.next(it);
     }
 }
@@ -77,8 +77,8 @@ void fus::auth_daemon_shutdown()
 
 static void auth_connection_encrypted(fus::auth_server_t* client, ssize_t result)
 {
-    if (result < 0 || (fus::auth_daemon_flags() & fus::daemon_t::e_shuttingDown)) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+    if (result < 0 || (s_authDaemon->m_flags & fus::daemon_t::e_shuttingDown)) {
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
@@ -89,14 +89,13 @@ static void auth_connection_encrypted(fus::auth_server_t* client, ssize_t result
 void fus::auth_daemon_accept(fus::auth_server_t* client, const void* msgbuf)
 {
     // Validate connection
-    if (!s_authDaemon || (fus::auth_daemon_flags() & fus::daemon_t::e_shuttingDown) || !daemon_verify_connection((daemon_t*)s_authDaemon, msgbuf, false)) {
-        tcp_stream_shutdown((tcp_stream_t*)client);
+    if (!s_authDaemon || (s_authDaemon->m_flags & fus::daemon_t::e_shuttingDown) ||
+        !daemon_verify_connection(s_authDaemon, msgbuf, false)) {
+        tcp_stream_shutdown(client);
         return;
     }
 
     // Init
     auth_server_init(client);
-    fus::secure_daemon_encrypt_stream((fus::secure_daemon_t*)s_authDaemon,
-                                      (fus::crypt_stream_t*)client,
-                                      (fus::crypt_established_cb)auth_connection_encrypted);
+    fus::secure_daemon_encrypt_stream(s_authDaemon, client, (crypt_established_cb)auth_connection_encrypted);
 }

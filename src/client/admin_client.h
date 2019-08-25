@@ -24,9 +24,8 @@ namespace fus
     struct admin_client_t;
     typedef void (*admin_client_wall_cb)(admin_client_t*, const ST::string&, const ST::string&);
 
-    struct admin_client_t
+    struct admin_client_t : public client_t
     {
-        client_t m_client;
         admin_client_wall_cb m_wallcb;
     };
 

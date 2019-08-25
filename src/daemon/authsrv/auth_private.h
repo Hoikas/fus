@@ -22,32 +22,13 @@
 
 namespace fus
 {
-    struct auth_daemon_t
+    struct auth_daemon_t : public db_trans_daemon_t
     {
-        db_trans_daemon_t m_daemon;
         FUS_LIST_DECL(auth_server_t, m_link) m_clients;
     };
 };
 
 extern fus::auth_daemon_t* s_authDaemon;
-
-namespace fus
-{
-    inline db_client_t* auth_daemon_db()
-    {
-        return ((db_trans_daemon_t*)s_authDaemon)->m_db;
-    }
-
-    inline uint32_t& auth_daemon_flags()
-    {
-        return ((daemon_t*)s_authDaemon)->m_flags;
-    }
-
-    inline log_file& auth_daemon_log()
-    {
-        return ((daemon_t*)s_authDaemon)->m_log;
-    }
-};
 
 // =================================================================================
 
@@ -57,7 +38,7 @@ using _auth_cb = void(fus::auth_server_t*, ssize_t, _Msg*);
 template<typename _Msg, typename _Cb=_auth_cb<_Msg>>
 static inline void auth_read(fus::auth_server_t* client, _Cb cb)
 {
-    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
+    fus::tcp_stream_read_msg<_Msg>(client, (fus::tcp_read_cb)cb);
 }
 
 // =================================================================================

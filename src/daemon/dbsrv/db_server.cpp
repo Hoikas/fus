@@ -26,9 +26,9 @@
 
 void fus::db_server_init(fus::db_server_t* client)
 {
-    tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)db_server_free);
-    crypt_stream_init((crypt_stream_t*)client);
-    crypt_stream_must_encrypt((crypt_stream_t*)client);
+    tcp_stream_free_cb(client, (tcp_free_cb)db_server_free);
+    crypt_stream_init(client);
+    crypt_stream_must_encrypt(client);
     new(&client->m_link) FUS_LIST_LINK(db_server_t);
 }
 
@@ -42,10 +42,10 @@ void fus::db_server_free(fus::db_server_t* client)
 static inline bool db_check_read(fus::db_server_t* client, ssize_t nread)
 {
     if (nread < 0) {
-        fus::db_daemon_log().write_debug("[{}]: Read failed: {}",
-                                         fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
-                                         uv_strerror(nread));
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        s_dbDaemon->m_log.write_debug("[{}]: Read failed: {}",
+                                      fus::tcp_stream_peeraddr(client),
+                                      uv_strerror(nread));
+        fus::tcp_stream_shutdown(client);
         return false;
     }
     return true;
@@ -57,7 +57,7 @@ static void db_pingpong(fus::db_server_t* client, ssize_t nread, fus::protocol::
         return;
 
     // Message reply is a bitwise copy, so we'll just throw the request back.
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, msg, nread);
+    fus::tcp_stream_write(client, msg, nread);
 
     // Continue reading
     fus::db_server_read(client);
@@ -72,7 +72,7 @@ static void db_acctCreated(fus::db_server_t* client, uint32_t transId, fus::net_
     msg.set_transId(transId);
     msg.set_result((uint32_t)result);
     *msg.get_uuid() = uuid;
-    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
+    fus::tcp_stream_write_msg(client, msg);
 }
 
 static void db_acctCreate(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctCreateRequest* msg)
@@ -116,7 +116,7 @@ static void db_acctAuthed(fus::db_server_t* client, uint32_t transId, fus::net_e
         msg.set_flags(flags);
     }
 
-    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
+    fus::tcp_stream_write_msg(client, msg);
 }
 
 static void db_acctAuth(fus::db_server_t* client, ssize_t nread, fus::protocol::db_acctAuthRequest* msg)
@@ -152,12 +152,12 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
         db_read<fus::protocol::db_acctAuthRequest>(client, db_acctAuth);
         break;
     default:
-        fus::db_daemon_log().write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        s_dbDaemon->m_log.write_error("Received unimplemented message type 0x{04X} -- kicking client", msg->get_type());
+        fus::tcp_stream_shutdown(client);
     }
 }
 
 void fus::db_server_read(fus::db_server_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)db_msg_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)db_msg_pump);
 }

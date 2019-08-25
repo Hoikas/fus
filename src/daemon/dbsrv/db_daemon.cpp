@@ -33,8 +33,8 @@ bool fus::db_daemon_init()
     FUS_ASSERTD(s_dbDaemon == nullptr);
 
     s_dbDaemon = (db_daemon_t*)malloc(sizeof(db_daemon_t));
-    secure_daemon_init((secure_daemon_t*)s_dbDaemon, ST_LITERAL("db"));
-    s_dbDaemon->m_db = database::init(server::get()->config(), db_daemon_log());
+    secure_daemon_init(s_dbDaemon, ST_LITERAL("db"));
+    s_dbDaemon->m_db = database::init(server::get()->config(), s_dbDaemon->m_log);
     new(&s_dbDaemon->m_clients) FUS_LIST_DECL(db_server_t, m_link);
 
     if (!s_dbDaemon->m_db) {
@@ -52,7 +52,7 @@ bool fus::db_daemon_running()
 bool fus::db_daemon_shutting_down()
 {
     if (s_dbDaemon)
-        return db_daemon_flags() & daemon_t::e_shuttingDown;
+        return s_dbDaemon->m_flags & daemon_t::e_shuttingDown;
     return false;
 }
 
@@ -63,7 +63,7 @@ void fus::db_daemon_free()
 
     s_dbDaemon->m_clients.~list_declare();
     delete s_dbDaemon->m_db;
-    secure_daemon_free((secure_daemon_t*)s_dbDaemon);
+    secure_daemon_free(s_dbDaemon);
     free(s_dbDaemon);
     s_dbDaemon = nullptr;
 }
@@ -71,12 +71,12 @@ void fus::db_daemon_free()
 void fus::db_daemon_shutdown()
 {
     FUS_ASSERTD(s_dbDaemon);
-    secure_daemon_shutdown((secure_daemon_t*)s_dbDaemon);
+    secure_daemon_shutdown(s_dbDaemon);
 
     // Clients will be removed from the list by db_server_free
     auto it = s_dbDaemon->m_clients.front();
     while (it) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)it);
+        fus::tcp_stream_shutdown(it);
         it = s_dbDaemon->m_clients.next(it);
     }
 }
@@ -85,8 +85,8 @@ void fus::db_daemon_shutdown()
 
 static void db_connection_encrypted(fus::db_server_t* client, ssize_t result)
 {
-    if (result < 0 || (fus::db_daemon_flags() & fus::daemon_t::e_shuttingDown)) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+    if (result < 0 || (s_dbDaemon->m_flags & fus::daemon_t::e_shuttingDown)) {
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
@@ -97,14 +97,12 @@ static void db_connection_encrypted(fus::db_server_t* client, ssize_t result)
 void fus::db_daemon_accept(fus::db_server_t* client, const void* msgbuf)
 {
     // Validate connection
-    if (!s_dbDaemon || (fus::db_daemon_flags() & fus::daemon_t::e_shuttingDown) || !daemon_verify_connection((daemon_t*)s_dbDaemon, msgbuf, false)) {
-        tcp_stream_shutdown((tcp_stream_t*)client);
+    if (!s_dbDaemon || (s_dbDaemon->m_flags & fus::daemon_t::e_shuttingDown) || !daemon_verify_connection(s_dbDaemon, msgbuf, false)) {
+        tcp_stream_shutdown(client);
         return;
     }
 
     // Init
     db_server_init(client);
-    fus::secure_daemon_encrypt_stream((fus::secure_daemon_t*)s_dbDaemon,
-                                      (fus::crypt_stream_t*)client,
-                                      (fus::crypt_established_cb)db_connection_encrypted);
+    fus::secure_daemon_encrypt_stream(s_dbDaemon, client, (crypt_established_cb)db_connection_encrypted);
 }

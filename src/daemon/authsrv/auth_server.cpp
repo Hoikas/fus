@@ -29,8 +29,8 @@
 
 void fus::auth_server_init(fus::auth_server_t* client)
 {
-    tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)auth_server_free);
-    crypt_stream_init((crypt_stream_t*)client);
+    tcp_stream_free_cb(client, (tcp_free_cb)auth_server_free);
+    crypt_stream_init(client);
     new(&client->m_link) FUS_LIST_LINK(auth_server_t);
     client->m_flags = 0;
     client->m_srvChallenge = 0;
@@ -38,8 +38,8 @@ void fus::auth_server_init(fus::auth_server_t* client)
 
 void fus::auth_server_free(fus::auth_server_t* client)
 {
-    if (auth_daemon_db())
-        client_kill_trans((client_t*)auth_daemon_db(), client, net_error::e_disconnected, UV_ECONNRESET, true);
+    if (s_authDaemon->m_db)
+        client_kill_trans(s_authDaemon->m_db, client, net_error::e_disconnected, UV_ECONNRESET, true);
     client->m_link.~list_link();
 }
 
@@ -48,10 +48,10 @@ void fus::auth_server_free(fus::auth_server_t* client)
 static inline bool auth_check_read(fus::auth_server_t* client, ssize_t nread)
 {
     if (nread < 0) {
-        fus::auth_daemon_log().write_debug("[{}] Read failed: {}",
-                                           fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
-                                           uv_strerror(nread));
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        s_authDaemon->m_log.write_debug("[{}] Read failed: {}",
+                                        fus::tcp_stream_peeraddr(client),
+                                        uv_strerror(nread));
+        fus::tcp_stream_shutdown(client);
         return false;
     }
     return true;
@@ -63,7 +63,7 @@ static void auth_pingpong(fus::auth_server_t* client, ssize_t nread, fus::protoc
         return;
 
     // Message reply is a bitwise copy, so we'll just throw the request back.
-    fus::tcp_stream_write((fus::tcp_stream_t*)client, msg, nread);
+    fus::tcp_stream_write(client, msg, nread);
 
     // Continue reading
     fus::auth_server_read(client);
@@ -78,7 +78,7 @@ static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::
 
     // If a client tries to register more than once, they are obviously being nefarious.
     if (client->m_flags & e_clientRegistered)
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
 
     RAND_bytes((unsigned char*)(&client->m_srvChallenge), sizeof(client->m_srvChallenge));
     client->m_flags |= e_clientRegistered;
@@ -86,7 +86,7 @@ static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::
     fus::protocol::auth_clientRegisterReply reply;
     reply.set_type(fus::protocol::auth2client::e_clientRegisterReply);
     reply.set_loginSalt(client->m_srvChallenge);
-    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, reply);
+    fus::tcp_stream_write_msg(client, reply);
 
     // Continue reading
     fus::auth_server_read(client);
@@ -98,10 +98,10 @@ static void auth_acctLoginAuthed(fus::auth_server_t* client, fus::db_client_t* d
                                  fus::net_error result, ssize_t nread, const fus::protocol::db_acctAuthReply* reply)
 {
     if (result == fus::net_error::e_success)
-        fus::auth_daemon_log().write_debug("Account '{}' login: {}", reply->get_name_view(),
-                                           fus::net_error_string(result));
+        s_authDaemon->m_log.write_debug("Account '{}' login: {}", reply->get_name_view(),
+                                        fus::net_error_string(result));
     else
-        fus::auth_daemon_log().write_error("Account '{}' login: {}", reply->get_name_view(),
+        s_authDaemon->m_log.write_error("Account '{}' login: {}", reply->get_name_view(),
                                            fus::net_error_string(result));
 
     // TODO: this needs to request the account's players from the database
@@ -114,7 +114,7 @@ static void auth_acctLoginAuthed(fus::auth_server_t* client, fus::db_client_t* d
         msg.set_flags(reply->get_flags());
         // TOOD: billingtype, droidkey
     }
-    fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, msg);
+    fus::tcp_stream_write_msg(client, msg);
 }
 
 static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::protocol::auth_acctLoginRequest* msg)
@@ -125,23 +125,23 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
     fus::net_error result = fus::net_error::e_pending;
     do {
         if (!(client->m_flags & e_clientRegistered)) {
-            fus::auth_daemon_log().write_debug("[{}] Wants to login but has not registered",
-                                               fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client));
+            s_authDaemon->m_log.write_debug("[{}] Wants to login but has not registered",
+                                            fus::tcp_stream_peeraddr(client));
             result = fus::net_error::e_disconnected;
             break;
         }
 
         if (client->m_flags & e_acctLoggedIn || client->m_flags & e_acctLoginInProgress) {
-            fus::auth_daemon_log().write_debug("[{}] Sent dupe login requests",
-                                               fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client));
+            s_authDaemon->m_log.write_debug("[{}] Sent dupe login requests",
+                                            fus::tcp_stream_peeraddr(client));
             result = fus::net_error::e_disconnected;
             break;
         }
 
-        if (!(fus::auth_daemon_flags() & fus::daemon_t::e_dbConnected)) {
-            fus::auth_daemon_log().write_error("[{}] Tried to login to account '{}', but the DBSrv is unavailable",
-                                                fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
-                                               msg->get_name());
+        if (!(s_authDaemon->m_flags & fus::daemon_t::e_dbConnected)) {
+            s_authDaemon->m_log.write_error("[{}] Tried to login to account '{}', but the DBSrv is unavailable",
+                                            fus::tcp_stream_peeraddr(client),
+                                            msg->get_name());
             result = fus::net_error::e_internalError;
             break;
         }
@@ -151,9 +151,9 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
         std::cmatch match;
         std::regex_search(msg->get_name().to_lower().c_str(), match, re_domain);
         if (!(match.empty() || match[2].compare("gametap") == 0)) {
-            fus::auth_daemon_log().write_debug("[{}] Sent an account name [{}] that would require SHA-0",
-                                               fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client),
-                                               msg->get_name());
+            s_authDaemon->m_log.write_debug("[{}] Sent an account name [{}] that would require SHA-0",
+                                            fus::tcp_stream_peeraddr(client),
+                                            msg->get_name());
             result = fus::net_error::e_notSupported;
             break;
         }
@@ -165,9 +165,9 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
         reply.set_type(fus::protocol::auth2client::e_acctLoginReply);
         reply.set_transId(msg->get_transId());
         reply.set_result((uint32_t)result);
-        fus::tcp_stream_write_msg((fus::tcp_stream_t*)client, reply);
+        fus::tcp_stream_write_msg(client, reply);
         if (result == fus::net_error::e_disconnected)
-            fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+            fus::tcp_stream_shutdown(client);
     } else {
         // eap-tastic networking code sends big endian 32-bit integers
         void* hash = alloca(msg->get_hashsz());
@@ -178,7 +178,7 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
                 destp[i] = FUS_BE32(srcp[i]);
         }
 
-        fus::db_client_authenticate_account(fus::auth_daemon_db(), msg->get_name(), msg->get_challenge(),
+        fus::db_client_authenticate_account(s_authDaemon->m_db, msg->get_name(), msg->get_challenge(),
                                             client->m_srvChallenge, fus::hash_type::e_sha1, hash,
                                             msg->get_hashsz(), (fus::client_trans_cb)auth_acctLoginAuthed,
                                             client, msg->get_transId());
@@ -206,14 +206,14 @@ static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protoc
         auth_read<fus::protocol::auth_acctLoginRequest>(client, auth_acctLogin);
         break;
     default:
-        fus::auth_daemon_log().write_error("[{}] Received unimplemented message type 0x{04X} -- kicking client",
-                                           fus::tcp_stream_peeraddr((fus::tcp_stream_t*)client), msg->get_type());
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        s_authDaemon->m_log.write_error("[{}] Received unimplemented message type 0x{04X} -- kicking client",
+                                        fus::tcp_stream_peeraddr(client), msg->get_type());
+        fus::tcp_stream_shutdown(client);
         break;
     }
 }
 
 void fus::auth_server_read(fus::auth_server_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)auth_msg_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)auth_msg_pump);
 }

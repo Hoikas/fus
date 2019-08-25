@@ -23,10 +23,10 @@
 
 int fus::admin_client_init(fus::admin_client_t* client, uv_loop_t* loop)
 {
-    int result = client_init((client_t*)client, loop);
+    int result = client_init(client, loop);
     if (result < 0)
         return result;
-    tcp_stream_free_cb((tcp_stream_t*)client, (tcp_free_cb)admin_client_free);
+    tcp_stream_free_cb(client, (tcp_free_cb)admin_client_free);
 
     ((client_t*)client)->m_proc = (client_pump_proc)admin_client_read;
     client->m_wallcb = nullptr;
@@ -36,7 +36,7 @@ int fus::admin_client_init(fus::admin_client_t* client, uv_loop_t* loop)
 
 void fus::admin_client_free(fus::admin_client_t* client)
 {
-    client_free((client_t*)client);
+    client_free(client);
 }
 
 // =================================================================================
@@ -48,7 +48,7 @@ void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr
 
     auto header = (protocol::connection_header*)buf;
     header->set_connType(protocol::e_protocolCli2Admin);
-    fus::client_crypt_connect((client_t*)client, addr, buf, bufsz, cb);
+    fus::client_crypt_connect(client, addr, buf, bufsz, cb);
 }
 
 void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr, void* buf, size_t bufsz,
@@ -59,7 +59,7 @@ void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr
 
     auto header = (protocol::connection_header*)buf;
     header->set_connType(protocol::e_protocolCli2Admin);
-    fus::client_crypt_connect((client_t*)client, addr, buf, bufsz, g, n, x, cb);
+    fus::client_crypt_connect(client, addr, buf, bufsz, g, n, x, cb);
 }
 
 size_t fus::admin_client_header_size()
@@ -81,9 +81,9 @@ void fus::admin_client_ping(fus::admin_client_t* client, uint32_t pingTimeMs, fu
 {
     protocol::admin_pingRequest msg;
     msg.set_type(protocol::client2admin::e_pingRequest);
-    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_transId(client_gen_trans(client, instance, transId, cb));
     msg.set_pingTime(pingTimeMs);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg);
+    tcp_stream_write_msg(client, msg);
 }
 
 void fus::admin_client_wall(fus::admin_client_t* client, const ST::string& text)
@@ -91,7 +91,7 @@ void fus::admin_client_wall(fus::admin_client_t* client, const ST::string& text)
     protocol::admin_wallRequest msg;
     msg.set_type(protocol::client2admin::e_wallRequest);
     msg.set_text(text);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg);
+    tcp_stream_write_msg(client, msg);
 }
 
 void fus::admin_client_create_account(fus::admin_client_t* client, const ST::string& name,
@@ -100,11 +100,11 @@ void fus::admin_client_create_account(fus::admin_client_t* client, const ST::str
 {
     protocol::admin_acctCreateRequest msg;
     msg.set_type(protocol::client2admin::e_acctCreateRequest);
-    msg.set_transId(client_gen_trans((client_t*)client, instance, transId, cb));
+    msg.set_transId(client_gen_trans(client, instance, transId, cb));
     msg.set_name(name);
     msg.set_pass(pass);
     msg.set_flags(flags);
-    tcp_stream_write_msg((tcp_stream_t*)client, msg);
+    tcp_stream_write_msg(client, msg);
 }
 
 // =================================================================================
@@ -115,19 +115,18 @@ using _admin_cb = void(fus::admin_client_t*, ssize_t, _Msg*);
 template<typename _Msg, typename _Cb = _admin_cb<_Msg>>
 static inline void admin_read(fus::admin_client_t* client, _Cb cb)
 {
-    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
+    fus::tcp_stream_read_msg<_Msg>(client, (fus::tcp_read_cb)cb);
 }
 
 template<typename _Msg>
 static void admin_trans(fus::admin_client_t* client, ssize_t nread, _Msg* reply)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
-    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(),
-                           (fus::net_error)reply->get_result(), nread, reply);
+    fus::client_fire_trans(client, reply->get_transId(), (fus::net_error)reply->get_result(), nread, reply);
     fus::admin_client_read(client);
 }
 
@@ -135,11 +134,11 @@ template<typename _Msg>
 static void admin_trans_noresult(fus::admin_client_t* client, ssize_t nread, _Msg* reply)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
-    fus::client_fire_trans((fus::client_t*)client, reply->get_transId(), fus::net_error::e_success, nread, reply);
+    fus::client_fire_trans(client, reply->get_transId(), fus::net_error::e_success, nread, reply);
     fus::admin_client_read(client);
 }
 
@@ -148,7 +147,7 @@ static void admin_trans_noresult(fus::admin_client_t* client, ssize_t nread, _Ms
 static void admin_wallBCast(fus::admin_client_t* client, ssize_t nread, fus::protocol::admin_wallBCast* bcast)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
@@ -161,7 +160,7 @@ static void admin_wallBCast(fus::admin_client_t* client, ssize_t nread, fus::pro
 static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::protocol::msg_std_header* header)
 {
     if (nread < 0) {
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         return;
     }
 
@@ -176,12 +175,12 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
         admin_read<fus::protocol::admin_acctCreateReply>(client, admin_trans);
         break;
     default:
-        fus::tcp_stream_shutdown((fus::tcp_stream_t*)client);
+        fus::tcp_stream_shutdown(client);
         break;
     }
 }
 
 void fus::admin_client_read(fus::admin_client_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>((tcp_stream_t*)client, (tcp_read_cb)admin_client_pump);
+    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)admin_client_pump);
 }

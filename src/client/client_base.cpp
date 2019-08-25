@@ -45,14 +45,14 @@ struct connect_req_t
 
 int fus::client_init(fus::client_t* client, uv_loop_t* loop)
 {
-    int result = tcp_stream_init((tcp_stream_t*)client, loop);
+    int result = tcp_stream_init(client, loop);
     if (result < 0)
         return result;
-    crypt_stream_init((crypt_stream_t*)client);
+    crypt_stream_init(client);
 
     // Init members
     result = uv_timer_init(loop, &client->m_reconnect);
-    tcp_stream_ref((tcp_stream_t*)client, (uv_handle_t*)&client->m_reconnect);
+    tcp_stream_ref(client, (uv_handle_t*)&client->m_reconnect);
 
     client->m_connectReq = nullptr;
     client->m_connectcb = nullptr;
@@ -103,12 +103,12 @@ static void _client_connected(connect_req_t* req, int status)
         if (client->m_connectcb)
             client->m_connectcb(client, status);
     } else {
-        ((fus::tcp_stream_t*)client)->m_flags |= fus::tcp_stream_t::e_connected;
-        fus::tcp_stream_write((fus::tcp_stream_t*)client, req->m_buf, req->m_bufsz);
+        client->m_flags |= fus::tcp_stream_t::e_connected;
+        fus::tcp_stream_write(client, req->m_buf, req->m_bufsz);
         if (req->m_flags & connect_req_t::e_encrypt) {
             if (req->m_flags & connect_req_t::e_ownsKeys)
-                fus::crypt_stream_set_keys_client((fus::crypt_stream_t*)client, req->m_g, req->m_nKey, req->m_xKey);
-            fus::crypt_stream_establish_client((fus::crypt_stream_t*)client, (fus::crypt_established_cb)_client_encrypted);
+                fus::crypt_stream_set_keys_client(client, req->m_g, req->m_nKey, req->m_xKey);
+            fus::crypt_stream_establish_client(client, (fus::crypt_established_cb)_client_encrypted);
         } else {
             if (client->m_connectcb)
                 client->m_connectcb(client, 0);
@@ -187,7 +187,7 @@ static void reconnect_client(uv_timer_t* timer)
 void fus::client_reconnect(fus::client_t* client, uint64_t reconnectTimeMs)
 {
     FUS_ASSERTD(client);
-    FUS_ASSERTD(!(((fus::tcp_stream_t*)client)->m_flags & tcp_stream_t::e_connected));
+    FUS_ASSERTD(!(client->m_flags & tcp_stream_t::e_connected));
 
     // The high level code will probably take over the close callback. Unless we're shutting down,
     // a reconnect is most likely, so we need to cancel any transactions pending on the previous
@@ -220,7 +220,7 @@ void fus::client_fire_trans(fus::client_t* client, uint32_t transId, net_error r
 {
     auto it = client->m_trans.find(transId);
     if (it != client->m_trans.end()) {
-        it->second.m_cb(it->second.m_instance, (fus::client_t*)client, it->second.m_transId,
+        it->second.m_cb(it->second.m_instance, client, it->second.m_transId,
                         result, nread, msg);
         client->m_trans.erase(it);
     }

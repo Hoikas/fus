@@ -26,9 +26,8 @@ namespace fus
     struct crypt_stream_t;
     typedef void (*crypt_established_cb)(crypt_stream_t*, ssize_t);
 
-    struct crypt_stream_t
+    struct crypt_stream_t : public tcp_stream_t
     {
-        tcp_stream_t m_stream;
         tcp_read_cb m_readcb;
         crypt_established_cb m_encryptcb;
         union

@@ -42,9 +42,8 @@ namespace fus
         { }
     };
 
-    struct client_t
+    struct client_t : public crypt_stream_t
     {
-        crypt_stream_t m_stream;
         client_connect_cb m_connectcb;
         client_pump_proc m_proc;
 

@@ -58,9 +58,8 @@ namespace fus
     void daemon_shutdown(daemon_t*);
     bool daemon_verify_connection(const daemon_t*, const void*, bool);
 
-    struct secure_daemon_t
+    struct secure_daemon_t : public daemon_t
     {
-        daemon_t m_base;
         BIGNUM* m_bnK;
         BIGNUM* m_bnN;
     };
@@ -70,9 +69,8 @@ namespace fus
     void secure_daemon_encrypt_stream(secure_daemon_t*, crypt_stream_t*, crypt_established_cb=nullptr);
     void secure_daemon_shutdown(secure_daemon_t*);
 
-    struct db_trans_daemon_t
+    struct db_trans_daemon_t : public secure_daemon_t
     {
-        secure_daemon_t m_secureDaemon;
         db_client_t* m_db;
     };
 

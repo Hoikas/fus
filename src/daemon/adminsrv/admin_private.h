@@ -22,32 +22,13 @@
 
 namespace fus
 {
-    struct admin_daemon_t
+    struct admin_daemon_t : public db_trans_daemon_t
     {
-        db_trans_daemon_t m_secure;
         FUS_LIST_DECL(admin_server_t, m_link) m_clients;
     };
 };
 
 extern fus::admin_daemon_t* s_adminDaemon;
-
-namespace fus
-{
-    inline db_client_t* admin_daemon_db()
-    {
-        return ((db_trans_daemon_t*)s_adminDaemon)->m_db;
-    }
-
-    inline uint32_t& admin_daemon_flags()
-    {
-        return ((daemon_t*)s_adminDaemon)->m_flags;
-    }
-
-    inline log_file& admin_daemon_log()
-    {
-        return ((daemon_t*)s_adminDaemon)->m_log;
-    }
-};
 
 // =================================================================================
 
@@ -57,7 +38,7 @@ using _admin_cb = void(fus::admin_server_t*, ssize_t, _Msg*);
 template<typename _Msg, typename _Cb=_admin_cb<_Msg>>
 static inline void admin_read(fus::admin_server_t* client, _Cb cb)
 {
-    fus::tcp_stream_read_msg<_Msg>((fus::tcp_stream_t*)client, (fus::tcp_read_cb)cb);
+    fus::tcp_stream_read_msg<_Msg>(client, (fus::tcp_read_cb)cb);
 }
 
 #endif

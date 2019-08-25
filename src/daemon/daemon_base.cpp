@@ -106,7 +106,7 @@ void fus::secure_daemon_init(fus::secure_daemon_t* daemon, const ST::string& srv
     // encryption keys right at the onset.
     auto keys = fetch_keys(srv);
     if (std::get<0>(keys).empty() || std::get<1>(keys).empty()) {
-        ((daemon_t*)daemon)->m_log.write_error("No encryption keys found in config file. Generating...");
+        daemon->m_log.write_error("No encryption keys found in config file. Generating...");
         server::get()->generate_daemon_keys(srv, true);
         keys = fetch_keys(srv);
     }
@@ -117,7 +117,7 @@ void fus::secure_daemon_init(fus::secure_daemon_t* daemon, const ST::string& srv
 
 void fus::secure_daemon_free(fus::secure_daemon_t* daemon)
 {
-    daemon_free((daemon_t*)daemon);
+    daemon_free(daemon);
 
     BN_free(daemon->m_bnK);
     BN_free(daemon->m_bnN);
@@ -125,7 +125,7 @@ void fus::secure_daemon_free(fus::secure_daemon_t* daemon)
 
 void fus::secure_daemon_shutdown(fus::secure_daemon_t* daemon)
 {
-    daemon_shutdown((daemon_t*)daemon);
+    daemon_shutdown(daemon);
 }
 
 // =================================================================================
@@ -144,7 +144,7 @@ void fus::secure_daemon_encrypt_stream(fus::secure_daemon_t* daemon, fus::crypt_
 
 static void db_connected(fus::db_client_t* db, ssize_t status)
 {
-    ST::string addr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)db);
+    ST::string addr = fus::tcp_stream_peeraddr(db);
     fus::daemon_t* daemon = (fus::daemon_t*)uv_handle_get_data((uv_handle_t*)db);
 
     if (status == 0) {
@@ -155,21 +155,21 @@ static void db_connected(fus::db_client_t* db, ssize_t status)
     } else {
         daemon->m_log.write_error("DB '{}' connection failed, retrying in 5s... Detail: {}",
                                   addr, uv_strerror(status));
-        fus::client_reconnect((fus::client_t*)db, 5000);
+        fus::client_reconnect(db, 5000);
     }
 }
 
 static void db_disconnected(fus::db_client_t* db)
 {
-    fus::daemon_t* daemon = (fus::daemon_t*)uv_handle_get_data((uv_handle_t*)db);
+    fus::db_trans_daemon_t* daemon = (fus::db_trans_daemon_t*)uv_handle_get_data((uv_handle_t*)db);
     if (daemon->m_flags & fus::daemon_t::e_shuttingDown) {
         daemon->m_log.write_info("DB connection shutdown");
-        ((fus::db_trans_daemon_t*)daemon)->m_db = nullptr;
+        daemon->m_db = nullptr;
     } else {
-        ST::string addr = fus::tcp_stream_peeraddr((fus::tcp_stream_t*)db);
+        ST::string addr = fus::tcp_stream_peeraddr(db);
         daemon->m_log.write_error("DB '{}' connection lost, reconnecting in 5s...",
-                                  fus::tcp_stream_peeraddr((fus::tcp_stream_t*)db));
-        fus::client_reconnect((fus::client_t*)db, 5000);
+                                  fus::tcp_stream_peeraddr(db));
+        fus::client_reconnect(db, 5000);
     }
     daemon->m_flags &= ~fus::daemon_t::e_dbConnected;
 }
@@ -178,7 +178,7 @@ static void db_disconnected(fus::db_client_t* db)
 
 void fus::db_trans_daemon_init(fus::db_trans_daemon_t* daemon, const ST::string& srv)
 {
-    secure_daemon_init((secure_daemon_t*)daemon, srv);
+    secure_daemon_init(daemon, srv);
 
     daemon->m_db = (db_client_t*)malloc(sizeof(db_client_t));
     FUS_ASSERTD(db_client_init(daemon->m_db, uv_default_loop()) == 0);
@@ -190,10 +190,10 @@ void fus::db_trans_daemon_init(fus::db_trans_daemon_t* daemon, const ST::string&
 
         auto header = (fus::protocol::connection_header*)alloca(db_client_header_size());
         header->set_msgsz(sizeof(fus::protocol::connection_header) - 4); // does not include the buf field
-        header->set_buildId(((daemon_t*)daemon)->m_buildId);
-        header->set_buildType(((daemon_t*)daemon)->m_buildType);
-        header->set_branchId(((daemon_t*)daemon)->m_branchId);
-        *header->get_product() = ((daemon_t*)daemon)->m_product;
+        header->set_buildId(daemon->m_buildId);
+        header->set_buildType(daemon->m_buildType);
+        header->set_branchId(daemon->m_branchId);
+        *header->get_product() = daemon->m_product;
         header->set_bufsz(0);
 
         unsigned int g = server::get()->config().get<unsigned int>("crypt", "db_g");
@@ -206,14 +206,14 @@ void fus::db_trans_daemon_init(fus::db_trans_daemon_t* daemon, const ST::string&
 
 void fus::db_trans_daemon_free(fus::db_trans_daemon_t* daemon)
 {
-    secure_daemon_free((secure_daemon_t*)daemon);
+    secure_daemon_free(daemon);
 }
 
 void fus::db_trans_daemon_shutdown(fus::db_trans_daemon_t* daemon)
 {
-    secure_daemon_shutdown((secure_daemon_t*)daemon);
+    secure_daemon_shutdown(daemon);
 
     // OK to free the database connection now.
-    tcp_stream_free_on_close((tcp_stream_t*)daemon->m_db, true);
-    tcp_stream_shutdown((tcp_stream_t*)daemon->m_db);
+    tcp_stream_free_on_close(daemon->m_db, true);
+    tcp_stream_shutdown(daemon->m_db);
 }

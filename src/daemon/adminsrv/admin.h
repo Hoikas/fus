@@ -24,9 +24,8 @@ namespace fus
 {
     struct admin_server_t;
 
-    struct admin_server_t
+    struct admin_server_t : public crypt_stream_t
     {
-        crypt_stream_t m_stream;
         FUS_LIST_LINK(admin_server_t) m_link;
     };
 
