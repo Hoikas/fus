@@ -69,48 +69,6 @@ size_t fus::db_client_header_size()
 
 // =================================================================================
 
-void fus::db_client_ping(fus::db_client_t* client, uint32_t pingTimeMs, fus::client_trans_cb cb,
-                         void* instance, uint32_t transId)
-{
-    protocol::db_pingRequest msg;
-    msg.set_type(protocol::client2db::e_pingRequest);
-    msg.set_transId(client_gen_trans(client, instance, transId, cb));
-    msg.set_pingTime(pingTimeMs);
-    tcp_stream_write_msg(client, msg);
-}
-
-void fus::db_client_authenticate_account(fus::db_client_t* client, const ST::string& name,
-                                         uint32_t cliChallenge, uint32_t srvChallenge,
-                                         fus::hash_type hashType, const void* hashBuf,
-                                         size_t hashBufsz, fus::client_trans_cb cb,
-                                         void* instance, uint32_t transId)
-{
-    protocol::db_acctAuthRequest msg;
-    msg.set_type(protocol::client2db::e_acctAuthRequest);
-    msg.set_transId(client_gen_trans(client, instance, transId, cb));
-    msg.set_name(name);
-    msg.set_cliChallenge(cliChallenge);
-    msg.set_srvChallenge(srvChallenge);
-    msg.set_hashType((uint8_t)hashType);
-    msg.set_hashsz(hashBufsz);
-    tcp_stream_write_msg(client, msg, hashBuf, hashBufsz);
-}
-
-void fus::db_client_create_account(fus::db_client_t* client, const ST::string& name,
-                                   const ST::string& pass, uint32_t flags,
-                                   fus::client_trans_cb cb, void* instance, uint32_t transId)
-{
-    protocol::db_acctCreateRequest msg;
-    msg.set_type(protocol::client2db::e_acctCreateRequest);
-    msg.set_transId(client_gen_trans(client, instance, transId, cb));
-    msg.set_name(name);
-    msg.set_pass(pass);
-    msg.set_flags(flags);
-    tcp_stream_write_msg(client, msg);
-}
-
-// =================================================================================
-
 template<typename _Msg>
 using _db_cb = void(fus::db_client_t*, ssize_t, _Msg*);
 

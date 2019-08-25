@@ -109,9 +109,14 @@ static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::pr
 
     // Database client must be available for this to work. Otherwise, just phail.
     if (s_adminDaemon->m_flags & fus::daemon_t::e_dbConnected) {
-        fus::db_client_create_account(s_adminDaemon->m_db, msg->get_name(), msg->get_pass(),
-                                      msg->get_flags(), (fus::client_trans_cb)admin_acctCreated,
-                                      client, msg->get_transId());
+        fus::protocol::db_acctCreateRequest fwd;
+        fwd.set_type(fus::protocol::client2db::e_acctCreateRequest);
+        fus::client_prep_trans(s_adminDaemon->m_db, fwd, client, msg->get_transId(),
+                               (fus::client_trans_cb)admin_acctCreated);
+        fwd.set_name(msg->get_name_view());
+        fwd.set_pass(msg->get_pass_view());
+        fwd.set_flags(msg->get_flags());
+        fus::tcp_stream_write_msg(s_adminDaemon->m_db, fwd);
     } else {
         s_adminDaemon->m_log.write_error("[{}] Tried to create an account '{}', but the DBSrv is unavailable",
                                          fus::tcp_stream_peeraddr(client), msg->get_name());

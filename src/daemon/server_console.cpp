@@ -113,7 +113,13 @@ bool fus::server::admin_acctCreate(console& console, const ST::string& line)
         return false;
 
     /// FIXME: acct flags...
-    admin_client_create_account(m_admin, args[0], args[1], 0, (client_trans_cb)admin_acctCreated);
+    protocol::admin_acctCreateRequest msg;
+    msg.set_type(protocol::client2admin::e_acctCreateRequest);
+    client_prep_trans(m_admin, msg, this, 0, (client_trans_cb)admin_acctCreated);
+    msg.set_name(args[0]);
+    msg.set_pass(args[1]);
+    msg.set_flags(0);
+    tcp_stream_write_msg(m_admin, msg);
     return true;
 }
 
@@ -136,18 +142,25 @@ bool fus::server::admin_ping(console& console, const ST::string&)
     if (!admin_check(console))
         return true;
 
-    // I know, I know...
-    uint32_t pingTimeMs = (uint32_t)uv_now(uv_default_loop());
-    admin_client_ping(m_admin, pingTimeMs, (client_trans_cb)admin_pong);
+    protocol::admin_pingRequest msg;
+    msg.set_type(protocol::client2admin::e_pingRequest);
+    client_prep_trans(m_admin, msg, this, 0, (client_trans_cb)admin_pong);
+    msg.set_pingTime((uint32_t)uv_now(uv_default_loop())); // Sigh
+    tcp_stream_write_msg(m_admin, msg);
     return true;
 }
 
-bool fus::server::admin_wall(console& console, const ST::string& msg)
+bool fus::server::admin_wall(console& console, const ST::string& text)
 {
-    if (msg.empty())
+    if (text.empty())
         return false;
-    if (admin_check(console))
-        admin_client_wall(m_admin, msg);
+
+    if (admin_check(console)) {
+        protocol::admin_wallRequest msg;
+        msg.set_type(protocol::client2admin::e_wallRequest);
+        msg.set_text(text);
+        tcp_stream_write_msg(m_admin, msg);
+    }
     return true;
 }
 

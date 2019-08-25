@@ -67,6 +67,13 @@ namespace fus
     void client_fire_trans(client_t*, uint32_t, net_error, ssize_t, const void*);
     void client_kill_trans(client_t*, net_error, ssize_t, bool quiet=false);
     void client_kill_trans(client_t*, void*, net_error, ssize_t, bool quiet=false);
+
+    template<typename _Msg>
+    void client_prep_trans(client_t* client, _Msg& msg, void* instance, uint32_t wrapTransId,
+                           client_trans_cb cb)
+    {
+        msg.set_transId(client_gen_trans(client, instance, wrapTransId, cb));
+    }
 };
 
 #endif

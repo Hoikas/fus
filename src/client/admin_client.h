@@ -38,10 +38,6 @@ namespace fus
 
     void admin_client_wall_handler(admin_client_t*, admin_client_wall_cb cb=nullptr);
 
-    void admin_client_ping(admin_client_t*, uint32_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
-    void admin_client_wall(admin_client_t*, const ST::string&);
-    void admin_client_create_account(admin_client_t*, const ST::string&, const ST::string&, uint32_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
-
     void admin_client_read(admin_client_t*);
 };
 

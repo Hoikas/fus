@@ -37,11 +37,6 @@ namespace fus
     void db_client_connect(db_client_t*, const sockaddr*, void*, size_t, uint32_t, const ST::string&, const ST::string&, client_connect_cb);
     size_t db_client_header_size();
 
-
-    void db_client_ping(db_client_t*, uint32_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
-    void db_client_authenticate_account(db_client_t*, const ST::string&, uint32_t, uint32_t, hash_type, const void*, size_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
-    void db_client_create_account(db_client_t*, const ST::string&, const ST::string&, uint32_t, client_trans_cb cb=nullptr, void* instance=nullptr, uint32_t transId=0);
-
     void db_client_read(db_client_t*);
 };
 

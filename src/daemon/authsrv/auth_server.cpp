@@ -178,10 +178,16 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
                 destp[i] = FUS_BE32(srcp[i]);
         }
 
-        fus::db_client_authenticate_account(s_authDaemon->m_db, msg->get_name(), msg->get_challenge(),
-                                            client->m_srvChallenge, fus::hash_type::e_sha1, hash,
-                                            msg->get_hashsz(), (fus::client_trans_cb)auth_acctLoginAuthed,
-                                            client, msg->get_transId());
+        fus::protocol::db_acctAuthRequest fwd;
+        fwd.set_type(fus::protocol::client2db::e_acctAuthRequest);
+        fus::client_prep_trans(s_authDaemon->m_db, fwd, client, msg->get_transId(),
+                               (fus::client_trans_cb)auth_acctLoginAuthed);
+        fwd.set_name(msg->get_name_view());
+        fwd.set_cliChallenge(msg->get_challenge());
+        fwd.set_srvChallenge(client->m_srvChallenge);
+        fwd.set_hashType((uint8_t)fus::hash_type::e_sha1);
+        fwd.set_hashsz(msg->get_hashsz());
+        tcp_stream_write_msg(s_authDaemon->m_db, fwd, hash, msg->get_hashsz());
     }
 
     // Continue reading
