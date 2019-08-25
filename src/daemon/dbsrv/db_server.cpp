@@ -91,7 +91,7 @@ static void db_acctCreate(fus::db_server_t* client, ssize_t nread, fus::protocol
     // and a real RDBMS backend for serious shards. Supplemental apps like a theoretical dirtsand
     // database converter can use the same API we do for migrations...
     // So, yeah, TL;DR: https://www.youtube.com/watch?v=NUexv1tuWZA
-    s_dbDaemon->m_db->create_account(msg->get_name_view(), msg->get_pass_view(), msg->get_flags(),
+    s_dbDaemon->m_db->create_account(msg->get_name(), msg->get_pass(), msg->get_flags(),
                                      (fus::database_acct_create_cb)db_acctCreated,
                                      client, msg->get_transId());
 
@@ -124,7 +124,7 @@ static void db_acctAuth(fus::db_server_t* client, ssize_t nread, fus::protocol::
     if (!db_check_read(client, nread))
         return;
 
-    s_dbDaemon->m_db->authenticate_account(msg->get_name_view(), msg->get_cliChallenge(),
+    s_dbDaemon->m_db->authenticate_account(msg->get_name(), msg->get_cliChallenge(),
                                            msg->get_srvChallenge(), (fus::hash_type)msg->get_hashType(),
                                            msg->get_hash(), msg->get_hashsz(),
                                            (fus::database_acct_auth_cb)db_acctAuthed, client,

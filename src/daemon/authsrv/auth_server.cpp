@@ -98,10 +98,10 @@ static void auth_acctLoginAuthed(fus::auth_server_t* client, fus::db_client_t* d
                                  fus::net_error result, ssize_t nread, const fus::protocol::db_acctAuthReply* reply)
 {
     if (result == fus::net_error::e_success)
-        s_authDaemon->m_log.write_debug("Account '{}' login: {}", reply->get_name_view(),
+        s_authDaemon->m_log.write_debug("Account '{}' login: {}", reply->get_name(),
                                         fus::net_error_string(result));
     else
-        s_authDaemon->m_log.write_error("Account '{}' login: {}", reply->get_name_view(),
+        s_authDaemon->m_log.write_error("Account '{}' login: {}", reply->get_name(),
                                            fus::net_error_string(result));
 
     // TODO: this needs to request the account's players from the database
@@ -149,7 +149,7 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
         // Is this one of those silly, broken sha0 account names (email address style)???
         static const std::regex re_domain("[^@]+@([^.]+\\.)*([^.]+)\\.[^.]+");
         std::cmatch match;
-        std::regex_search(msg->get_name().to_lower().c_str(), match, re_domain);
+        std::regex_search(ST::string(msg->get_name()).to_lower().c_str(), match, re_domain);
         if (!(match.empty() || match[2].compare("gametap") == 0)) {
             s_authDaemon->m_log.write_debug("[{}] Sent an account name [{}] that would require SHA-0",
                                             fus::tcp_stream_peeraddr(client),
@@ -182,7 +182,7 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
         fwd.set_type(fus::protocol::client2db::e_acctAuthRequest);
         fus::client_prep_trans(s_authDaemon->m_db, fwd, client, msg->get_transId(),
                                (fus::client_trans_cb)auth_acctLoginAuthed);
-        fwd.set_name(msg->get_name_view());
+        fwd.set_name(msg->get_name());
         fwd.set_cliChallenge(msg->get_challenge());
         fwd.set_srvChallenge(client->m_srvChallenge);
         fwd.set_hashType((uint8_t)fus::hash_type::e_sha1);

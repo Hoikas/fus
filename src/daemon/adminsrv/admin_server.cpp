@@ -73,12 +73,12 @@ static void admin_wall(fus::admin_server_t* client, ssize_t nread, fus::protocol
         return;
 
     ST::string senderaddr = fus::tcp_stream_peeraddr(client);
-    s_adminDaemon->m_log.write("[{}] wall: {}", senderaddr, msg->get_text_view());
+    s_adminDaemon->m_log.write("[{}] wall: {}", senderaddr, msg->get_text());
 
     fus::protocol::admin_wallBCast bcast;
     bcast.set_type(fus::protocol::admin2client::e_wallBCast);
     bcast.set_sender(senderaddr);
-    bcast.set_text(msg->get_text_view());
+    bcast.set_text(msg->get_text());
 
     auto it = s_adminDaemon->m_clients.front();
     while (it) {
@@ -113,8 +113,8 @@ static void admin_acctCreate(fus::admin_server_t* client, ssize_t nread, fus::pr
         fwd.set_type(fus::protocol::client2db::e_acctCreateRequest);
         fus::client_prep_trans(s_adminDaemon->m_db, fwd, client, msg->get_transId(),
                                (fus::client_trans_cb)admin_acctCreated);
-        fwd.set_name(msg->get_name_view());
-        fwd.set_pass(msg->get_pass_view());
+        fwd.set_name(msg->get_name());
+        fwd.set_pass(msg->get_pass());
         fwd.set_flags(msg->get_flags());
         fus::tcp_stream_write_msg(s_adminDaemon->m_db, fwd);
     } else {

@@ -22,7 +22,7 @@
 namespace fus
 {
     struct admin_client_t;
-    typedef void (*admin_client_wall_cb)(admin_client_t*, const ST::string&, const ST::string&);
+    typedef void (*admin_client_wall_cb)(admin_client_t*, std::string_view, std::string_view);
 
     struct admin_client_t : public client_t
     {

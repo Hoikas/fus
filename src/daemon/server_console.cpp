@@ -26,7 +26,7 @@
 
 // =================================================================================
 
-static void admin_wallBCast(fus::admin_client_t* client, const ST::string& sender, const ST::string& text)
+static void admin_wallBCast(fus::admin_client_t* client, std::string_view sender, std::string_view text)
 {
     fus::console& c = fus::console::get();
     c << fus::console::weight_bold << fus::console::foreground_cyan << "From " << sender << ": "
