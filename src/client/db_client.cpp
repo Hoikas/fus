@@ -46,7 +46,7 @@ void fus::db_client_connect(fus::db_client_t* client, const sockaddr* addr, void
     FUS_ASSERTD(buf);
     FUS_ASSERTD(bufsz);
 
-    auto header = (protocol::connection_header*)buf;
+    auto header = (protocol::common_connection_header*)buf;
     header->set_connType(protocol::e_protocolSrv2Database);
     fus::client_crypt_connect(client, addr, buf, bufsz, cb);
 }
@@ -57,14 +57,14 @@ void fus::db_client_connect(fus::db_client_t* client, const sockaddr* addr, void
     FUS_ASSERTD(buf);
     FUS_ASSERTD(bufsz);
 
-    auto header = (protocol::connection_header*)buf;
+    auto header = (protocol::common_connection_header*)buf;
     header->set_connType(protocol::e_protocolSrv2Database);
     fus::client_crypt_connect(client, addr, buf, bufsz, g, n, x, cb);
 }
 
 size_t fus::db_client_header_size()
 {
-    return sizeof(protocol::connection_header);
+    return sizeof(protocol::common_connection_header);
 }
 
 // =================================================================================
@@ -104,7 +104,7 @@ static void db_trans_noresult(fus::db_client_t* client, ssize_t nread, _Msg* rep
 
 // =================================================================================
 
-static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protocol::msg_std_header* header)
+static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protocol::common_msg_std_header* header)
 {
     if (nread < 0) {
         fus::tcp_stream_shutdown(client);
@@ -112,13 +112,13 @@ static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protoco
     }
 
     switch (header->get_type()) {
-    case fus::protocol::db2client::e_pingReply:
+    case fus::protocol::db_pingReply::id():
         db_read<fus::protocol::db_pingReply>(client, db_trans_noresult);
         break;
-    case fus::protocol::db2client::e_acctCreateReply:
+    case fus::protocol::db_acctCreateReply::id():
         db_read<fus::protocol::db_acctCreateReply>(client, db_trans);
         break;
-    case fus::protocol::db2client::e_acctAuthReply:
+    case fus::protocol::db_acctAuthReply::id():
         db_read<fus::protocol::db_acctAuthReply>(client, db_trans);
         break;
     default:
@@ -129,5 +129,5 @@ static void db_client_pump(fus::db_client_t* client, ssize_t nread, fus::protoco
 
 void fus::db_client_read(fus::db_client_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)db_client_pump);
+    tcp_stream_peek_msg<protocol::common_msg_std_header>(client, (tcp_read_cb)db_client_pump);
 }

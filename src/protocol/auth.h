@@ -17,24 +17,11 @@
 #ifndef __FUS_PROTOCOL_AUTH_H
 #define __FUS_PROTOCOL_AUTH_H
 
-#include "utils.h"
-#include "common.h"
-
-#include "protocol_fields_begin.inl"
-#include "auth.inl"
-#include "protocol_fields_end.inl"
-
-#include "protocol_warnings_silence.inl"
-#include "protocol_structs_begin.inl"
-#include "auth.inl"
-#include "protocol_structs_end.inl"
-#include "protocol_warnings_restore.inl"
-
 namespace fus
 {
     namespace protocol
     {
-        namespace client2auth
+        namespace auth
         {
             enum
             {
@@ -64,7 +51,7 @@ namespace fus
                 e_playerRenameRequest,
                 e_playerCreateRequest,
                 e_playerSetStatus,
-                e_playerChat,
+                e_playerChatToSrv,
                 e_upgradeVisitorRequest,
                 e_setPlayerBanStatusRequest,
                 e_kickPlayer,
@@ -93,7 +80,7 @@ namespace fus
                 e_fileDownloadChunkAck,
 
                 // Game
-                e_propagateBuffer,
+                e_propagateBufferToSrv,
 
                 // Public ages
                 e_getPublicAgeList,
@@ -118,13 +105,8 @@ namespace fus
                 // Extension messages
                 e_ageRequestEx = 0x1000,
                 e_scoreGetHighScores,
-
-                e_numMsgs
             };
-        };
 
-        namespace auth2client
-        {
             enum
             {
                 // Global
@@ -149,7 +131,7 @@ namespace fus
 
                 // Player
                 e_playerList,
-                e_playerChat,
+                e_playerChatToCli,
                 e_playerCreateReply,
                 e_playerDeleteReply,
                 e_upgradeVisitorReply,
@@ -182,7 +164,7 @@ namespace fus
                 e_fileDownloadChunk,
 
                 // Game
-                e_propagateBuffer,
+                e_propagateBufferToCli,
 
                 // Admin
                 e_kickedOff,
@@ -205,11 +187,22 @@ namespace fus
                 e_ageReplyEx = 0x1000,
                 e_scoreGetHighScoresReply,
                 e_serverCaps,
-
-                e_numMsgs
             };
         };
     };
 };
+
+#include "utils.h"
+#include "common.h"
+
+#include "protocol_fields_begin.inl"
+#include "auth.inl"
+#include "protocol_fields_end.inl"
+
+#include "protocol_warnings_silence.inl"
+#include "protocol_structs_begin.inl"
+#include "auth.inl"
+#include "protocol_structs_end.inl"
+#include "protocol_warnings_restore.inl"
 
 #endif

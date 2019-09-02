@@ -14,8 +14,9 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define FUS_NET_STRUCT_BEGIN(name) \
-    const fus::net_struct_t* fus::protocol::name::net_struct = &fus::protocol::_net_structs::name;
+#define FUS_NET_STRUCT_BEGIN_COMMON(protocol_name, msg_name) \
+    const fus::net_struct_t* fus::protocol::protocol_name##_##msg_name::net_struct = &fus::protocol::_net_structs::protocol_name##_##msg_name;
+#define FUS_NET_STRUCT_BEGIN(protocol_name, msg_name) FUS_NET_STRUCT_BEGIN_COMMON(protocol_name, msg_name)
 
 // noops
 #define FUS_NET_FIELD_BLOB(name, size) ;
@@ -31,4 +32,4 @@
 #define FUS_NET_FIELD_STRING_UTF8(name, size) ;
 #define FUS_NET_FIELD_STRING_UTF16(name, size) ;
 #define FUS_NET_FIELD_UUID(name) ;
-#define FUS_NET_STRUCT_END(name) ;
+#define FUS_NET_STRUCT_END(protocol_name, msg_name) ;

@@ -16,10 +16,14 @@
 
 #pragma pack(push,1)
 
-#define FUS_NET_STRUCT_BEGIN(name) \
+#define FUS_NET_STRUCT_BEGIN_COMMON(protocol_name, msg_name) \
     namespace fus { namespace protocol { \
-        struct name final { \
-            static const fus::net_struct_t* net_struct;
+        struct protocol_name##_##msg_name final { \
+            static const fus::net_struct_t* net_struct; \
+
+#define FUS_NET_STRUCT_BEGIN(protocol_name, msg_name) \
+    FUS_NET_STRUCT_BEGIN_COMMON(protocol_name, msg_name) \
+            static constexpr uint16_t id() { return protocol_name::e_##msg_name; }
 
 #define FUS_NET_FIELD_BLOB(name, size) \
     uint8_t m_##name[size]; \
@@ -108,5 +112,5 @@
     const fus::uuid* get_##name() const { return (const fus::uuid*)m_##name; } \
     fus::uuid* get_##name() { return (fus::uuid*)m_##name; }
 
-#define FUS_NET_STRUCT_END(name) \
+#define FUS_NET_STRUCT_END(protocol_name, msg_name) \
     }; }; };

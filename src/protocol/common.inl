@@ -14,7 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-FUS_NET_STRUCT_BEGIN(connection_header)
+FUS_NET_STRUCT_BEGIN_COMMON(common, connection_header)
     FUS_NET_FIELD_UINT8(connType)
     FUS_NET_FIELD_UINT16(msgsz)
     FUS_NET_FIELD_UINT32(buildId)
@@ -22,13 +22,13 @@ FUS_NET_STRUCT_BEGIN(connection_header)
     FUS_NET_FIELD_UINT32(branchId)
     FUS_NET_FIELD_UUID(product)
     FUS_NET_FIELD_BUFFER_REDUNDANT_TINY(buf)
-FUS_NET_STRUCT_END(connection_header)
+FUS_NET_STRUCT_END(common, connection_header)
 
-FUS_NET_STRUCT_BEGIN(msg_std_header)
+FUS_NET_STRUCT_BEGIN_COMMON(common, msg_std_header)
     FUS_NET_FIELD_UINT16(type)
-FUS_NET_STRUCT_END(msg_std_header)
+FUS_NET_STRUCT_END(common, msg_std_header)
 
-FUS_NET_STRUCT_BEGIN(msg_size_header)
+FUS_NET_STRUCT_BEGIN_COMMON(common, msg_size_header)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_UINT16(size)
-FUS_NET_STRUCT_END(msg_size_header)
+FUS_NET_STRUCT_END(common, msg_size_header)

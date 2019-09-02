@@ -14,6 +14,7 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#undef FUS_NET_STRUCT_BEGIN_COMMON
 #undef FUS_NET_STRUCT_BEGIN
 #undef FUS_NET_FIELD_BLOB
 #undef FUS_NET_FIELD_BUFFER

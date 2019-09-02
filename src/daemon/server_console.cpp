@@ -79,7 +79,7 @@ void fus::server::admin_init()
     config2addr(ST_LITERAL("admin"), &addr);
 
     void* header = alloca(admin_client_header_size());
-    fill_connection_header(header);
+    fill_common_connection_header(header);
     admin_client_connect(m_admin, (sockaddr*)&addr, header, admin_client_header_size(), g, n, x, (client_connect_cb)admin_connected);
 }
 
@@ -114,7 +114,7 @@ bool fus::server::admin_acctCreate(console& console, const ST::string& line)
 
     /// FIXME: acct flags...
     protocol::admin_acctCreateRequest msg;
-    msg.set_type(protocol::client2admin::e_acctCreateRequest);
+    msg.set_type(msg.id());
     client_prep_trans(m_admin, msg, this, 0, (client_trans_cb)admin_acctCreated);
     msg.set_name(args[0]);
     msg.set_pass(args[1]);
@@ -143,7 +143,7 @@ bool fus::server::admin_ping(console& console, const ST::string&)
         return true;
 
     protocol::admin_pingRequest msg;
-    msg.set_type(protocol::client2admin::e_pingRequest);
+    msg.set_type(msg.id());
     client_prep_trans(m_admin, msg, this, 0, (client_trans_cb)admin_pong);
     msg.set_pingTime((uint32_t)uv_now(uv_default_loop())); // Sigh
     tcp_stream_write_msg(m_admin, msg);
@@ -157,7 +157,7 @@ bool fus::server::admin_wall(console& console, const ST::string& text)
 
     if (admin_check(console)) {
         protocol::admin_wallRequest msg;
-        msg.set_type(protocol::client2admin::e_wallRequest);
+        msg.set_type(msg.id());
         msg.set_text(text);
         tcp_stream_write_msg(m_admin, msg);
     }

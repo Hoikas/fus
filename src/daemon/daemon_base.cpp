@@ -65,7 +65,7 @@ bool fus::daemon_verify_connection(const daemon_t* daemon, const void* msgbuf, b
     if (daemon->m_verification == client_verification::e_none)
         return true;
 
-    const protocol::connection_header* header = (const protocol::connection_header*)msgbuf;
+    const protocol::common_connection_header* header = (const protocol::common_connection_header*)msgbuf;
     if (!permissive) {
         if (header->get_branchId() != daemon->m_branchId)
             return false;
@@ -188,8 +188,8 @@ void fus::db_trans_daemon_init(fus::db_trans_daemon_t* daemon, const ST::string&
         sockaddr_storage addr;
         server::get()->config2addr(ST_LITERAL("db"), &addr);
 
-        auto header = (fus::protocol::connection_header*)alloca(db_client_header_size());
-        header->set_msgsz(sizeof(fus::protocol::connection_header) - 4); // does not include the buf field
+        auto header = (fus::protocol::common_connection_header*)alloca(db_client_header_size());
+        header->set_msgsz(sizeof(fus::protocol::common_connection_header) - 4); // does not include the buf field
         header->set_buildId(daemon->m_buildId);
         header->set_buildType(daemon->m_buildType);
         header->set_branchId(daemon->m_branchId);

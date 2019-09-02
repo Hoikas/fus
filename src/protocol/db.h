@@ -17,6 +17,31 @@
 #ifndef __FUS_PROTOCOL_DB_H
 #define __FUS_PROTOCOL_DB_H
 
+namespace fus
+{
+    namespace protocol
+    {
+        namespace db
+        {
+            enum
+            {
+                e_pingRequest,
+
+                e_acctCreateRequest,
+                e_acctAuthRequest,
+            };
+
+            enum
+            {
+                e_pingReply,
+
+                e_acctCreateReply,
+                e_acctAuthReply,
+            };
+        };
+    };
+};
+
 #include "utils.h"
 #include "common.h"
 
@@ -29,37 +54,5 @@
 #include "db.inl"
 #include "protocol_structs_end.inl"
 #include "protocol_warnings_restore.inl"
-
-namespace fus
-{
-    namespace protocol
-    {
-        namespace client2db
-        {
-            enum
-            {
-                e_pingRequest,
-
-                e_acctCreateRequest,
-                e_acctAuthRequest,
-
-                e_numMsgs
-            };
-        };
-
-        namespace db2client
-        {
-            enum
-            {
-                e_pingReply,
-
-                e_acctCreateReply,
-                e_acctAuthReply,
-
-                e_numMsgs
-            };
-        };
-    };
-};
 
 #endif

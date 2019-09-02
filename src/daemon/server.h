@@ -129,7 +129,7 @@ namespace fus
 
     public:
         bool config2addr(const ST::string&, sockaddr_storage*);
-        void fill_connection_header(void* packet);
+        void fill_common_connection_header(void* packet);
 
     public:
         config_parser& config() { return m_config; }

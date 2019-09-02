@@ -14,9 +14,11 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define FUS_NET_STRUCT_BEGIN(name) \
+#define FUS_NET_STRUCT_BEGIN_COMMON(protocol_name, msg_name) \
     namespace fus { namespace protocol { namespace _fields { \
-        static const fus::net_field_t name[] = {
+        static const fus::net_field_t protocol_name##_##msg_name[] = {
+
+#define FUS_NET_STRUCT_BEGIN(protocol_name, msg_name) FUS_NET_STRUCT_BEGIN_COMMON(protocol_name, msg_name)
 
 #define FUS_NET_FIELD_BLOB(name, size) \
     { fus::net_field_t::data_type::e_blob, #name, size },
@@ -65,12 +67,12 @@
 #define FUS_NET_FIELD_UUID(name) \
     { fus::net_field_t::data_type::e_uuid, #name, 16 },
 
-#define FUS_NET_STRUCT_END(name) \
+#define FUS_NET_STRUCT_END(protocol_name, msg_name) \
     }; \
     }; }; }; \
     \
     namespace fus { namespace protocol { namespace _net_structs { \
-        const fus::net_struct_t name =\
-            { #name, fus::protocol::_fields::size(fus::protocol::_fields::name), \
-              fus::protocol::_fields::name }; \
+        const fus::net_struct_t protocol_name##_##msg_name =\
+            { #protocol_name "_" #msg_name, fus::protocol::_fields::size(fus::protocol::_fields::protocol_name##_##msg_name), \
+              fus::protocol::_fields::protocol_name##_##msg_name }; \
     }; }; };

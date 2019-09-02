@@ -84,7 +84,7 @@ static void auth_registerClient(fus::auth_server_t* client, ssize_t nread, fus::
     client->m_flags |= e_clientRegistered;
 
     fus::protocol::auth_clientRegisterReply reply;
-    reply.set_type(fus::protocol::auth2client::e_clientRegisterReply);
+    reply.set_type(reply.id());
     reply.set_loginSalt(client->m_srvChallenge);
     fus::tcp_stream_write_msg(client, reply);
 
@@ -106,7 +106,7 @@ static void auth_acctLoginAuthed(fus::auth_server_t* client, fus::db_client_t* d
 
     // TODO: this needs to request the account's players from the database
     fus::protocol::auth_acctLoginReply msg;
-    msg.set_type(fus::protocol::auth2client::e_acctLoginReply);
+    msg.set_type(msg.id());
     msg.set_transId(transId);
     msg.set_result((uint32_t)result);
     if (result == fus::net_error::e_success) {
@@ -162,7 +162,7 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
 
     if (result != fus::net_error::e_pending) {
         fus::protocol::auth_acctLoginReply reply;
-        reply.set_type(fus::protocol::auth2client::e_acctLoginReply);
+        reply.set_type(reply.id());
         reply.set_transId(msg->get_transId());
         reply.set_result((uint32_t)result);
         fus::tcp_stream_write_msg(client, reply);
@@ -179,7 +179,7 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
         }
 
         fus::protocol::db_acctAuthRequest fwd;
-        fwd.set_type(fus::protocol::client2db::e_acctAuthRequest);
+        fwd.set_type(fwd.id());
         fus::client_prep_trans(s_authDaemon->m_db, fwd, client, msg->get_transId(),
                                (fus::client_trans_cb)auth_acctLoginAuthed);
         fwd.set_name(msg->get_name());
@@ -196,19 +196,19 @@ static void auth_acctLogin(fus::auth_server_t* client, ssize_t nread, fus::proto
 
 // =================================================================================
 
-static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protocol::msg_std_header* msg)
+static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protocol::common_msg_std_header* msg)
 {
     if (!auth_check_read(client, nread))
         return;
 
     switch (msg->get_type()) {
-    case fus::protocol::client2auth::e_pingRequest:
+    case fus::protocol::auth_pingRequest::id():
         auth_read<fus::protocol::auth_pingRequest>(client, auth_pingpong);
         break;
-    case fus::protocol::client2auth::e_clientRegisterRequest:
+    case fus::protocol::auth_clientRegisterRequest::id():
         auth_read<fus::protocol::auth_clientRegisterRequest>(client, auth_registerClient);
         break;
-    case fus::protocol::client2auth::e_acctLoginRequest:
+    case fus::protocol::auth_acctLoginRequest::id():
         auth_read<fus::protocol::auth_acctLoginRequest>(client, auth_acctLogin);
         break;
     default:
@@ -221,5 +221,5 @@ static void auth_msg_pump(fus::auth_server_t* client, ssize_t nread, fus::protoc
 
 void fus::auth_server_read(fus::auth_server_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)auth_msg_pump);
+    tcp_stream_peek_msg<protocol::common_msg_std_header>(client, (tcp_read_cb)auth_msg_pump);
 }

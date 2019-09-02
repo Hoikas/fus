@@ -14,42 +14,42 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-FUS_NET_STRUCT_BEGIN(admin_pingRequest)
+FUS_NET_STRUCT_BEGIN(admin, pingRequest)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_UINT32(transId)
     FUS_NET_FIELD_UINT32(pingTime)
-FUS_NET_STRUCT_END(admin_pingRequest)
+FUS_NET_STRUCT_END(admin, pingRequest)
 
-FUS_NET_STRUCT_BEGIN(admin_wallRequest)
+FUS_NET_STRUCT_BEGIN(admin, wallRequest)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_STRING_UTF8(text, 1024)
-FUS_NET_STRUCT_END(admin_wallRequest)
+FUS_NET_STRUCT_END(admin, wallRequest)
 
-FUS_NET_STRUCT_BEGIN(admin_acctCreateRequest)
+FUS_NET_STRUCT_BEGIN(admin, acctCreateRequest)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_UINT32(transId)
     FUS_NET_FIELD_STRING_UTF16(name, 64)
     FUS_NET_FIELD_STRING_UTF8(pass, 64)
     FUS_NET_FIELD_UINT32(flags)
-FUS_NET_STRUCT_END(admin_acctCreateRequest)
+FUS_NET_STRUCT_END(admin, acctCreateRequest)
 
 // =================================================================================
 
-FUS_NET_STRUCT_BEGIN(admin_pingReply)
+FUS_NET_STRUCT_BEGIN(admin, pingReply)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_UINT32(transId)
     FUS_NET_FIELD_UINT32(pingTime)
-FUS_NET_STRUCT_END(admin_pingReply)
+FUS_NET_STRUCT_END(admin, pingReply)
 
-FUS_NET_STRUCT_BEGIN(admin_wallBCast)
+FUS_NET_STRUCT_BEGIN(admin, wallBCast)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_STRING_UTF8(sender, 64)
     FUS_NET_FIELD_STRING_UTF8(text, 1024)
-FUS_NET_STRUCT_END(admin_wallBCast)
+FUS_NET_STRUCT_END(admin, wallBCast)
 
-FUS_NET_STRUCT_BEGIN(admin_acctCreateReply)
+FUS_NET_STRUCT_BEGIN(admin, acctCreateReply)
     FUS_NET_FIELD_UINT16(type)
     FUS_NET_FIELD_UINT32(transId)
     FUS_NET_FIELD_UINT32(result)
     FUS_NET_FIELD_UUID(uuid)
-FUS_NET_STRUCT_END(admin_acctCreateReply)
+FUS_NET_STRUCT_END(admin, acctCreateReply)

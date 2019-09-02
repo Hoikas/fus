@@ -105,7 +105,7 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
         return;
     }
 
-    fus::protocol::connection_header* header = (fus::protocol::connection_header*)msg;
+    fus::protocol::common_connection_header* header = (fus::protocol::common_connection_header*)msg;
     switch (header->get_connType()) {
     case fus::protocol::e_protocolCli2Admin:
         log.write_debug("[{}] Incoming admin connection", fus::tcp_stream_peeraddr(client));
@@ -140,7 +140,7 @@ static void _on_client_connect(fus::tcp_stream_t* lobby, int status)
     fus::tcp_stream_init(client, uv_default_loop());
     fus::tcp_stream_free_on_close(client, true);
     if (fus::tcp_stream_accept(lobby, client) == 0) {
-        fus::tcp_stream_read_msg<fus::protocol::connection_header>(client, _on_header_read);
+        fus::tcp_stream_read_msg<fus::protocol::common_connection_header>(client, _on_header_read);
     } else {
         uv_close((uv_handle_t*)client, (uv_close_cb)fus::tcp_stream_free);
     }
@@ -313,10 +313,10 @@ bool fus::server::config2addr(const ST::string& section, sockaddr_storage* addr)
     }
 }
 
-void fus::server::fill_connection_header(void* packet)
+void fus::server::fill_common_connection_header(void* packet)
 {
-    auto header = (fus::protocol::connection_header*)packet;
-    header->set_msgsz(sizeof(fus::protocol::connection_header) - 4); // does not include the buf field
+    auto header = (fus::protocol::common_connection_header*)packet;
+    header->set_msgsz(sizeof(fus::protocol::common_connection_header) - 4); // does not include the buf field
     header->set_buildId(m_config.get<unsigned int>("client", "buildId"));
     header->set_buildType(m_config.get<unsigned int>("client", "buildType"));
     header->set_branchId(m_config.get<unsigned int>("client", "branchId"));

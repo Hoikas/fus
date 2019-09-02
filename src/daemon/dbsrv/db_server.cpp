@@ -68,7 +68,7 @@ static void db_pingpong(fus::db_server_t* client, ssize_t nread, fus::protocol::
 static void db_acctCreated(fus::db_server_t* client, uint32_t transId, fus::net_error result, const fus::uuid& uuid)
 {
     fus::protocol::db_acctCreateReply msg;
-    msg.set_type(fus::protocol::db2client::e_acctCreateReply);
+    msg.set_type(msg.id());
     msg.set_transId(transId);
     msg.set_result((uint32_t)result);
     *msg.get_uuid() = uuid;
@@ -105,7 +105,7 @@ static void db_acctAuthed(fus::db_server_t* client, uint32_t transId, fus::net_e
                           const std::u16string_view& name, const fus::uuid& uuid, uint32_t flags)
 {
     fus::protocol::db_acctAuthReply msg;
-    msg.set_type(fus::protocol::db2client::e_acctAuthReply);
+    msg.set_type(msg.id());
     msg.set_transId(transId);
     msg.set_result((uint32_t)result);
     msg.set_name(name);
@@ -136,19 +136,19 @@ static void db_acctAuth(fus::db_server_t* client, ssize_t nread, fus::protocol::
 
 // =================================================================================
 
-static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::msg_std_header* msg)
+static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::common_msg_std_header* msg)
 {
     if (!db_check_read(client, nread))
         return;
 
     switch (msg->get_type()) {
-    case fus::protocol::client2db::e_pingRequest:
+    case fus::protocol::db_pingRequest::id():
         db_read<fus::protocol::db_pingRequest>(client, db_pingpong);
         break;
-    case fus::protocol::client2db::e_acctCreateRequest:
+    case fus::protocol::db_acctCreateRequest::id():
         db_read<fus::protocol::db_acctCreateRequest>(client, db_acctCreate);
         break;
-    case fus::protocol::client2db::e_acctAuthRequest:
+    case fus::protocol::db_acctAuthRequest::id():
         db_read<fus::protocol::db_acctAuthRequest>(client, db_acctAuth);
         break;
     default:
@@ -159,5 +159,5 @@ static void db_msg_pump(fus::db_server_t* client, ssize_t nread, fus::protocol::
 
 void fus::db_server_read(fus::db_server_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)db_msg_pump);
+    tcp_stream_peek_msg<protocol::common_msg_std_header>(client, (tcp_read_cb)db_msg_pump);
 }

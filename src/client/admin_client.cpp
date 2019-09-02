@@ -46,7 +46,7 @@ void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr
     FUS_ASSERTD(buf);
     FUS_ASSERTD(bufsz);
 
-    auto header = (protocol::connection_header*)buf;
+    auto header = (protocol::common_connection_header*)buf;
     header->set_connType(protocol::e_protocolCli2Admin);
     fus::client_crypt_connect(client, addr, buf, bufsz, cb);
 }
@@ -57,14 +57,14 @@ void fus::admin_client_connect(fus::admin_client_t* client, const sockaddr* addr
     FUS_ASSERTD(buf);
     FUS_ASSERTD(bufsz);
 
-    auto header = (protocol::connection_header*)buf;
+    auto header = (protocol::common_connection_header*)buf;
     header->set_connType(protocol::e_protocolCli2Admin);
     fus::client_crypt_connect(client, addr, buf, bufsz, g, n, x, cb);
 }
 
 size_t fus::admin_client_header_size()
 {
-    return sizeof(protocol::connection_header);
+    return sizeof(protocol::common_connection_header);
 }
 
 // =================================================================================
@@ -124,7 +124,7 @@ static void admin_wallBCast(fus::admin_client_t* client, ssize_t nread, fus::pro
     fus::admin_client_read(client);
 }
 
-static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::protocol::msg_std_header* header)
+static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::protocol::common_msg_std_header* header)
 {
     if (nread < 0) {
         fus::tcp_stream_shutdown(client);
@@ -132,13 +132,13 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
     }
 
     switch (header->get_type()) {
-    case fus::protocol::admin2client::e_pingReply:
+    case fus::protocol::admin_pingReply::id():
         admin_read<fus::protocol::admin_pingReply>(client, admin_trans_noresult);
         break;
-    case fus::protocol::admin2client::e_wallBCast:
+    case fus::protocol::admin_wallBCast::id():
         admin_read<fus::protocol::admin_wallBCast>(client, admin_wallBCast);
         break;
-    case fus::protocol::admin2client::e_acctCreateReply:
+    case fus::protocol::admin_acctCreateReply::id():
         admin_read<fus::protocol::admin_acctCreateReply>(client, admin_trans);
         break;
     default:
@@ -149,5 +149,5 @@ static void admin_client_pump(fus::admin_client_t* client, ssize_t nread, fus::p
 
 void fus::admin_client_read(fus::admin_client_t* client)
 {
-    tcp_stream_peek_msg<protocol::msg_std_header>(client, (tcp_read_cb)admin_client_pump);
+    tcp_stream_peek_msg<protocol::common_msg_std_header>(client, (tcp_read_cb)admin_client_pump);
 }

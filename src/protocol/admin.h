@@ -17,6 +17,31 @@
 #ifndef __FUS_PROTOCOL_ADMIN_H
 #define __FUS_PROTOCOL_ADMIN_H
 
+namespace fus
+{
+    namespace protocol
+    {
+        namespace admin
+        {
+            enum
+            {
+                e_pingRequest,
+                e_wallRequest,
+
+                e_acctCreateRequest,
+            };
+
+            enum
+            {
+                e_pingReply,
+                e_wallBCast,
+
+                e_acctCreateReply,
+            };
+        };
+    };
+};
+
 #include "utils.h"
 #include "common.h"
 
@@ -29,37 +54,5 @@
 #include "admin.inl"
 #include "protocol_structs_end.inl"
 #include "protocol_warnings_restore.inl"
-
-namespace fus
-{
-    namespace protocol
-    {
-        namespace client2admin
-        {
-            enum
-            {
-                e_pingRequest,
-                e_wallRequest,
-
-                e_acctCreateRequest,
-
-                e_numMsgs
-            };
-        };
-
-        namespace admin2client
-        {
-            enum
-            {
-                e_pingReply,
-                e_wallBCast,
-
-                e_acctCreateReply,
-
-                e_numMsgs
-            };
-        };
-    };
-};
 
 #endif
