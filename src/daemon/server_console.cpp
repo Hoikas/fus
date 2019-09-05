@@ -236,7 +236,7 @@ bool fus::server::save_config(fus::console& console, const ST::string& args)
         console << "server ";
     else
         console << "client ";
-    console << "configuration to '" << path.c_str() << "'" << console::endl;
+    console << "configuration to '" << path << "'" << console::endl;
     return true;
 }
 

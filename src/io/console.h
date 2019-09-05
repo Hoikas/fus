@@ -166,17 +166,6 @@ namespace fus
             return *this;
         }
 
-        console& operator <<(std::string_view value)
-        {
-            if (m_flags & e_outputAnsiDirty) {
-                output_ansi();
-                m_flags &= ~e_outputAnsiDirty;
-                m_flags |= e_outputAnsiChanged;
-            }
-            m_outputBuf.append(value.data(), value.size());
-            return *this;
-        }
-
         console& operator <<(console&(*func)(console&))
         {
             return func(*this);
