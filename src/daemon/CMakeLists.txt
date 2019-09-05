@@ -15,6 +15,9 @@
 
 include_directories(${GFLAGS_INCLUDE_DIRS})
 include_directories(${LIBUV_INCLUDE_DIRS})
+if(FUS_HAVE_SQLITE)
+    include_directories(${SQLITE3_INCLUDE_DIRS})
+endif()
 include_directories(${STRING_THEORY_INCLUDE_DIRS})
 include_directories("../")
 
@@ -32,12 +35,17 @@ set(FUS_AUTH_DAEMON
     authsrv/auth_private.h
 )
 
-set(FUS_DB_DAEMON
-    dbsrv/db.h
-    dbsrv/db_daemon.cpp
-    dbsrv/db_server.cpp
-    dbsrv/db_private.h
-)
+if(FUS_HAVE_SQLITE)
+    set(FUS_SQLITE3DB_DAEMON
+        sqlite3dbsrv/sqlite3db.h
+        sqlite3dbsrv/sqlite3db_daemon.cpp
+        sqlite3dbsrv/sqlite3db_server.cpp
+        sqlite3dbsrv/sqlite3db_private.h
+        sqlite3dbsrv/sqlite3db_query.cpp
+    )
+else()
+    set(FUS_SQLITE3DB_DAEMON)
+endif()
 
 set(FUS_DAEMON_HEADERS
     daemon_base.h
@@ -52,19 +60,23 @@ set(FUS_DAEMON_SOURCES
     server_console.cpp
 )
 
-add_executable(fus_daemon ${FUS_ADMIN_DAEMON} ${FUS_AUTH_DAEMON} ${FUS_DB_DAEMON}
+add_executable(fus_daemon ${FUS_ADMIN_DAEMON} ${FUS_AUTH_DAEMON} ${FUS_SQLITE3DB_DAEMON}
                           ${FUS_DAEMON_HEADERS} ${FUS_DAEMON_SOURCES})
 target_link_libraries(fus_daemon ${GFLAGS_LIBRARIES})
 target_link_libraries(fus_daemon ${LIBUV_LIBRARIES})
+if(FUS_HAVE_SQLITE)
+    target_link_libraries(fus_daemon ${SQLITE3_LIBRARIES})
+endif()
 target_link_libraries(fus_daemon ${STRING_THEORY_LIBRARIES})
 target_link_libraries(fus_daemon fus_client)
 target_link_libraries(fus_daemon fus_core)
-target_link_libraries(fus_daemon fus_db)
 target_link_libraries(fus_daemon fus_io)
 target_link_libraries(fus_daemon fus_protocol)
 
 source_group("Admin Daemon" FILES ${FUS_ADMIN_DAEMON})
 source_group("Auth Daemon" FILES ${FUS_AUTH_DAEMON})
-source_group("DB Daemon" FILES ${FUS_DB_DAEMON})
+if(FUS_HAVE_SQLITE)
+    source_group("DB (SQLite3) Daemon" FILES ${FUS_SQLITE3DB_DAEMON})
+endif()
 source_group("Header Files" FILES ${FUS_DAEMON_HEADERS})
 source_group("Source Files" FILES ${FUS_DAEMON_SOURCES})

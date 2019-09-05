@@ -561,7 +561,7 @@ void fus::tcp_stream_write_struct(fus::tcp_stream_t* stream, const fus::net_stru
 
     if (!(stream->m_flags & tcp_stream_t::e_closing)) {
         /// FIXME: this allocation can be larger than needed.
-        auto req = (write_buf_t*)malloc(sizeof(write_buf_t) + bufsz);
+        auto req = (write_buf_t*)malloc(sizeof(write_buf_t) + bufsz + appendBufsz);
         req->m_bufsz = 0;
         uv_buf_t* sendbufs = (uv_buf_t*)alloca(sizeof(uv_buf_t) * ns->m_size);
         const char* srcPtr = (const char*)buf;

@@ -57,6 +57,7 @@ namespace fus
             e_running = (1<<1),
             e_shuttingDown = (1<<2),
             e_hasShutdownTimer = (1<<3),
+            e_dbSqlite = (1<<4),
         };
 
         uv_tcp_t m_lobby;
@@ -134,6 +135,8 @@ namespace fus
     public:
         config_parser& config() { return m_config; }
         log_file& log() { return m_log; }
+
+        bool use_sqlite() const { return m_flags & e_dbSqlite; }
 
     public:
         void generate_client_ini(const std::filesystem::path& path) const;

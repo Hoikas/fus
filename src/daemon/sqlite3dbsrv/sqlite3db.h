@@ -14,36 +14,35 @@
  *   along with fus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __FUS_DB_CONSTANTS
-#define __FUS_DB_CONSTANTS
+#ifndef __FUS_SQLITE3DB_DAEMON_H
+#define __FUS_SQLITE3DB_DAEMON_H
+
+#include "core/list.h"
+#include "io/crypt_stream.h"
 
 namespace fus
 {
-    namespace acct_flags
+    namespace sqlite3
     {
-        enum
+        struct db_server_t;
+
+        struct db_server_t : public crypt_stream_t
         {
-            // These roles are defined by Plasma
-            e_roleDisabled = 0<<0,
-            e_roleAdmin = 1<<0,
-            e_roleDeveloper = 1<<1,
-            e_roleBetaTester = 1<<2,
-            e_roleUser = 1<<3,
-            e_roleSpecialEvent = 1<<4,
-            e_roleBanned = 1<<16,
-
-            // internal fus flags
-            e_acctHashSha0 = 1<<17,
-            e_acctHashSha1 = 1<<18,
-            e_acctHashMask = e_acctHashSha0 | e_acctHashSha1,
+            FUS_LIST_LINK(db_server_t) m_link;
         };
-    };
 
-    enum class hash_type
-    {
-        e_unspecified,
-        e_sha0,
-        e_sha1,
+        void db_server_init(db_server_t*);
+        void db_server_free(db_server_t*);
+
+        void db_server_read(db_server_t*);
+
+        bool db_daemon_init();
+        bool db_daemon_running();
+        bool db_daemon_shutting_down();
+        void db_daemon_free();
+        void db_daemon_shutdown();
+
+        void db_daemon_accept(db_server_t*, const void*);
     };
 };
 

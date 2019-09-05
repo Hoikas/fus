@@ -21,6 +21,7 @@ include_directories("../")
 set(FUS_IO_HEADERS
     console.h
     crypt_stream.h
+    hash.h
     io.h
     log_file.h
     net_struct.h
@@ -31,6 +32,7 @@ set(FUS_IO_HEADERS
 set(FUS_IO_SOURCES
     console.cpp
     crypt_stream.cpp
+    hash.cpp
     io.cpp
     log_file.cpp
     net_error.cpp

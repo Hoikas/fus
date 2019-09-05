@@ -21,7 +21,6 @@
 #include "client/admin_client.h"
 #include "core/errors.h"
 #include "daemon_config.h"
-#include "dbsrv/db.h"
 #include <gflags/gflags.h>
 #include "io/console.h"
 #include "io/io.h"
@@ -29,6 +28,9 @@
 #include "io/tcp_stream.h"
 #include "protocol/common.h"
 #include "server.h"
+#ifdef FUS_HAVE_SQLITE
+#   include "sqlite3dbsrv/sqlite3db.h"
+#endif
 
 // =================================================================================
 
@@ -39,6 +41,21 @@ DEFINE_bool(run_db, true, "Launch the database daemon");
 // =================================================================================
 
 fus::server* fus::server::m_instance = nullptr;
+
+// =================================================================================
+
+#ifndef FUS_HAVE_SQLITE
+namespace fus
+{
+    namespace sqlite3
+    {
+        struct db_server_t
+        {
+
+        };
+    };
+};
+#endif
 
 // =================================================================================
 
@@ -54,7 +71,8 @@ struct max_sizeof<_Arg0, _Args...>
     static constexpr size_t value = std::max(sizeof(_Arg0), max_sizeof<_Args...>::value);
 };
 
-constexpr size_t k_clientMemsz = max_sizeof<fus::admin_server_t, fus::auth_server_t>::value;
+constexpr size_t k_clientMemsz = max_sizeof<fus::admin_server_t, fus::auth_server_t,
+                                            fus::sqlite3::db_server_t>::value;
 
 // =================================================================================
 
@@ -67,21 +85,28 @@ fus::server::server(const std::filesystem::path& config_path)
     log_file::set_directory(m_config.get<const ST::string&>("log", "directory"));
     m_log.set_level(m_config.get<const ST::string&>("log", "level"));
 
-#define ADD_DAEMON(name) \
+#define ADD_DAEMON(prefix, suffix) \
     { \
-    auto pair = m_daemonCtl.emplace(std::piecewise_construct, std::forward_as_tuple(ST_LITERAL(#name)), \
-                                    std::forward_as_tuple(name##_daemon_init, name##_daemon_shutdown, \
-                                                          name##_daemon_free, name##_daemon_running, \
-                                                          name##_daemon_shutting_down, FLAGS_run_##name)); \
+    auto pair = m_daemonCtl.emplace(std::piecewise_construct, std::forward_as_tuple(ST_LITERAL(#prefix "::" #suffix)), \
+                                    std::forward_as_tuple(prefix::suffix##_daemon_init, prefix::suffix##_daemon_shutdown, \
+                                                          prefix::suffix##_daemon_free, prefix::suffix##_daemon_running, \
+                                                          prefix::suffix##_daemon_shutting_down, FLAGS_run_##suffix)); \
     m_daemonIts.push_back(pair.first); \
     }
 
     // All daemons must be entered into the map in the order that they should be inited
     // Hint: if another server connects to it, init it first... May GAWD help you if you're trying
     //       something crazy, like circular connections.
-    ADD_DAEMON(db);
-    ADD_DAEMON(admin);
-    ADD_DAEMON(auth);
+    const ST::string db = m_config.get<const ST::string&>("db", "engine").to_lower();
+#ifdef FUS_HAVE_SQLITE
+    if (db == ST_LITERAL("sqlite") || db == ST_LITERAL("sqlite3")) {
+        m_flags |= e_dbSqlite;
+        ADD_DAEMON(fus::sqlite3, db);
+    }
+#endif
+
+    ADD_DAEMON(fus, admin);
+    ADD_DAEMON(fus, auth);
 
 #undef ADD_DAEMON
 }
@@ -117,7 +142,11 @@ static void _on_header_read(fus::tcp_stream_t* client, ssize_t error, void* msg)
         break;
     case fus::protocol::e_protocolSrv2Database:
         log.write_debug("[{}] Incoming db connection", fus::tcp_stream_peeraddr(client));
-        fus::db_daemon_accept((fus::db_server_t*)client, msg);
+#ifdef FUS_HAVE_SQLITE
+        if (fus::server::get()->use_sqlite()) {
+            fus::sqlite3::db_daemon_accept((fus::sqlite3::db_server_t*)client, msg);
+        }
+#endif
         break;
     default:
         log.write_error("[{}] Invalid connection type '{2X}'", fus::tcp_stream_peeraddr(client), header->get_connType());
@@ -282,7 +311,7 @@ void fus::server::daemon_ctl_noresult(const ST::string& action, const ST::string
 {
     FUS_ASSERTD(proc);
 
-    console::get() << fus::console::weight_bold << action << " fus::" << daemon << console::flush;
+    console::get() << fus::console::weight_bold << action << " " << daemon << console::flush;
     proc();
     output_result(true, success, ST::null);
 }
@@ -293,7 +322,7 @@ bool fus::server::daemon_ctl_result(const ST::string& action, const ST::string& 
 {
     FUS_ASSERTD(proc);
 
-    console::get() << fus::console::weight_bold << action << " fus::" << daemon << console::flush;
+    console::get() << fus::console::weight_bold << action << " " << daemon << console::flush;
     bool result = proc();
     output_result(result, success, fail);
     return result;

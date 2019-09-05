@@ -18,7 +18,6 @@
 #include "client/db_client.h"
 #include "core/errors.h"
 #include "daemon/daemon_base.h"
-#include "db/constants.h"
 #include <new>
 #include <openssl/evp.h>
 #include "protocol/admin.h"

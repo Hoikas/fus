@@ -16,7 +16,6 @@
 
 #include "core/errors.h"
 #include <cstring>
-#include "db/constants.h"
 #include "db_client.h"
 #include "protocol/db.h"
 
